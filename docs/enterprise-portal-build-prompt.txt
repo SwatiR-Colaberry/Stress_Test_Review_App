@@ -1,0 +1,80 @@
+WHAT WE'RE BUILDING
+
+A Stress Test Review Application: a controlled review platform that sits between Basecamp (where students submit their work) and a human reviewer (who gives final feedback). Students keep working entirely inside Basecamp as they do today — nothing changes for them except adding a marker when they're ready for review. The new system detects that marker, pulls the right rules for the right assignment, has Claude draft a structured review, and hands that draft to a human reviewer who approves, edits, or rejects it before anything is posted back to Basecamp. The AI never has final say — a human always does.
+
+WHO USES IT
+
+- Students: unchanged workflow. They submit work in Basecamp as normal and add a "##Critique##" marker in a comment when a submission/version is ready to be reviewed.
+- Human reviewers ("critiquers"): the primary users of the new application. They see a central Review Queue across all projects and all Stress Tests, open a review, see the AI's draft findings with evidence and rule citations, and approve/edit/reject before final feedback goes back to Basecamp.
+- Program/ops staff: view completed reviews and audit history for quality and consistency across reviewers.
+
+THE CORE WORKFLOW
+
+1. Student creates or updates a Stress Test submission in an existing Basecamp project.
+2. Student adds a "##Critique##" marker in a Basecamp comment, indicating the current submission/version is ready for review.
+3. The application monitors Basecamp activity and detects a valid, normalized critique marker (accepting reasonable spacing/case variants like "## Critique ##", but never triggering on plain "Critique", "#Critique", "##Review##", or ordinary prose that happens to contain the word).
+4. A Review Queue item is created with status "Pending," tied to the exact submission/version (not just the thread).
+5. The application identifies the project, student, which Stress Test (ST0–ST5), submission version, and reviewer — and if any of this is ambiguous, it routes to manual resolution instead of guessing.
+6. The application loads only the rule module for the identified Stress Test — never a generic AI critique, never another Stress Test's rules.
+7. The application retrieves everything needed for review from Basecamp: written content, comments, screenshots, attachments, files, and relevant links.
+8. Claude evaluates the current submission against the loaded rules only, including multimodal evaluation of screenshots when a rule requires visual evidence.
+9. Claude returns structured draft findings, not free-text feedback: rule ID, status (PASS/FAIL/ADVISORY), severity (Required Fix / Needs Attention / Improvement), evidence, reason, suggested feedback text, and a confidence score. It may also reference relevant historical cases if retrieval surfaced any.
+10. A human reviewer opens the review, sees the AI draft grouped by severity, and can approve, edit, reject, or add findings the AI missed. Human review is mandatory — the system never auto-approves.
+11. Only the reviewer's approved final feedback is posted back to the correct location in Basecamp.
+12. The review is marked "Completed" — which specifically means the human review and the Basecamp posting are both done, not that "the AI finished."
+13. If a later version gets a new critique marker, a new review is created while the previous review/version is preserved for history — nothing is overwritten.
+
+MARKER DETECTION AND VERSIONING DETAIL
+
+Detection must read Basecamp's underlying comment data directly (the Basecamp_MessageBoards_MessageComments table) rather than relying solely on the existing proc_AllStressTestData stored procedure, because that procedure's exact LIKE matching is too brittle for real-world marker variations. Use MessageId to identify the overall Basecamp thread and CommentId to identify the exact submission/comment version — never use IsSubmitted as a version identifier, it isn't reliable for that. The existing proc_AllStressTestData can keep supporting the current Critique List as-is; the new app adds its own normalization/intake layer rather than rewriting that procedure. There's also an existing ADF_BasecampStressTestCritiquer table for critiquer assignment/history that should be used where relevant rather than rebuilt.
+
+RULE ARCHITECTURE — THIS IS THE CENTERPIECE
+
+Official Stress Test rules are versioned configuration data, not baked into AI prompts. Each Stress Test module (ST0 through ST5) is a self-contained rule module owning: its scope (what AI is and isn't allowed to evaluate), stable rule IDs (e.g. ST0-001), requirement definitions, validation logic, required artifacts, an ordered sequence of review stages, severity guidance, feedback-wording guidance, any advisory (non-blocking) rules, and a rule version so historical reviews can always be interpreted against the rules that were active when they were made. The platform must be able to add ST1–ST5 later as new configuration without rebuilding the core application. The common platform (this app) owns Basecamp integration, marker detection, queue management, submission retrieval, the reviewer workflow, audit history, and historical retrieval — it does not own assignment-specific validation logic, which lives entirely inside each Stress Test's rule module.
+
+MVP SCOPE — START WITH ST0 ONLY
+
+ST0 is purely structural validation of a data science project pitch: is a dataset described, is there a valid public source link, is data collection explained separately from the dataset description, does a screenshot show real headers/preview rows, are the actual dataset files present, are there 8–10 well-formed candidate problems each with Problem/Solution/Model Type(s)/Algorithm/Independent Variable(s)/Dependent Variable/Target Audience/Future Capability(ies), and is exactly one of those problems clearly marked as the selected one. ST0 explicitly does NOT evaluate modeling quality, forecasting quality, dataset realism, strategic quality, feature engineering, or algorithm choice — those come with later Stress Test modules (ST1–ST5), which are out of scope for the MVP but must be addable later without a rebuild.
+
+ST0 runs in three ordered stages: Stage 1 (structural check) — if this fails, list every structural issue found and stop, don't mix in Stage 2 findings. Stage 2 (artifact check) only runs after Stage 1 fully passes. Stage 3 (dataset advisory, e.g. "this dataset has only one categorical dimension, which limits dashboard analysis later") is purely advisory and must never cause a structural failure on its own. The system must never auto-approve a submission, regardless of how clean it looks.
+
+HISTORICAL LEARNING (BUILD LATER, DESIGN NOW)
+
+Every completed review becomes searchable historical knowledge: final feedback, reviewer edits, rule IDs, findings, and the final decision are all stored and indexed. A future submission's review can retrieve a small number of genuinely relevant prior cases — filtered first by SQL (same Stress Test, completed status), then by matching rule ID, then by similar project domain/objective, then by full-text search, and only as an optional/advanced last layer by vector/embedding similarity. Claude should only ever see the current case plus a handful (top 5–10) of relevant historical examples — never the entire historical database — and historical examples must never override the current official rules. No manual retraining step is needed; new completed reviews just get indexed automatically.
+
+WHAT "DONE" LOOKS LIKE FOR THE MVP
+
+A "##Critique##" marker creates exactly one review record per submission version (no duplicates, even on retries). The system correctly identifies ST0 and loads only ST0's rules. It correctly detects every required missing structural item and, where a required field is missing inside one of the 8–10 problems, identifies exactly which problem number and field is missing rather than a vague "something's wrong." Stage 1 always runs before Stage 2, then advisory checks — and a dataset advisory finding never gets treated as a blocking structural failure. AI feedback text reads as concise, specific, and actionable, not generic. A human reviewer can approve, edit, reject, or add findings, and a review is only ever marked Completed after that human step plus successful Basecamp posting. A new critique marker on a newer version creates a new review while fully preserving the previous one's history. The AI never has authority to give final approval. Historical retrieval never silently overrides the current official rules for a Stress Test.
+
+DATA THIS TOUCHES / SENSITIVITY
+
+Student submissions (written content, screenshots, files, links), reviewer identities and decisions, and a full audit trail of AI drafts vs. final human-approved feedback. Original AI output must be preserved separately from the human-edited final version so both are auditable later — not merged/overwritten. Reviewer identity and completion timestamp must be recorded on every completed review. Access to Basecamp and the database should be least-privilege. No credentials of any kind (Basecamp OAuth secrets, Anthropic/Bedrock keys, database credentials) may ever live in source code, browser JavaScript, plain-text database tables, or documents shared with reviewers — they belong in environment configuration or a secrets manager only.
+
+ERROR HANDLING THAT MUST EXIST FROM DAY ONE
+
+If the project can't be identified: route to manual resolution, do not critique. If the Stress Test number can't be identified: route to manual resolution, do not guess. If a submission can't be retrieved from Basecamp: keep the queue item and surface a visible integration error rather than silently dropping it. If an unsupported/unrecognized Stress Test comes in: never fall back to applying a different module's rules to it. Duplicate critique events must be caught by an idempotency check so they never create duplicate review records. If Claude or any external API call fails: retry safely within a bounded number of attempts, and keep the queue item with a visible error state rather than losing it. If posting the final feedback back to Basecamp fails: the review must not be marked Completed until that posting is actually resolved.
+
+TECHNICAL DIRECTION ALREADY DECIDED
+
+- Language/stack: Python (chosen for team familiarity and consistency with this org's existing internal tooling). Backend should expose a typed API (FastAPI + Pydantic models for request/response contracts) rather than a bare script.
+- Database: Microsoft SQL Server is the system of record for reviews, submission versions, rule definitions, findings, historical index, reviewer edits, and the audit log. Connect via pyodbc (with the Microsoft ODBC driver) or SQLAlchemy on top of it. Use SQL Server Full-Text Search as the first historical-retrieval layer; only add a vector/embedding layer later if semantic search is proven necessary and the SQL Server version/approval supports it.
+- Basecamp integration: OAuth 2.0 app registered against the Basecamp account at app.basecamp.com/3945211/, using Basecamp's REST API (plain HTTP, e.g. Python's `requests`) to read projects/submissions/comments/attachments and to post final feedback. Prefer Basecamp webhooks for near-real-time detection where available; support polling as a fallback/interim approach.
+- AI: Claude, via whichever enterprise-approved route applies (direct Anthropic API key, or Claude through AWS Bedrock) — not yet finalized which credential path, but the integration layer should be written so either can be swapped in via configuration.
+- Frontend: a real reviewer-facing web UI (not a CLI, not a bare local dev tool) — Review Queue, Review Detail, AI Findings grouped by severity, an editable Feedback Editor, Approve/Edit/Reject/Add-Finding controls, and an audit/history view showing the AI's original draft alongside the final human version.
+- Deployment target: still being decided between reusing this organization's existing production VPS/docker-compose setup versus a new, isolated environment for this app specifically, given it's reviewer/student-facing rather than an internal automation script. Whichever is chosen, the app needs a public HTTPS endpoint for the Basecamp OAuth callback (and for webhooks, if used).
+
+DATABASE ENTITIES EXPECTED (SUMMARY — TREAT AS A STARTING POINT, NOT FINAL SCHEMA)
+
+stress_test_reviews (one review instance per project/submission/version, with status, reviewer, timestamps, final feedback), stress_test_rules (versioned ST0–ST5 rule definitions), review_findings (each AI finding: rule ID, status, severity, evidence, reason, confidence, reviewer decision), submissions/submission_versions (exact Basecamp submission/version reviewed), projects (Basecamp project identity/metadata), historical_reviews (searchable completed-review index), reviewer_edits (what a human changed/rejected/approved/added), review_audit_log (who did what, when, against which version), integration_events (incoming webhook/API events and their processing status).
+
+REVIEW QUEUE — VISIBLE FIELDS
+
+COE (organizational/center context), Critique List/Project (which project + Stress Test needs review), Last Submitted (most recent version timestamp), Critiquer (assigned reviewer), Status (Pending / In Review / Feedback Generated / Completed — internally at least, with Pending/Completed likely being what stays user-visible), and an Action column (Open review / Continue / Complete).
+
+PHASED BUILD ORDER
+
+Phase 1: Basecamp connection, critique marker detection, and a working Review Queue (no AI yet) — a real student submission can enter the system end to end. Phase 2: the ST0 rule engine and its three-stage validation logic. Phase 3: Claude integration producing structured ST0 draft findings. Phase 4: the full human reviewer workflow plus posting final feedback back to Basecamp — this completes an operational end-to-end ST0 review loop. Phase 5: historical retrieval surfacing relevant prior reviews automatically. Phase 6: analytics on reviewer edits/decisions to improve future retrieval and prompting. Phase 7: add ST1 through ST5 as additional rule modules without touching the core platform.
+
+WHAT I NEED THIS BUILD TO PRODUCE FIRST
+
+Please turn this into a scheduled build with lists and tasks that follow the phased order above (Phase 1 through Phase 4 first, since that's the full MVP for a single Stress Test — ST0 — end to end; Phases 5 through 7 can be later lists). Within Phase 1, please break out: environment/config setup (env vars for DB and Basecamp/Claude credentials, no secrets in code), the Basecamp OAuth flow, the marker-detection/normalization logic reading Basecamp_MessageBoards_MessageComments directly, the core database schema and migrations for projects/submissions/submission_versions/stress_test_reviews/integration_events, an idempotency check for duplicate critique events, and a minimal read-only Review Queue view to confirm the pipeline works before any AI or reviewer UI exists.
