@@ -1,0 +1,520 @@
+{
+  "schema_version": 2,
+  "project": "Stress Test Review Application",
+  "totals": {
+    "stories_total": 13,
+    "stories_verified": 0,
+    "stories_submitted": 0,
+    "stories_in_progress": 0,
+    "stories_not_started": 13,
+    "criteria_total": 41,
+    "criteria_passed": 0,
+    "points_awarded": 650
+  },
+  "stories": [
+    {
+      "id": "STORY-000",
+      "release": null,
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
+          "passed": false
+        },
+        {
+          "text": "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
+          "passed": false
+        },
+        {
+          "text": "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
+          "passed": false
+        },
+        {
+          "text": "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
+          "passed": false
+        },
+        {
+          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 5,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
+          "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
+          "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
+          "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
+          "Trust — no tab shows a number, a connection or a result the project has not actually produced."
+        ]
+      }
+    },
+    {
+      "id": "STORY-001",
+      "release": "r0",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a Basecamp comment with '##Critique##', When the system processes the comment, Then a review item is created with status 'Pending'.",
+          "passed": false
+        },
+        {
+          "text": "Given a comment with '## Review ##', When the system processes the comment, Then no review item is created.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs the detection event with the exact comment ID.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given a Basecamp comment with '##Critique##', When the system processes the comment, Then a review item is created with status 'Pending'.",
+          "Given a comment with '## Review ##', When the system processes the comment, Then no review item is created.",
+          "Trust: The system logs the detection event with the exact comment ID."
+        ]
+      }
+    },
+    {
+      "id": "STORY-002",
+      "release": "r0",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a Basecamp project with submissions, when the system retrieves data, then it includes comments, attachments, and links.",
+          "passed": false
+        },
+        {
+          "text": "Given a Basecamp project with no submissions, when the system attempts to retrieve data, then it returns an empty dataset.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all data retrieval actions with timestamps and user IDs.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given a Basecamp project with submissions, when the system retrieves data, then it includes comments, attachments, and links.",
+          "Given a Basecamp project with no submissions, when the system attempts to retrieve data, then it returns an empty dataset.",
+          "Trust: The system logs all data retrieval actions with timestamps and user IDs."
+        ]
+      }
+    },
+    {
+      "id": "STORY-003",
+      "release": "r1",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a submission for ST0, When the system loads rules, Then only ST0 rules are loaded.",
+          "passed": false
+        },
+        {
+          "text": "Given a submission for an unknown Stress Test, When the system loads rules, Then it routes to manual resolution.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs rule loading events with rule version.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given a submission for ST0, When the system loads rules, Then only ST0 rules are loaded.",
+          "Given a submission for an unknown Stress Test, When the system loads rules, Then it routes to manual resolution.",
+          "Trust: The system logs rule loading events with rule version."
+        ]
+      }
+    },
+    {
+      "id": "STORY-004",
+      "release": "r1",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a valid submission, When Claude evaluates it, Then structured draft findings are returned.",
+          "passed": false
+        },
+        {
+          "text": "Given an invalid submission, When Claude evaluates it, Then an error is returned.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs evaluation events with submission ID and rule ID.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given a valid submission, When Claude evaluates it, Then structured draft findings are returned.",
+          "Given an invalid submission, When Claude evaluates it, Then an error is returned.",
+          "Trust: The system logs evaluation events with submission ID and rule ID."
+        ]
+      }
+    },
+    {
+      "id": "STORY-005",
+      "release": "r2",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given AI findings, When a reviewer approves them, Then feedback is prepared for Basecamp posting.",
+          "passed": false
+        },
+        {
+          "text": "Given AI findings, When a reviewer edits them, Then the edits are saved and prepared for posting.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all reviewer actions with timestamps.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given AI findings, When a reviewer approves them, Then feedback is prepared for Basecamp posting.",
+          "Given AI findings, When a reviewer edits them, Then the edits are saved and prepared for posting.",
+          "Trust: The system logs all reviewer actions with timestamps."
+        ]
+      }
+    },
+    {
+      "id": "STORY-006",
+      "release": "r2",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given approved feedback, When the system posts it to Basecamp, Then the review is marked 'Completed'.",
+          "passed": false
+        },
+        {
+          "text": "Given a posting error, When the system retries, Then it eventually succeeds or logs an error.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs posting events with feedback ID and status.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given approved feedback, When the system posts it to Basecamp, Then the review is marked 'Completed'.",
+          "Given a posting error, When the system retries, Then it eventually succeeds or logs an error.",
+          "Trust: The system logs posting events with feedback ID and status."
+        ]
+      }
+    },
+    {
+      "id": "STORY-007",
+      "release": "r3",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a completed review, When the system archives it, Then both AI drafts and human edits are preserved.",
+          "passed": false
+        },
+        {
+          "text": "Given an audit request, When the system retrieves history, Then it shows all relevant actions and timestamps.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all archival events with review ID.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given a completed review, When the system archives it, Then both AI drafts and human edits are preserved.",
+          "Given an audit request, When the system retrieves history, Then it shows all relevant actions and timestamps.",
+          "Trust: The system logs all archival events with review ID."
+        ]
+      }
+    },
+    {
+      "id": "STORY-008",
+      "release": "r3",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given an ambiguous project ID, When the system processes it, Then it routes to manual resolution.",
+          "passed": false
+        },
+        {
+          "text": "Given an ambiguous Stress Test ID, When the system processes it, Then it routes to manual resolution.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all manual resolution events with details.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given an ambiguous project ID, When the system processes it, Then it routes to manual resolution.",
+          "Given an ambiguous Stress Test ID, When the system processes it, Then it routes to manual resolution.",
+          "Trust: The system logs all manual resolution events with details."
+        ]
+      }
+    },
+    {
+      "id": "STORY-009",
+      "release": "r4",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given an API call failure, When the system retries, Then it succeeds or logs an error after bounded attempts.",
+          "passed": false
+        },
+        {
+          "text": "Given a network issue, When the system detects it, Then it surfaces a visible error state.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all API call attempts and outcomes.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given an API call failure, When the system retries, Then it succeeds or logs an error after bounded attempts.",
+          "Given a network issue, When the system detects it, Then it surfaces a visible error state.",
+          "Trust: The system logs all API call attempts and outcomes."
+        ]
+      }
+    },
+    {
+      "id": "STORY-010",
+      "release": "r4",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a new Stress Test module, When the system loads it, Then it integrates without core changes.",
+          "passed": false
+        },
+        {
+          "text": "Given a configuration error, When the system detects it, Then it logs an error for resolution.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all module loading events with module ID.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given a new Stress Test module, When the system loads it, Then it integrates without core changes.",
+          "Given a configuration error, When the system detects it, Then it logs an error for resolution.",
+          "Trust: The system logs all module loading events with module ID."
+        ]
+      }
+    },
+    {
+      "id": "STORY-011",
+      "release": "r0",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a submission is processed, when an action is taken, then it is logged in the audit trail.",
+          "passed": false
+        },
+        {
+          "text": "Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system ensures no credentials are stored in source code or shared documents.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given a submission is processed, when an action is taken, then it is logged in the audit trail.",
+          "Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action.",
+          "Trust: The system ensures no credentials are stored in source code or shared documents."
+        ]
+      }
+    },
+    {
+      "id": "STORY-012",
+      "release": "r2",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a pending review in the queue, when accessed via the UI, then it displays all necessary details for review.",
+          "passed": false
+        },
+        {
+          "text": "Given a completed review, when accessed via the UI, then it shows the review status and history.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all UI interactions with timestamps and user IDs.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": [
+          "Given a pending review in the queue, when accessed via the UI, then it displays all necessary details for review.",
+          "Given a completed review, when accessed via the UI, then it shows the review status and history.",
+          "Trust: The system logs all UI interactions with timestamps and user IDs."
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,749 @@
+{
+  "schema_version": 2,
+  "project_name": "Stress Test Review Application",
+  "descriptor": "A controlled review platform integrating Basecamp and human reviewers, with AI-assisted draft reviews.",
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "kind": "FUNC",
+      "cluster": "Marker Detection",
+      "priority": "must",
+      "statement": "The system must detect a '##Critique##' marker in Basecamp comments, normalizing reasonable spacing and case variants.",
+      "from_dimensions": [
+        "current_workflow",
+        "inputs"
+      ],
+      "fulfilled_by": [
+        "STORY-001"
+      ]
+    },
+    {
+      "id": "REQ-002",
+      "kind": "FUNC",
+      "cluster": "Review Queue",
+      "priority": "must",
+      "statement": "The system must create a Review Queue item with status 'Pending' for each detected critique marker, tied to the exact submission/version.",
+      "from_dimensions": [
+        "current_workflow",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-001"
+      ]
+    },
+    {
+      "id": "REQ-003",
+      "kind": "FUNC",
+      "cluster": "Rule Application",
+      "priority": "must",
+      "statement": "The system must load only the rule module for the identified Stress Test (ST0) and never apply generic or incorrect rules.",
+      "from_dimensions": [
+        "systems",
+        "constraints"
+      ],
+      "fulfilled_by": [
+        "STORY-003"
+      ]
+    },
+    {
+      "id": "REQ-004",
+      "kind": "FUNC",
+      "cluster": "Data Retrieval",
+      "priority": "must",
+      "statement": "The system must retrieve all necessary submission data from Basecamp, including comments, attachments, and links.",
+      "from_dimensions": [
+        "inputs",
+        "systems"
+      ],
+      "fulfilled_by": [
+        "STORY-002"
+      ]
+    },
+    {
+      "id": "REQ-005",
+      "kind": "FUNC",
+      "cluster": "AI Evaluation",
+      "priority": "must",
+      "statement": "Claude must evaluate submissions against loaded rules, returning structured draft findings with rule ID, status, severity, evidence, reason, and confidence score.",
+      "from_dimensions": [
+        "ai_opportunities",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-004"
+      ]
+    },
+    {
+      "id": "REQ-006",
+      "kind": "FUNC",
+      "cluster": "Human Review",
+      "priority": "must",
+      "statement": "Human reviewers must be able to approve, edit, reject, or add findings before final feedback is posted back to Basecamp.",
+      "from_dimensions": [
+        "actors",
+        "desired_outcome"
+      ],
+      "fulfilled_by": [
+        "STORY-005"
+      ]
+    },
+    {
+      "id": "REQ-007",
+      "kind": "FUNC",
+      "cluster": "Review Completion",
+      "priority": "must",
+      "statement": "The system must mark reviews as 'Completed' only after human review and Basecamp posting are both done.",
+      "from_dimensions": [
+        "outputs",
+        "success_definition"
+      ],
+      "fulfilled_by": [
+        "STORY-006"
+      ]
+    },
+    {
+      "id": "REQ-008",
+      "kind": "SAFE",
+      "cluster": "Audit and History",
+      "priority": "must",
+      "statement": "The system must preserve the history of each review, including AI drafts and human edits, for audit purposes.",
+      "from_dimensions": [
+        "security_context",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-007"
+      ]
+    },
+    {
+      "id": "REQ-009",
+      "kind": "FUNC",
+      "cluster": "Error Handling",
+      "priority": "must",
+      "statement": "The system must route ambiguous project or Stress Test identifications to manual resolution rather than guessing.",
+      "from_dimensions": [
+        "exceptions",
+        "unknowns"
+      ],
+      "fulfilled_by": [
+        "STORY-008"
+      ]
+    },
+    {
+      "id": "REQ-010",
+      "kind": "SAFE",
+      "cluster": "Error Handling",
+      "priority": "must",
+      "statement": "The system must retry external API calls safely within a bounded number of attempts and surface visible errors if they fail.",
+      "from_dimensions": [
+        "exceptions",
+        "unknowns"
+      ],
+      "fulfilled_by": [
+        "STORY-009"
+      ]
+    },
+    {
+      "id": "REQ-011",
+      "kind": "SAFE",
+      "cluster": "Human Review",
+      "priority": "must",
+      "statement": "The system must not auto-approve any submission; human review is mandatory.",
+      "from_dimensions": [
+        "constraints",
+        "success_definition"
+      ],
+      "fulfilled_by": [
+        "STORY-011"
+      ]
+    },
+    {
+      "id": "REQ-012",
+      "kind": "CONSTRAINT",
+      "cluster": "Integration",
+      "priority": "must",
+      "statement": "The system must use Basecamp's OAuth 2.0 for authentication and authorization.",
+      "from_dimensions": [
+        "systems",
+        "constraints"
+      ],
+      "fulfilled_by": [
+        "STORY-002"
+      ]
+    },
+    {
+      "id": "REQ-013",
+      "kind": "CONSTRAINT",
+      "cluster": "Data Storage",
+      "priority": "must",
+      "statement": "The system must connect to Microsoft SQL Server for data storage and retrieval.",
+      "from_dimensions": [
+        "systems",
+        "constraints"
+      ],
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-014",
+      "kind": "CONSTRAINT",
+      "cluster": "AI Evaluation",
+      "priority": "must",
+      "statement": "The system must use Claude via the Anthropic API for AI evaluations.",
+      "from_dimensions": [
+        "systems",
+        "constraints"
+      ],
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-015",
+      "kind": "CONSTRAINT",
+      "cluster": "API Design",
+      "priority": "must",
+      "statement": "The system must expose a typed API using FastAPI and Pydantic models.",
+      "from_dimensions": [
+        "systems",
+        "constraints"
+      ],
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-016",
+      "kind": "SAFE",
+      "cluster": "Security",
+      "priority": "must",
+      "statement": "The system must ensure that no credentials are stored in source code or shared documents.",
+      "from_dimensions": [
+        "security_context"
+      ],
+      "fulfilled_by": [
+        "STORY-011"
+      ]
+    },
+    {
+      "id": "REQ-017",
+      "kind": "NFR",
+      "cluster": "Extensibility",
+      "priority": "should",
+      "statement": "The system must support adding new Stress Test modules (ST1–ST5) as configuration without rebuilding the core application.",
+      "from_dimensions": [
+        "constraints",
+        "success_definition"
+      ],
+      "fulfilled_by": [
+        "STORY-010"
+      ]
+    },
+    {
+      "id": "REQ-018",
+      "kind": "FUNC",
+      "cluster": "User Interface",
+      "priority": "must",
+      "statement": "The system must provide a web UI for reviewers to manage the Review Queue and perform reviews.",
+      "from_dimensions": [
+        "actors",
+        "desired_outcome"
+      ],
+      "fulfilled_by": [
+        "STORY-012"
+      ]
+    }
+  ],
+  "releases": [
+    {
+      "key": "r0",
+      "demo": "A critique marker in Basecamp creates a pending review item in the system.",
+      "goal": "Establish Basecamp integration and critique marker detection.",
+      "name": "Initial Integration and Detection",
+      "week_end": 2,
+      "week_start": 1,
+      "story_ids": [
+        "STORY-001",
+        "STORY-002",
+        "STORY-011"
+      ],
+      "starts_on": "2026-09-18",
+      "ends_on": "2026-09-20",
+      "is_demo_target": true
+    },
+    {
+      "key": "r1",
+      "demo": "A submission is evaluated by Claude against ST0 rules, producing structured draft findings.",
+      "goal": "Implement rule loading and AI evaluation for ST0.",
+      "name": "Rule Application and AI Evaluation",
+      "week_end": 4,
+      "week_start": 3,
+      "story_ids": [
+        "STORY-003",
+        "STORY-004"
+      ],
+      "starts_on": "2026-09-21",
+      "ends_on": "2026-09-23",
+      "is_demo_target": false
+    },
+    {
+      "key": "r2",
+      "demo": "A reviewer edits and approves AI findings, and feedback is posted to Basecamp.",
+      "goal": "Enable human reviewers to approve, edit, or reject AI findings.",
+      "name": "Human Review Workflow",
+      "week_end": 6,
+      "week_start": 5,
+      "story_ids": [
+        "STORY-005",
+        "STORY-006",
+        "STORY-012"
+      ],
+      "starts_on": "2026-09-24",
+      "ends_on": "2026-09-25",
+      "is_demo_target": false
+    },
+    {
+      "key": "r3",
+      "demo": "Review history shows AI drafts and human edits for completed reviews.",
+      "goal": "Implement audit logging and historical review preservation.",
+      "name": "Audit and History",
+      "week_end": 8,
+      "week_start": 7,
+      "story_ids": [
+        "STORY-007",
+        "STORY-008"
+      ],
+      "starts_on": "2026-09-27",
+      "ends_on": "2026-09-28",
+      "is_demo_target": false
+    },
+    {
+      "key": "r4",
+      "demo": "System handles errors gracefully and supports adding new Stress Test modules.",
+      "goal": "Enhance error handling and prepare for future Stress Test modules.",
+      "name": "Error Handling and Extensibility",
+      "week_end": 10,
+      "week_start": 9,
+      "story_ids": [
+        "STORY-009",
+        "STORY-010"
+      ],
+      "starts_on": "2026-09-30",
+      "ends_on": "2026-10-01",
+      "is_demo_target": false
+    }
+  ],
+  "stories": [
+    {
+      "id": "STORY-001",
+      "title": "Detect Critique Marker in Basecamp",
+      "release": "r0",
+      "fulfills": [
+        "REQ-001",
+        "REQ-002"
+      ],
+      "narrative": "As a system, I want to detect critique markers in Basecamp comments, so that I can create review items.",
+      "acceptance": [
+        "Given a Basecamp comment with '##Critique##', When the system processes the comment, Then a review item is created with status 'Pending'.",
+        "Given a comment with '## Review ##', When the system processes the comment, Then no review item is created.",
+        "Trust: The system logs the detection event with the exact comment ID."
+      ],
+      "blocked_by": [],
+      "owner_agent": "System",
+      "failure_paths": [
+        "Comment does not contain a valid marker",
+        "Basecamp API is unreachable",
+        "Comment data is malformed"
+      ],
+      "task_guidance": "Implement marker detection logic reading Basecamp_MessageBoards_MessageComments directly.",
+      "due_on": "2026-09-18",
+      "due_baseline_on": "2026-09-18"
+    },
+    {
+      "id": "STORY-002",
+      "title": "Retrieve Submission Data from Basecamp",
+      "release": "r0",
+      "fulfills": [
+        "REQ-004",
+        "REQ-012"
+      ],
+      "narrative": "As a reviewer, I want to retrieve all necessary submission data from Basecamp, so that I can perform a comprehensive review.",
+      "acceptance": [
+        "Given a Basecamp project with submissions, when the system retrieves data, then it includes comments, attachments, and links.",
+        "Given a Basecamp project with no submissions, when the system attempts to retrieve data, then it returns an empty dataset.",
+        "Trust: The system logs all data retrieval actions with timestamps and user IDs."
+      ],
+      "blocked_by": [],
+      "owner_agent": "system",
+      "failure_paths": [
+        "Basecamp API rate limits exceeded",
+        "Invalid OAuth token",
+        "Network failure during data retrieval"
+      ],
+      "task_guidance": "Use Basecamp API to fetch project data including comments, attachments, and links. Ensure OAuth tokens are securely managed.",
+      "due_on": "2026-09-19",
+      "due_baseline_on": "2026-09-19"
+    },
+    {
+      "id": "STORY-003",
+      "title": "Load ST0 Rule Module",
+      "release": "r1",
+      "fulfills": [
+        "REQ-003"
+      ],
+      "narrative": "As a system, I want to load the ST0 rule module, so that I can evaluate submissions correctly.",
+      "acceptance": [
+        "Given a submission for ST0, When the system loads rules, Then only ST0 rules are loaded.",
+        "Given a submission for an unknown Stress Test, When the system loads rules, Then it routes to manual resolution.",
+        "Trust: The system logs rule loading events with rule version."
+      ],
+      "blocked_by": [
+        "STORY-001"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [
+        "Rule module not found",
+        "Incorrect rule version loaded",
+        "Rule loading timeout"
+      ],
+      "task_guidance": "Implement rule loading logic for ST0, ensuring correct module is loaded based on submission data.",
+      "due_on": "2026-09-21",
+      "due_baseline_on": "2026-09-21"
+    },
+    {
+      "id": "STORY-004",
+      "title": "Evaluate Submission with Claude",
+      "release": "r1",
+      "fulfills": [
+        "REQ-005"
+      ],
+      "narrative": "As a system, I want to evaluate submissions using Claude, so that I can generate draft findings.",
+      "acceptance": [
+        "Given a valid submission, When Claude evaluates it, Then structured draft findings are returned.",
+        "Given an invalid submission, When Claude evaluates it, Then an error is returned.",
+        "Trust: The system logs evaluation events with submission ID and rule ID."
+      ],
+      "blocked_by": [
+        "STORY-003"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [
+        "Claude API is unreachable",
+        "Submission data is incomplete",
+        "Evaluation exceeds time limit"
+      ],
+      "task_guidance": "Integrate Claude via Anthropic API, ensuring structured findings are returned for ST0 evaluations.",
+      "due_on": "2026-09-23",
+      "due_baseline_on": "2026-09-23"
+    },
+    {
+      "id": "STORY-005",
+      "title": "Human Review of AI Findings",
+      "release": "r2",
+      "fulfills": [
+        "REQ-006"
+      ],
+      "narrative": "As a human reviewer, I want to review AI findings, so that I can approve, edit, or reject them before posting feedback.",
+      "acceptance": [
+        "Given AI findings, When a reviewer approves them, Then feedback is prepared for Basecamp posting.",
+        "Given AI findings, When a reviewer edits them, Then the edits are saved and prepared for posting.",
+        "Trust: The system logs all reviewer actions with timestamps."
+      ],
+      "blocked_by": [
+        "STORY-004"
+      ],
+      "owner_agent": "Human Reviewer",
+      "failure_paths": [
+        "Reviewer UI fails to load",
+        "Edits are not saved",
+        "Network issues during feedback posting"
+      ],
+      "task_guidance": "Develop a web UI for reviewers to manage and edit AI findings before final approval.",
+      "due_on": "2026-09-24",
+      "due_baseline_on": "2026-09-24"
+    },
+    {
+      "id": "STORY-006",
+      "title": "Post Final Feedback to Basecamp",
+      "release": "r2",
+      "fulfills": [
+        "REQ-007"
+      ],
+      "narrative": "As a system, I want to post final feedback to Basecamp, so that the review process is completed.",
+      "acceptance": [
+        "Given approved feedback, When the system posts it to Basecamp, Then the review is marked 'Completed'.",
+        "Given a posting error, When the system retries, Then it eventually succeeds or logs an error.",
+        "Trust: The system logs posting events with feedback ID and status."
+      ],
+      "blocked_by": [
+        "STORY-005"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [
+        "Basecamp API is unreachable",
+        "Feedback data is malformed",
+        "Posting exceeds time limit"
+      ],
+      "task_guidance": "Implement feedback posting logic using Basecamp's REST API, ensuring retries on failure.",
+      "due_on": "2026-09-24",
+      "due_baseline_on": "2026-09-24"
+    },
+    {
+      "id": "STORY-007",
+      "title": "Preserve Review History",
+      "release": "r3",
+      "fulfills": [
+        "REQ-008"
+      ],
+      "narrative": "As a system, I want to preserve review history, so that audits can be conducted on AI drafts and human edits.",
+      "acceptance": [
+        "Given a completed review, When the system archives it, Then both AI drafts and human edits are preserved.",
+        "Given an audit request, When the system retrieves history, Then it shows all relevant actions and timestamps.",
+        "Trust: The system logs all archival events with review ID."
+      ],
+      "blocked_by": [
+        "STORY-006"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [
+        "Archival process fails",
+        "History retrieval is incomplete",
+        "Database connection issues"
+      ],
+      "task_guidance": "Develop archival logic to store AI drafts and human edits separately in the database.",
+      "due_on": "2026-09-27",
+      "due_baseline_on": "2026-09-27"
+    },
+    {
+      "id": "STORY-008",
+      "title": "Handle Ambiguous Identifications",
+      "release": "r3",
+      "fulfills": [
+        "REQ-009"
+      ],
+      "narrative": "As a system, I want to handle ambiguous project or Stress Test identifications, so that I can route them to manual resolution.",
+      "acceptance": [
+        "Given an ambiguous project ID, When the system processes it, Then it routes to manual resolution.",
+        "Given an ambiguous Stress Test ID, When the system processes it, Then it routes to manual resolution.",
+        "Trust: The system logs all manual resolution events with details."
+      ],
+      "blocked_by": [
+        "STORY-006"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [
+        "Ambiguity detection fails",
+        "Manual resolution queue is full",
+        "Routing logic is incorrect"
+      ],
+      "task_guidance": "Implement logic to detect and route ambiguous identifications to a manual resolution queue.",
+      "due_on": "2026-09-28",
+      "due_baseline_on": "2026-09-28"
+    },
+    {
+      "id": "STORY-009",
+      "title": "Implement Error Handling for External Calls",
+      "release": "r4",
+      "fulfills": [
+        "REQ-010"
+      ],
+      "narrative": "As a system, I want to handle errors in external API calls, so that I can maintain system stability.",
+      "acceptance": [
+        "Given an API call failure, When the system retries, Then it succeeds or logs an error after bounded attempts.",
+        "Given a network issue, When the system detects it, Then it surfaces a visible error state.",
+        "Trust: The system logs all API call attempts and outcomes."
+      ],
+      "blocked_by": [
+        "STORY-007"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [
+        "API call exceeds retry limit",
+        "Network issues persist",
+        "Error logging fails"
+      ],
+      "task_guidance": "Develop error handling logic for external API calls, ensuring retries and error logging.",
+      "due_on": "2026-09-30",
+      "due_baseline_on": "2026-09-30"
+    },
+    {
+      "id": "STORY-010",
+      "title": "Prepare for Future Stress Test Modules",
+      "release": "r4",
+      "fulfills": [
+        "REQ-017"
+      ],
+      "narrative": "As a system, I want to support adding new Stress Test modules, so that I can extend functionality without rebuilding.",
+      "acceptance": [
+        "Given a new Stress Test module, When the system loads it, Then it integrates without core changes.",
+        "Given a configuration error, When the system detects it, Then it logs an error for resolution.",
+        "Trust: The system logs all module loading events with module ID."
+      ],
+      "blocked_by": [
+        "STORY-007"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [
+        "Module integration fails",
+        "Configuration errors occur",
+        "Module loading is incomplete"
+      ],
+      "task_guidance": "Design system architecture to support modular addition of new Stress Test configurations.",
+      "due_on": "2026-10-01",
+      "due_baseline_on": "2026-10-01"
+    },
+    {
+      "id": "STORY-011",
+      "title": "Implement Trust Spine for Submission Processing",
+      "release": "r0",
+      "fulfills": [
+        "REQ-011",
+        "REQ-016"
+      ],
+      "narrative": "As a system administrator, I want an audit trail for all submission processing actions, so that I can ensure compliance and traceability.",
+      "acceptance": [
+        "Given a submission is processed, when an action is taken, then it is logged in the audit trail.",
+        "Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action.",
+        "Trust: The system ensures no credentials are stored in source code or shared documents."
+      ],
+      "blocked_by": [],
+      "owner_agent": "system",
+      "failure_paths": [
+        "Audit trail logging fails",
+        "Submission processed without logging",
+        "Credentials accidentally stored in code"
+      ],
+      "task_guidance": "Implement logging for all actions in submission processing. Ensure human review is mandatory before approval. Verify no credentials are hardcoded or stored insecurely.",
+      "due_on": "2026-09-20",
+      "due_baseline_on": "2026-09-20"
+    },
+    {
+      "id": "STORY-012",
+      "title": "Web UI for Review Queue Management",
+      "release": "r2",
+      "fulfills": [
+        "REQ-018"
+      ],
+      "narrative": "As a reviewer, I want a web UI to manage the Review Queue, so that I can efficiently perform and track reviews.",
+      "acceptance": [
+        "Given a pending review in the queue, when accessed via the UI, then it displays all necessary details for review.",
+        "Given a completed review, when accessed via the UI, then it shows the review status and history.",
+        "Trust: The system logs all UI interactions with timestamps and user IDs."
+      ],
+      "blocked_by": [
+        "STORY-005"
+      ],
+      "owner_agent": "reviewer",
+      "failure_paths": [
+        "UI fails to load review details",
+        "Review status not updated in UI",
+        "UI interaction not logged"
+      ],
+      "task_guidance": "Develop a web interface for reviewers to access and manage the Review Queue. Ensure all actions are logged for audit purposes.",
+      "due_on": "2026-09-25",
+      "due_baseline_on": "2026-09-25"
+    }
+  ],
+  "agents": [],
+  "project": {
+    "name": "Stress Test Review Application",
+    "descriptor": "A controlled review platform integrating Basecamp and human reviewers, with AI-assisted draft reviews.",
+    "repo_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App",
+    "plan_version": 1,
+    "plan_sha256": "4f266b59089c544f079d772b3865eef4b3883aee89258c55e02ee5df02f7aadf"
+  },
+  "schedule": {
+    "build_start": "2026-09-17",
+    "build_end": "2026-10-01",
+    "demo_day": "2026-10-08",
+    "build_weeks": 2,
+    "demo_release_key": "r0",
+    "roadmap_release_keys": [
+      "r1",
+      "r2",
+      "r3",
+      "r4"
+    ],
+    "prep": [
+      {
+        "key": "PREP-1",
+        "title": "Write the demo narrative: the problem, the one moment, the guardrail",
+        "due_on": "2026-10-02"
+      },
+      {
+        "key": "PREP-2",
+        "title": "Record a first run-through and watch it back",
+        "due_on": "2026-10-03"
+      },
+      {
+        "key": "PREP-3",
+        "title": "Build the slides — what it does, who for, the number it moves",
+        "due_on": "2026-10-05"
+      },
+      {
+        "key": "PREP-4",
+        "title": "Rehearse with one other person and take their notes",
+        "due_on": "2026-10-06"
+      },
+      {
+        "key": "PREP-5",
+        "title": "Record the final demo video",
+        "due_on": "2026-10-07"
+      },
+      {
+        "key": "PREP-6",
+        "title": "Present at Demo Day",
+        "due_on": "2026-10-08"
+      }
+    ]
+  },
+  "derived": {
+    "measures": [
+      {
+        "id": "REQ-017",
+        "statement": "The system must support adding new Stress Test modules (ST1–ST5) as configuration without rebuilding the core application."
+      }
+    ],
+    "guardrails": [
+      {
+        "id": "REQ-008",
+        "statement": "The system must preserve the history of each review, including AI drafts and human edits, for audit purposes."
+      },
+      {
+        "id": "REQ-010",
+        "statement": "The system must retry external API calls safely within a bounded number of attempts and surface visible errors if they fail."
+      },
+      {
+        "id": "REQ-011",
+        "statement": "The system must not auto-approve any submission; human review is mandatory."
+      },
+      {
+        "id": "REQ-016",
+        "statement": "The system must ensure that no credentials are stored in source code or shared documents."
+      }
+    ],
+    "systems": [
+      "Basecamp",
+      "OAuth",
+      "Microsoft SQL",
+      "Server",
+      "API",
+      "FastAPI",
+      "Pydantic"
+    ],
+    "roles": [
+      "reviewer",
+      "human reviewer",
+      "system administrator"
+    ],
+    "counts": {
+      "requirements_total": 18,
+      "requirements_by_kind": {
+        "CONSTRAINT": 4,
+        "FUNC": 9,
+        "NFR": 1,
+        "SAFE": 4
+      },
+      "stories_total": 12,
+      "releases_total": 5,
+      "agents_total": 0,
+      "failure_paths_total": 35,
+      "agents_by_autonomy": {}
+    }
+  }
+}
