@@ -34,7 +34,7 @@
           "passed": false
         },
         {
-          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": false
         }
       ],
@@ -56,7 +56,7 @@
           "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
           "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
           "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
-          "Trust — no tab shows a number, a connection or a result the project has not actually produced."
+          "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced."
         ]
       }
     },
@@ -451,17 +451,30 @@
         },
         {
           "text": "Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action.",
-          "passed": false
+          "passed": true,
+          "evidence": "backend/src/services/guardrails/reviewFinalizationGuardrail.js (assertSafeToFinalize) + reviewFinalizationGuardrail.test.js (9/9 passing)"
         },
         {
           "text": "Trust: The system ensures no credentials are stored in source code or shared documents.",
-          "passed": false
+          "passed": true,
+          "evidence": "backend/src/services/guardrails/credentialLeakGuardrail.js (assertNoCredentialLeaks) + credentialLeakGuardrail.test.js (12/12 passing) + backend/src/scripts/scanForCredentials.js (npm run scan:secrets exits 0 against the repo)"
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "backend/src/scripts/scanForCredentials.js",
+        "backend/src/services/guardrails/credentialLeakGuardrail.js",
+        "backend/src/services/guardrails/credentialLeakGuardrail.test.js",
+        "backend/src/services/guardrails/reviewFinalizationGuardrail.js",
+        "backend/src/services/guardrails/reviewFinalizationGuardrail.test.js",
+        "directives/REQ-011-human-approval-guardrail.md",
+        "directives/REQ-016-credential-leak-guardrail.md"
+      ],
+      "tests_added": [
+        "credentialLeakGuardrail.test.js",
+        "reviewFinalizationGuardrail.test.js"
+      ],
+      "notes": "Criteria 2 and 3 genuinely pass and are covered by unit tests (npm test, 30/30 passing repo-wide) plus a real repo-wide scan (npm run scan:secrets, exit 0). Criterion 1 (audit trail logging) is not yet built \u2014 it needs the database layer, which does not exist yet per Master Spec \u00a727, and is left false rather than ticked prematurely.",
+      "updated_at": "2026-09-16T00:00:00Z",
       "verification": {
         "state": "not_started",
         "criteria_passed": 0,

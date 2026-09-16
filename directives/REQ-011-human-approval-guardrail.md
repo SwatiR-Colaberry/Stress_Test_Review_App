@@ -1,11 +1,12 @@
-# R4 — Human-Approval Safety Guardrail
+# REQ-011 — Human-Approval Safety Guardrail
 
-**Status:** PLANNED (was UNMAPPED)
-**Fulfils:** R4 — "the application must never produce an unsafe result"
+**Fulfils:** REQ-011 (Safety, must) — "The system must not auto-approve any submission; human review is mandatory." Part of **STORY-011**, criterion 2: "Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action."
+
+> **Correction:** this file was originally written and named as "R4" before `.colaberry/plan.json` existed locally. Now that the canonical plan is synced, `derived.guardrails[]` shows R4 is actually **REQ-016** (see `directives/REQ-016-credential-leak-guardrail.md`) — the credential-leak check. This file's content still stands on its own merits (it satisfies REQ-011 / STORY-011 criterion 2, a real safety requirement); only the "R4" label was wrong.
 
 ## What "safe" means here
 
-Per the Master Project Specification (`docs/01-Master-Project-Specification.md`, §22 Status Model and §26 MVP Acceptance Criteria):
+Per the Master Project Specification (`docs/01-Master-Project-Specification.md`, §22 Status Model and §26 MVP Acceptance Criteria) and `docs/stories/STORY-011.md`:
 
 - "Completed must never mean 'AI finished.' It means human review is finished and final feedback has been accepted/delivered." (§22)
 - "Review is marked Completed only after human review." (§26)
@@ -27,15 +28,11 @@ An **unsafe result**, for this application, is defined precisely as: **a review 
 
 The function is pure, synchronous, and dependency-free by design: it does not touch the database, Basecamp, or Claude, so it can be unit tested in isolation today and reused unchanged once the real finalize / post-to-Basecamp path is built in Phase 4 (§25).
 
-## Acceptance criterion (moves R4 UNMAPPED → PLANNED)
+## Acceptance evidence
 
-R4 is PLANNED when all of the following hold:
+`backend/src/services/guardrails/reviewFinalizationGuardrail.test.js` passes and covers: the happy path (genuine human approval), every rejection reason code above, and an idempotency check (the same input evaluated twice yields the same result). Runs via `npm test` with zero additional setup.
 
-1. `assertSafeToFinalize()` exists and is documented as the single required gate before any "mark Completed" / "post final feedback to Basecamp" operation.
-2. `backend/src/services/guardrails/reviewFinalizationGuardrail.test.js` passes and covers: the happy path (genuine human approval), every rejection reason code above, and an idempotency check (the same input evaluated twice yields the same result).
-3. `npm test` runs the suite with zero additional setup.
-
-R4 advances beyond PLANNED only once a real finalize / post-to-Basecamp code path in Phase 4 actually calls this guard, and that call is covered by an integration test — that wiring is out of scope for PLANNED and depends on the Basecamp integration (§27) not yet existing.
+This satisfies STORY-011 criterion 2 today. STORY-011 criterion 1 (audit trail logging) is not yet built and is out of scope for this guard — it depends on the database layer, which doesn't exist yet (§27).
 
 ## Known limitation (logged, not solved here)
 

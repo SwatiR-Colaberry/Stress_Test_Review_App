@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "description": "Controlled review platform for Basecamp Stress Test submissions.",
   "scripts": {
-    "test": "node --test backend/src/services/guardrails/**/*.test.js"
+    "test": "node --test backend/src/**/*.test.js",
+    "scan:secrets": "node backend/src/scripts/scanForCredentials.js"
   }
 }
