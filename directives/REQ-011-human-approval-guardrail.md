@@ -16,7 +16,7 @@ An **unsafe result**, for this application, is defined precisely as: **a review 
 
 ## The check that enforces it
 
-`backend/src/services/guardrails/reviewFinalizationGuardrail.js` exports `assertSafeToFinalize(review)`. It must be called — and must not throw — before any code finalizes a review (marks it `Completed`) or posts `finalFeedbackText` to Basecamp. It rejects (throws `UnsafeFinalizationError`, `errorClass: 'ContractViolation'`) when:
+`backend/app/guardrails/review_finalization_guardrail.py` exports `assert_safe_to_finalize(review)`. It must be called — and must not raise — before any code finalizes a review (marks it `Completed`) or posts `final_feedback_text` to Basecamp. It's also exposed read-only over HTTP as `POST /reviews/finalize-check` (`backend/app/routers/reviews.py`), returning 409 with the reason code on rejection. It raises (`UnsafeFinalizationError`, `error_class: "ContractViolation"`) when:
 
 | Reason code | Condition | Maps to |
 |---|---|---|
@@ -30,7 +30,9 @@ The function is pure, synchronous, and dependency-free by design: it does not to
 
 ## Acceptance evidence
 
-`backend/src/services/guardrails/reviewFinalizationGuardrail.test.js` passes and covers: the happy path (genuine human approval), every rejection reason code above, and an idempotency check (the same input evaluated twice yields the same result). Runs via `npm test` with zero additional setup.
+`backend/app/guardrails/test_review_finalization_guardrail.py` passes and covers: the happy path (genuine human approval), every rejection reason code above, and an idempotency check (the same input evaluated twice yields the same result). Runs via `pytest` (`make test` after `make install`); the same behavior is additionally covered over HTTP in `backend/app/test_main.py`.
+
+> **Stack note (2026-09-16):** this guard was originally implemented in Node.js/CommonJS; the whole backend was migrated to Python/FastAPI+Pydantic per REQ-015 and explicit user direction. The gate order and every reason code above are unchanged by the port.
 
 This satisfies STORY-011 criterion 2 today. STORY-011 criterion 1 (audit trail logging) is not yet built and is out of scope for this guard — it depends on the database layer, which doesn't exist yet (§27).
 

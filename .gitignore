@@ -4,3 +4,7 @@ node_modules/
 .env.local
 *.log
 /tmp/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/

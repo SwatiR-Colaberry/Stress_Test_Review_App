@@ -1,51 +1,69 @@
 # Acceptance Checklist
 
-One-line, repo-verifiable acceptance checks derived from [`01-Master-Project-Specification.md`](01-Master-Project-Specification.md) and [`directives/R4-human-approval-guardrail.md`](../directives/R4-human-approval-guardrail.md). Each line names a concrete artifact (a file, a test, a grep) rather than a narrative description — the check should be answerable by looking at the repo, not by trusting a claim.
+One-line, repo-verifiable acceptance checks for each of the 18 canonical requirements in [`.colaberry/plan.json`](../.colaberry/plan.json) (rendered for humans in [`REQUIREMENTS.md`](REQUIREMENTS.md)), cross-referenced against each requirement's fulfilling story's Given/When/Then acceptance criteria in [`STORIES.md`](STORIES.md). Each line names a concrete artifact (a file, a test, a grep) rather than a narrative description — the check should be answerable by looking at the repo, not by trusting a claim.
 
-Update this file's checkboxes as work lands; each `[x]` should be backed by a passing test or a verifiable grep, the same evidence standard `PROGRESS.md` requires.
+**Superseded note:** an earlier version of this file was written before `.colaberry/plan.json`/`progress.json` existed in this repo, grouped by Master Spec section number with invented labels (e.g. "R4" for the human-approval guardrail). The canonical data pulled 2026-09-16 revealed the platform's real R4 is REQ-016 (credentials), not REQ-011 (human approval) — see `directives/REQ-016-credential-leak-guardrail.md` and `directives/REQ-011-human-approval-guardrail.md` for the correction. This version replaces that one, keyed on the real `REQ-XXX` ids. Later the same day, the entire backend was migrated from Node.js to Python/FastAPI+Pydantic per explicit user direction (see "Stack conflict" note below, now resolved) — file paths throughout this checklist reflect that migration.
 
-## Marker Detection & Versioning (§4, §23, §26)
-- [x] Recognizes `##Critique##` variants, rejects near-misses — `backend/src/services/basecamp/critiqueMarkerDetector.test.js` asserts `##Critique##`/`## Critique##`/`##Critique ##`/`## Critique ##` trigger and `Critique`/`#Critique`/`##Review##` don't
-- [ ] `CommentId` (not `IsSubmitted`) is the version identity key — grep marker/intake source shows review rows keyed on `CommentId`, with no code path keying on `IsSubmitted`
-- [ ] One review record per submission version, even on retries — a test posts the same critique event twice and asserts exactly one row is created
-- [ ] New critique on a later version creates a new review, preserving the old one — a test with two `CommentId`s asserts two rows exist and the first is unchanged
+Update this file's checkboxes as work lands; each `[x]` should be backed by a passing test or a verifiable grep, the same evidence standard `PROGRESS.md` requires. A `[x]` here means the requirement's own one-sentence statement is met — it does not always mean every acceptance criterion of every story that also fulfills it is met (noted inline where that gap exists).
 
-## Identification & Retrieval (§2, §6, §23)
-- [ ] Ambiguous project/Stress-Test/submission routes to manual resolution, never guessed — a test feeding an ambiguous event asserts a manual-resolution state, not an auto-assigned module
-- [ ] Failed Basecamp retrieval preserves the queue item with a surfaced integration error — a test mocking a fetch failure asserts the review row survives with an error state, not deletion or silent completion
+## AI Evaluation
+- [ ] REQ-005 — Claude returns structured findings (`rule_id`/`status`/`severity`/`evidence`/`reason`/`confidence`) for a valid submission and an error for an invalid one — a test asserts both shapes (STORY-004 AC1/AC2); not built, no Claude client exists yet
+- [ ] REQ-014 *(constraint, unassigned — `fulfilled_by: []` in `plan.json`)* — Claude is called via the Anthropic API — grep for an `@anthropic-ai/sdk` dependency and a call site; not built, and no story in the current 12-story plan is assigned to build it
 
-## Rule Architecture & ST0 Scope (§7, §8, §9, §10, §11, §12)
-- [ ] Rules are versioned config, not baked into prompts — a `stress_test_rules`/`docs/stress-test-rules` artifact carries `rule_id`/`rule_version` fields, and no ST0 rule text is hard-coded in prompt-builder source
-- [ ] Rule IDs `ST0-001`–`ST0-008` exist and are the sole IDs the ST0 module emits — grep the ST0 rule module for exactly these IDs, no modeling/forecasting/strategy rule IDs present
-- [ ] Stage 2 never runs before Stage 1 passes — a test asserts zero Stage-2 findings when a Stage-1 fixture fails
-- [ ] Stage 1 failures are reported together, uncontaminated by Stage 2 — a failing-Stage-1 fixture test asserts only Stage-1 rule IDs appear in the result
-- [ ] Dataset advisory (Stage 3) can never flip to a structural failure — a test asserts Stage-3 findings always carry `status: ADVISORY`, never affecting overall pass/fail
-- [ ] Missing problem fields are pinpointed by problem number + field name — a fixture missing "Target Audience" on problem 4 asserts the finding names problem 4 and that exact field
-- [ ] Heading-wording variance doesn't cause false failures — a fixture with varied casing/numbering/singular-plural headings asserts no false-negative finding
-- [ ] Exactly one selected problem is enforced (ST0-008) — a test asserts 0-selected and 2-selected fixtures both fail, 1-selected passes
-- [ ] Submission is never auto-approved — grep every code path that sets `status = 'Completed'` and confirm each calls `assertSafeToFinalize()` (`backend/src/services/guardrails/reviewFinalizationGuardrail.js`) first
+## API Design
+- [x] REQ-015 *(constraint, unassigned — `fulfilled_by: []` in `plan.json`)* — the system exposes a typed API via FastAPI + Pydantic — root `requirements.txt` pins `fastapi`/`pydantic`; `backend/app/main.py` constructs a real `FastAPI()` app whose three routers (`reviews`, `security`, `basecamp`) all take/return Pydantic models from `backend/app/models.py`; `backend/app/test_main.py` (9/9 passing) exercises every route via `TestClient`, including a 422 on malformed input. Scope note: this covers the 3 endpoints that wrap already-built logic, not a full production API — REQ-002/003/004/etc. still have no endpoints since their underlying logic isn't built yet.
 
-## AI Finding Structure (§13, §26)
-- [ ] Every finding carries `rule_id`, `status`, `severity`, `evidence`, `reason`, `suggested_feedback`, `confidence` — a schema (Zod/TS type) rejects a finding object missing any of the seven fields
-- [ ] Prompt sent to Claude contains only the identified Stress Test's rules — a test asserts the ST0 prompt payload contains no rule text from another module
+## Audit and History
+- [ ] REQ-008 — a completed review's AI draft and human edits are both preserved and retrievable by an audit request — a test archives a completed review and asserts both are present (STORY-007 AC1/AC2); not built. Note: STORY-011's own audit-trail criterion (`Given a submission is processed, when an action is taken, then it is logged in the audit trail`) is explicitly `"passed": false` in `.colaberry/progress.json` right now — the trust-spine story left this the one criterion it did *not* close.
 
-## Human Review & Finalization Safety (§9, §22, §24)
-- [x] Review can never be finalized without genuine human approval — `npm test` runs `reviewFinalizationGuardrail.test.js`, 9/9 passing (happy path + all 5 rejection codes + idempotency)
-- [x] AI/system identity can't supply the approving decision — same suite asserts `AI_CANNOT_APPROVE` throws for denylisted/self-authored reviewer ids
-- [ ] Reviewer can approve/edit/reject/add findings — a reviewer-decision type/enum test exercises each of the four outcomes
-- [ ] Completed requires both human approval AND successful Basecamp post — a test simulating a failed post asserts `status` never reaches `Completed`
+## Data Retrieval
+- [ ] REQ-004 — a Basecamp submission fetch includes comments, attachments, and links; an empty project returns an empty dataset — a test asserts both (STORY-002 AC1/AC2); not built, no Basecamp client exists yet
 
-## Historical Retrieval (§14, §15, §26)
-- [ ] Retrieval narrows SQL → rule match → domain → full-text → vector, in order — a retrieval-service test asserts call order and short-circuiting when earlier layers return enough
-- [ ] Claude never receives more than 5–10 historical cases — a test asserts the retrieval function's return length is capped at 10 regardless of upstream candidate count
-- [ ] Historical examples never override current rules — a test with a conflicting historical case asserts the finding's outcome matches the current rule module, not the precedent
+## Data Storage
+- [ ] REQ-013 *(constraint, unassigned — `fulfilled_by: []` in `plan.json`)* — the system connects to Microsoft SQL Server — grep for an `mssql`/`tedious` (or equivalent) driver dependency and a connection module; not built, and no story in the current 12-story plan is assigned to build it either
 
-## Error Handling (§23)
-- [ ] Unsupported Stress Test never borrows another module's rules — a test requesting an unimplemented module returns an error/manual-resolution state, not ST0 fallback
-- [ ] Claude/API failure retries with a bounded count, retains queue item + error state — a test mocks repeated failures and asserts the retry count is capped (no infinite loop) and the row persists
+## Error Handling
+- [ ] REQ-009 — an ambiguous project ID and an ambiguous Stress Test ID both route to manual resolution rather than a guess — a test asserts both cases (STORY-008 AC1/AC2); not built
+- [ ] REQ-010 — a failing external call retries a bounded number of times then either succeeds or surfaces a visible/logged error — a test mocks repeated failures and asserts the retry count is capped, never infinite (STORY-009 AC1/AC2); not built — no external call code exists in this repo yet to wrap
 
-## Security & Audit (§18, §24)
-- [ ] No secrets in source or history — a secret scan (e.g. `git log -p | grep -E` for key patterns, or `trufflehog`) over the repo returns zero hits
-- [ ] AI draft and human-final feedback are stored separately — schema has distinct `ai_draft_feedback`/`final_feedback_text` columns, and a test asserts editing final feedback doesn't mutate the stored draft
-- [ ] Reviewer identity + completion timestamp recorded — audit table schema includes `reviewer_id` and `completed_at`, populated by a completion test
-- [ ] Rules are versioned so old reviews interpret against contemporaneous rules — rule schema has a `rule_version`/effective-date field, and a test asserts a stored historical review keeps its original `rule_version` after the active rule set changes
+## Extensibility
+- [ ] REQ-017 — a new Stress Test module (e.g. a fake "ST9") integrates purely via configuration, with zero changes to engine source — a test registers one and asserts the engine picks it up (STORY-010 AC1); not built
+
+## Human Review
+- [ ] REQ-006 — a reviewer can approve or edit AI findings, and both actions leave the result "prepared for posting" — a test exercises approve and edit and asserts the prepared-for-posting state (STORY-005 AC1/AC2); not built (only the downstream finalization *gate* exists — see REQ-011 — not the review-editing workflow itself)
+- [x] REQ-011 — the system never auto-approves a submission; human review is mandatory — `backend/app/guardrails/test_review_finalization_guardrail.py` (9/9 passing) proves `assert_safe_to_finalize()` blocks finalization unless a genuine, non-AI, `approved` human decision is recorded, matching STORY-011 AC2 exactly; also exercised over HTTP via `POST /reviews/finalize-check` in `backend/app/test_main.py`; `.colaberry/progress.json`'s STORY-011 entry has this criterion locally marked `"passed": true`
+
+## Integration
+- [ ] REQ-012 — Basecamp authentication uses OAuth 2.0 — grep the Basecamp client for an OAuth 2.0 authorization-code/token flow (no API-key/basic-auth shortcut); not built, no Basecamp client exists yet
+
+## Marker Detection
+- [x] REQ-001 — `##Critique##` is detected in a Basecamp comment with reasonable spacing/case variants normalized — `backend/app/basecamp/test_critique_marker_detector.py` (9/9 passing) asserts the four documented spacing variants and case variants trigger, and `Critique`/`#Critique`/`##Review##`/ordinary prose don't; also exercised over HTTP via `POST /basecamp/critique-marker/detect` (STORY-001 AC1/AC2, detection half)
+
+## Review Completion
+- [ ] REQ-007 — a review is marked `Completed` only once approved feedback is actually posted to Basecamp, and a posting error is retried/logged rather than silently marking Completed — a test asserts both (STORY-006 AC1/AC2); not built — the guardrail (REQ-011) exists, but nothing calls it yet since there's no finalize/post-to-Basecamp code path
+
+## Review Queue
+- [ ] REQ-002 — detecting a marker creates a Review Queue row with status `Pending`, tied to the exact submission/version (comment id, not thread id) — a test asserts the row and its status (STORY-001 AC1); not built — no persistence/database layer exists yet, so detection (REQ-001) currently produces no row at all
+
+## Rule Application
+- [ ] REQ-003 — loading rules for an ST0 submission returns only ST0-prefixed rules; an unknown Stress Test routes to manual resolution — a test asserts both (STORY-003 AC1/AC2); not built
+
+## Security
+- [x] REQ-016 — no credentials are stored in source code or shared documents — `make scan-secrets` (`backend/scripts/scan_for_credentials.py`) exits 0 ("No credential-shaped content found across 49 text files"); `backend/app/guardrails/test_credential_leak_guardrail.py` (12/12) passing; also exercised over HTTP via `POST /security/scan-credentials`; `.colaberry/progress.json`'s STORY-011 entry has this criterion locally marked `"passed": true`
+
+## User Interface
+- [ ] REQ-018 — the UI shows a pending review's full detail, and a completed review's status + history — a test/build asserts both views render (STORY-012 AC1/AC2); not built, no `frontend/` directory exists yet
+
+---
+
+## Not a requirement, but tracked and currently failing: the Command Center (STORY-000)
+
+`.colaberry/progress.json` tracks a 13th, un-numbered story — **STORY-000, "Build your Command Center"** — with 5 of its own criteria, all currently `"passed": false`. It fulfills no `REQ-XXX` (per `STORIES.md`: "it belongs to no release and fulfils none of your requirements, because it is the window onto your system rather than a part of it"), so it's excluded from the 18-item list above, but it is real, platform-tracked work with its own 50 points.
+
+Its criteria require an `index.html` **committed at the repo root**, reading `.colaberry/plan.json`/`progress.json`/`manifest.json` live at runtime (not hard-coded values), showing data staleness, and drilling down from every card. **The "Build" artifact published to claude.ai earlier this conversation does not satisfy this** — it's a separate, external, hand-authored summary of two pieces of work, not a repo-committed page reading the live JSON files. If STORY-000 credit matters, it needs its own build, following the exact brief in `docs/stories/STORY-000.md`.
+
+## Stack conflict — resolved 2026-09-16
+
+REQ-015 requires FastAPI + Pydantic (Python), but every module up to this point had been built in Node.js/CommonJS (a deliberate early assumption, logged when no toolchain was yet chosen). Flagged to the user rather than silently building around it or silently switching stacks; the user then explicitly directed the migration to Python/FastAPI+Pydantic. All three existing modules (both guardrails, the marker detector) were ported 1:1 — same logic, same reason codes, same test cases, now 39/39 passing under `pytest` — and wired into a real `FastAPI()` app with Pydantic request/response models. See the `PROGRESS.md` entry dated 2026-09-16 (session `CC-20260916-edil`) for the full change list.
+
+REQ-013 (SQL Server) and REQ-014 (Anthropic API) are still `fulfilled_by: []` in `plan.json` — no story in the current 12-story plan builds either one. That gap is unrelated to the language choice and remains open.
