@@ -4,11 +4,11 @@
   "totals": {
     "stories_total": 13,
     "stories_verified": 0,
-    "stories_submitted": 0,
-    "stories_in_progress": 0,
-    "stories_not_started": 13,
+    "stories_submitted": 1,
+    "stories_in_progress": 12,
+    "stories_not_started": 0,
     "criteria_total": 41,
-    "criteria_passed": 0,
+    "criteria_passed": 2,
     "points_awarded": 650
   },
   "stories": [
@@ -34,7 +34,7 @@
           "passed": false
         },
         {
-          "text": "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": false
         }
       ],
@@ -43,7 +43,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 5,
         "verified_at": null,
@@ -56,7 +56,7 @@
           "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
           "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
           "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
-          "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced."
+          "Trust — no tab shows a number, a connection or a result the project has not actually produced."
         ]
       }
     },
@@ -83,7 +83,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -121,7 +121,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -159,7 +159,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -197,7 +197,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -235,7 +235,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -273,7 +273,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -311,7 +311,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -349,7 +349,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -387,7 +387,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -425,7 +425,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
@@ -473,21 +473,19 @@
         "credentialLeakGuardrail.test.js",
         "reviewFinalizationGuardrail.test.js"
       ],
-      "notes": "Criteria 2 and 3 genuinely pass and are covered by unit tests (npm test, 30/30 passing repo-wide) plus a real repo-wide scan (npm run scan:secrets, exit 0). Criterion 1 (audit trail logging) is not yet built \u2014 it needs the database layer, which does not exist yet per Master Spec \u00a727, and is left false rather than ticked prematurely.",
+      "notes": "Criteria 2 and 3 genuinely pass and are covered by unit tests (npm test, 30/30 passing repo-wide) plus a real repo-wide scan (npm run scan:secrets, exit 0). Criterion 1 (audit trail logging) is not yet built — it needs the database layer, which does not exist yet per Master Spec §27, and is left false rather than ticked prematurely.",
       "updated_at": "2026-09-16T00:00:00Z",
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
+        "state": "submitted",
+        "criteria_passed": 2,
         "criteria_total": 3,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "b65be304004b85a7c353ce9960dfb3ee8e6d1ecc",
+        "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/b65be304004b85a7c353ce9960dfb3ee8e6d1ecc",
+        "commit_at": "2026-09-16T15:35:42Z",
         "points_awarded": 50,
         "outstanding": [
-          "Given a submission is processed, when an action is taken, then it is logged in the audit trail.",
-          "Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action.",
-          "Trust: The system ensures no credentials are stored in source code or shared documents."
+          "Given a submission is processed, when an action is taken, then it is logged in the audit trail."
         ]
       }
     },
@@ -514,7 +512,7 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
