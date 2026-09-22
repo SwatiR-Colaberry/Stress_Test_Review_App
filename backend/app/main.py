@@ -1,7 +1,6 @@
 """FastAPI entry point (REQ-015: typed API via FastAPI + Pydantic).
 
 Run with: uvicorn app.main:app --app-dir backend --reload
-(or `make run` from the repo root).
 """
 from fastapi import FastAPI
 

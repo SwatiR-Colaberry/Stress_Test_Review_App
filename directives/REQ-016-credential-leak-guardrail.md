@@ -24,7 +24,7 @@ Detectors cover two classes:
 
 Deliberately **not** flagged: `os.environ[...]` / `process.env.X` references (the correct pattern — see 12-Factor "Config separated from code" in CLAUDE.md), and placeholder values (`YOUR_API_KEY_HERE`, `<client-secret>`, `${DB_PASSWORD}`, `xxxx...`, `changeme`, etc.) — flagging those would make `.env.example`-style templates and this repo's own documentation unusable.
 
-**`backend/scripts/scan_for_credentials.py`** is the repo-wide enforcement check: it walks every text file in the repository (skipping `.git`, `node_modules`, `.venv`, `__pycache__`, binary file types, and test fixtures — `test_*.py`/`*_test.py`/`*.test.js`, which deliberately contain fake credential-shaped values to exercise the detectors), runs `scan_text_for_credentials` on each, and exits non-zero if anything is found. Run it via `make scan-secrets`.
+**`backend/scripts/scan_for_credentials.py`** is the repo-wide enforcement check: it walks every text file in the repository (skipping `.git`, `node_modules`, `.venv`, `__pycache__`, binary file types, and test fixtures — `test_*.py`/`*_test.py`/`*.test.js`, which deliberately contain fake credential-shaped values to exercise the detectors), runs `scan_text_for_credentials` on each, and exits non-zero if anything is found. Run it via `python3 backend/scripts/scan_for_credentials.py`.
 
 ## Acceptance criterion (moves R4 UNMAPPED → PLANNED)
 
@@ -32,9 +32,9 @@ R4 is PLANNED when all of the following hold:
 
 1. `assert_no_credential_leaks()` / `scan_text_for_credentials()` exist as the check that defines "no credentials in source" precisely and testably.
 2. `backend/app/guardrails/test_credential_leak_guardrail.py` passes and covers: the happy path (env-var references and safe prose), one failure case per fixed-format detector, a generic-assignment failure case, a "never leaks the raw secret in the error message" case, boundary cases (empty content, placeholder values, short values below the real-secret threshold, non-string input), and an idempotency check.
-3. `backend/scripts/scan_for_credentials.py` exists and, run today via `make scan-secrets`, exits 0 against the actual repository — i.e. the check doesn't just pass in theory, it currently passes for real.
+3. `backend/scripts/scan_for_credentials.py` exists and, run today via `python3 backend/scripts/scan_for_credentials.py`, exits 0 against the actual repository — i.e. the check doesn't just pass in theory, it currently passes for real.
 
-Verified: `make scan-secrets` → `No credential-shaped content found across 49 text files.` (exit 0), and `pytest` → all 39 tests pass.
+Verified: `python3 backend/scripts/scan_for_credentials.py` → `No credential-shaped content found across 47 text files.` (exit 0), and `pytest` → all 41 tests pass.
 
 > **Stack note (2026-09-16):** this guard was originally implemented in Node.js/CommonJS; the whole backend was migrated to Python/FastAPI+Pydantic per REQ-015 and explicit user direction. Every detector and the acceptance criteria above are unchanged by the port.
 

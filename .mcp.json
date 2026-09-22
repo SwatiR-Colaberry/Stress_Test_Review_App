@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "stress-test-review-app": {
+      "command": ".venv/bin/python3",
+      "args": ["-m", "app.mcp.server"],
+      "env": {
+        "PYTHONPATH": "backend"
+      }
+    }
+  }
+}

@@ -12,8 +12,25 @@ MVP scope is the Review Queue + ST0 (structural validation) module; ST1–ST5 fo
 
 ## Status
 
-Pre-implementation. See "Development Inputs Required Before Coding" (§27) and "Implementation Phases" (§25) in the Master Project Specification for what's needed before Phase 1 starts.
+Early implementation. Real Basecamp/SQL-Server/Claude integration is still blocked on "Development Inputs Required Before Coding" (§27) in the Master Project Specification, but a handful of dependency-free pieces (safety guardrails, marker detection) are built and tested — see [docs/ACCEPTANCE_CHECKLIST.md](docs/ACCEPTANCE_CHECKLIST.md) for what's actually done vs. still open, checked against the canonical `.colaberry/plan.json` requirements.
+
+## Local development
+
+Backend is Python + FastAPI + Pydantic (Python 3.10+ required — pinned to 3.12 in `.python-version`, needed for the `mcp` SDK).
+
+```
+python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+```
+
+Then:
+
+```
+pytest                                                    # run the test suite
+uvicorn app.main:app --app-dir backend --reload           # FastAPI app on localhost
+PYTHONPATH=backend python3 -m app.mcp.server               # local MCP server over stdio (see backend/app/mcp/)
+python3 backend/scripts/scan_for_credentials.py            # repo-wide credential scan
+```
 
 ## Repo conventions
 
-`CLAUDE.md` in this folder was copied from the SupplyMind_AI repo as a starting governance template — it currently describes a Node/TypeScript backend+frontend layout and Colaberry-specific integrations (Mandrill, Basecamp automation, etc.) that don't all apply here yet. Treat it as a draft: prune sections that don't fit once the actual tech stack (per §17 and §29 of the spec) is decided, rather than following it literally where it conflicts with this project's reality.
+`CLAUDE.md` in this folder was copied from the SupplyMind_AI repo as a starting governance template — it originally described a Node/TypeScript backend+frontend layout; the backend-specific parts of that were corrected once the stack was decided (Python/FastAPI/Pydantic, 2026-09-16), but Colaberry-specific integrations inherited from that template (Mandrill, openclaw, Cory-briefing content, etc.) that don't apply to this project at all still remain and haven't been cleaned up. Treat it as a draft: prune sections that don't fit, rather than following it literally where it conflicts with this project's reality.

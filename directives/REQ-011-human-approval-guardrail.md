@@ -30,7 +30,7 @@ The function is pure, synchronous, and dependency-free by design: it does not to
 
 ## Acceptance evidence
 
-`backend/app/guardrails/test_review_finalization_guardrail.py` passes and covers: the happy path (genuine human approval), every rejection reason code above, and an idempotency check (the same input evaluated twice yields the same result). Runs via `pytest` (`make test` after `make install`); the same behavior is additionally covered over HTTP in `backend/app/test_main.py`.
+`backend/app/guardrails/test_review_finalization_guardrail.py` passes and covers: the happy path (genuine human approval), every rejection reason code above, and an idempotency check (the same input evaluated twice yields the same result). Runs via `pytest` (after `pip install -r requirements.txt`); the same behavior is additionally covered over HTTP in `backend/app/test_main.py`.
 
 > **Stack note (2026-09-16):** this guard was originally implemented in Node.js/CommonJS; the whole backend was migrated to Python/FastAPI+Pydantic per REQ-015 and explicit user direction. The gate order and every reason code above are unchanged by the port.
 

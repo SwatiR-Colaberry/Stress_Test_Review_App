@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-off operational script: walks the repo and enforces REQ-016 — no
 credentials stored in source code or shared documents. Exits non-zero if
-anything is found. Run with `make scan-secrets` or
+anything is found. Run with
 `python3 backend/scripts/scan_for_credentials.py` from the repo root.
 
 Ported from the original Node.js implementation

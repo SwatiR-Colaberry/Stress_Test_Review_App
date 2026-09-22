@@ -58,6 +58,7 @@ Claude must respect these boundaries.
   - `backend/app/routers/` - FastAPI route modules, one per resource area
   - `backend/app/guardrails/` - safety/security guardrails (e.g. human-approval finalization, credential-leak scanning) — pure, dependency-free logic, colocated `test_*.py`
   - `backend/app/basecamp/` - Basecamp-facing logic (marker detection today; the API client itself once built)
+  - `backend/app/mcp/` - local MCP server (official `mcp` SDK) exposing this app's data/actions to MCP clients like Claude Code; registered via root `.mcp.json`
   - `backend/scripts/` - one-off operational scripts (`scan_for_credentials.py`, etc.). Disposable but auditable. Each script has a single clear responsibility.
 - **`/frontend`** - React + CRA + TypeScript frontend. Subfolders:
   - `frontend/src/pages/` - top-level page components

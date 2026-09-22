@@ -1,3 +1,13 @@
-fastapi==0.115.0
+# Root dependency manifest for Stress_Test_Review_App (Python).
+# Runtime deps used by backend/app/ (FastAPI + Pydantic API, REQ-015).
+fastapi==0.141.1
 pydantic==2.13.5
-uvicorn==0.30.6
+uvicorn==0.53.0
+
+# Runtime dep for backend/app/mcp/server.py (official MCP SDK; requires
+# Python 3.10+, see .python-version).
+mcp[cli]==2.2.0
+
+# Test tooling.
+pytest==9.1.1
+httpx==0.28.1

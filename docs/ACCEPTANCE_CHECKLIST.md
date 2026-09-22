@@ -49,7 +49,7 @@ Update this file's checkboxes as work lands; each `[x]` should be backed by a pa
 - [ ] REQ-003 — loading rules for an ST0 submission returns only ST0-prefixed rules; an unknown Stress Test routes to manual resolution — a test asserts both (STORY-003 AC1/AC2); not built
 
 ## Security
-- [x] REQ-016 — no credentials are stored in source code or shared documents — `make scan-secrets` (`backend/scripts/scan_for_credentials.py`) exits 0 ("No credential-shaped content found across 49 text files"); `backend/app/guardrails/test_credential_leak_guardrail.py` (12/12) passing; also exercised over HTTP via `POST /security/scan-credentials`; `.colaberry/progress.json`'s STORY-011 entry has this criterion locally marked `"passed": true`
+- [x] REQ-016 — no credentials are stored in source code or shared documents — `python3 backend/scripts/scan_for_credentials.py` exits 0 ("No credential-shaped content found across 47 text files"); `backend/app/guardrails/test_credential_leak_guardrail.py` (12/12) passing; also exercised over HTTP via `POST /security/scan-credentials`; `.colaberry/progress.json`'s STORY-011 entry has this criterion locally marked `"passed": true`
 
 ## User Interface
 - [ ] REQ-018 — the UI shows a pending review's full detail, and a completed review's status + history — a test/build asserts both views render (STORY-012 AC1/AC2); not built, no `frontend/` directory exists yet
@@ -67,3 +67,9 @@ Its criteria require an `index.html` **committed at the repo root**, reading `.c
 REQ-015 requires FastAPI + Pydantic (Python), but every module up to this point had been built in Node.js/CommonJS (a deliberate early assumption, logged when no toolchain was yet chosen). Flagged to the user rather than silently building around it or silently switching stacks; the user then explicitly directed the migration to Python/FastAPI+Pydantic. All three existing modules (both guardrails, the marker detector) were ported 1:1 — same logic, same reason codes, same test cases, now 39/39 passing under `pytest` — and wired into a real `FastAPI()` app with Pydantic request/response models. See the `PROGRESS.md` entry dated 2026-09-16 (session `CC-20260916-edil`) for the full change list.
 
 REQ-013 (SQL Server) and REQ-014 (Anthropic API) are still `fulfilled_by: []` in `plan.json` — no story in the current 12-story plan builds either one. That gap is unrelated to the language choice and remains open.
+
+## Not a requirement, but tracked separately: the local MCP server (2026-09-22)
+
+`backend/app/mcp/server.py` (official `mcp` SDK) exposes one read-only resource, `basecamp://submissions`, and one tool stub, `finalize_review`, registered locally via `.mcp.json`. This is Claude-Code-integration tooling, not something `.colaberry/plan.json` tracks — it doesn't move any `REQ-XXX` checkbox above on its own.
+
+The resource is honestly backed by sample data (see `backend/app/mcp/sample_data.py`) — it will become a genuine read of REQ-004/REQ-012 once the real Basecamp OAuth client exists, not before. The tool is a deliberate stub: it returns `{"status": "not_implemented", ...}` rather than pretending to finalize anything, since REQ-007's real finalize/post-to-Basecamp path still doesn't exist. Verified end-to-end (not just imported) via `backend/app/mcp/test_server.py`, which spawns the server as a real subprocess and drives it with the official `mcp` client over stdio — 2/2 passing, part of the 41/41 `pytest` total.
