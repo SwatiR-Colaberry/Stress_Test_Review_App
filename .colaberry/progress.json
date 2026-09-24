@@ -3,13 +3,13 @@
   "project": "Stress Test Review Application",
   "totals": {
     "stories_total": 13,
-    "stories_verified": 0,
+    "stories_verified": 1,
     "stories_submitted": 1,
-    "stories_in_progress": 12,
+    "stories_in_progress": 11,
     "stories_not_started": 0,
     "criteria_total": 41,
-    "criteria_passed": 2,
-    "points_awarded": 650
+    "criteria_passed": 7,
+    "points_awarded": 712
   },
   "stories": [
     {
@@ -60,21 +60,15 @@
       "notes": "Verified manually with headless Chrome (Puppeteer): all 9 tabs reachable, every card/row drills down one level, Sample/Real toggle correctly labels fictional data, stale-data warning fires on the current 7-day-21-hour-old manifest, and deleting a story from plan.json and reloading removes it from the page (confirmed no hard-coded values). No automated test suite added for this static page — session CC-20260924-x7q3.",
       "updated_at": "2026-09-24T20:30:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 5,
         "criteria_total": 5,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 50,
-        "outstanding": [
-          "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
-          "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
-          "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
-          "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
-          "Trust — no tab shows a number, a connection or a result the project has not actually produced."
-        ]
+        "verified_at": "2026-09-24T15:09:56.718Z",
+        "commit_sha": "b09696145393a2a8a7495e9f7d661a9b39baf815",
+        "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/b09696145393a2a8a7495e9f7d661a9b39baf815",
+        "commit_at": "2026-09-24T14:26:24Z",
+        "points_awarded": 112,
+        "outstanding": []
       }
     },
     {
