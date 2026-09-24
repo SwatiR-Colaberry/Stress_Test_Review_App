@@ -3,57 +3,25 @@ import { buildSampleData } from "./sample-data.js";
 import { renderChrome } from "./chrome.js";
 import { parseHash, onRouteChange, navigate } from "./router.js";
 import { renderOverview } from "./tabs/overview.js";
-import { renderPlaceholder } from "./tabs/placeholder.js";
+import { renderOutcomes } from "./tabs/outcomes.js";
+import { renderUsers } from "./tabs/users.js";
+import { renderGuardrails } from "./tabs/guardrails.js";
+import { renderSystems } from "./tabs/systems.js";
+import { renderProjectManagement } from "./tabs/project-management.js";
+import { renderAgents } from "./tabs/agents.js";
+import { renderKnowledgeBase } from "./tabs/knowledge-base.js";
+import { renderDataModel } from "./tabs/data-model.js";
 
 const TABS = [
-  { id: "overview", label: "Overview" },
-  {
-    id: "outcomes",
-    label: "Outcomes",
-    blurb:
-      "The numbers this project has to move — drawn from plan.derived.measures. On real data, every measure reads “not measured yet” until the running system reports a figure; this project's files never carry the actual value, only the target.",
-  },
-  {
-    id: "users",
-    label: "Users & use case",
-    blurb:
-      "Who this is for and what they're trying to get done, taken from the roles your stories are written for (plan.derived.roles) and each story's narrative sentence.",
-  },
-  {
-    id: "guardrails",
-    label: "Guardrails",
-    blurb:
-      "The SAFE requirements this project promises never to violate (plan.derived.guardrails), and whether the stories that fulfil each one are actually verified yet.",
-  },
-  {
-    id: "systems",
-    label: "Systems",
-    blurb:
-      "Every system this project is meant to connect to (plan.derived.systems), each with a live indicator. None of them can be shown as connected from a static page — every indicator starts grey.",
-  },
-  {
-    id: "project-management",
-    label: "Project management",
-    blurb:
-      "A Gantt view of your releases and every task's due date, including how far a due date has slipped from when it was first given.",
-  },
-  {
-    id: "agents",
-    label: "AI agents",
-    blurb:
-      "Who owns each story today (plan.stories[].owner_agent) — owners, not a scoped AI agent roster. This project's plan doesn't carry agent definitions yet.",
-  },
-  {
-    id: "knowledge-base",
-    label: "Knowledge base",
-    blurb:
-      "Requirements-to-stories traceability, plus a chat panel that answers questions about this project's own data and cites where the answer came from.",
-  },
-  {
-    id: "data-model",
-    label: "Data model",
-    blurb: "The tables behind this project's requirements, with fields and relationships, derived from the requirements themselves.",
-  },
+  { id: "overview", label: "Overview", render: renderOverview },
+  { id: "outcomes", label: "Outcomes", render: renderOutcomes },
+  { id: "users", label: "Users & use case", render: renderUsers },
+  { id: "guardrails", label: "Guardrails", render: renderGuardrails },
+  { id: "systems", label: "Systems", render: renderSystems },
+  { id: "project-management", label: "Project management", render: renderProjectManagement },
+  { id: "agents", label: "AI agents", render: renderAgents },
+  { id: "knowledge-base", label: "Knowledge base", render: renderKnowledgeBase },
+  { id: "data-model", label: "Data model", render: renderDataModel },
 ];
 
 const state = {
@@ -112,14 +80,8 @@ function render() {
   });
 
   const ctx = { ...dataset, mode: state.mode };
-
-  if (activeTabId === "overview") {
-    renderOverview(content, ctx, detail.length ? detail : null);
-    return;
-  }
-
   const tabDef = TABS.find((t) => t.id === activeTabId);
-  renderPlaceholder(content, { tabId: activeTabId, label: tabDef.label, blurb: tabDef.blurb }, detail.length ? detail : null);
+  tabDef.render(content, ctx, detail.length ? detail : null);
 }
 
 init();

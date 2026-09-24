@@ -168,6 +168,16 @@ main.content {
   color: var(--text-muted);
   margin-bottom: 6px;
 }
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+}
+
 .crumb button {
   border: none;
   background: none;

@@ -19,29 +19,46 @@
       "criteria": [
         {
           "text": "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
+      "files_touched": [
+        "index.html",
+        "command-center/style.css",
+        "command-center/data.js",
+        "command-center/sample-data.js",
+        "command-center/router.js",
+        "command-center/chrome.js",
+        "command-center/main.js",
+        "command-center/tabs/overview.js",
+        "command-center/tabs/outcomes.js",
+        "command-center/tabs/users.js",
+        "command-center/tabs/guardrails.js",
+        "command-center/tabs/systems.js",
+        "command-center/tabs/project-management.js",
+        "command-center/tabs/agents.js",
+        "command-center/tabs/knowledge-base.js",
+        "command-center/tabs/data-model.js"
+      ],
       "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "notes": "Verified manually with headless Chrome (Puppeteer): all 9 tabs reachable, every card/row drills down one level, Sample/Real toggle correctly labels fictional data, stale-data warning fires on the current 7-day-21-hour-old manifest, and deleting a story from plan.json and reloading removes it from the page (confirmed no hard-coded values). No automated test suite added for this static page — session CC-20260924-x7q3.",
+      "updated_at": "2026-09-24T20:30:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

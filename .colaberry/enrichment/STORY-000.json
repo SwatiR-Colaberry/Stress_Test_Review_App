@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-000",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-24T20:30:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "delivery_profile",
+      "value": "The Command Center is a static, dependency-free page (vanilla JS ES modules, no framework, no CDN) that fetches .colaberry/plan.json, progress.json and manifest.json at runtime — chosen because it has to run as a plain GitHub Pages site with no server and no place to hold a secret.",
+      "evidence": "command-center/main.js, command-center/data.js, index.html"
+    },
+    {
+      "dimension": "ai_opportunities",
+      "value": "The Knowledge base tab's \"chat panel\" is implemented as local keyword search over the already-loaded plan/progress JSON, not a hosted LLM call — a static page cannot hold an API key, so it says plainly when it can't answer rather than guessing.",
+      "evidence": "command-center/tabs/knowledge-base.js"
+    },
+    {
+      "dimension": "unknowns",
+      "value": "plan.agents[] is empty — this project's plan does not yet define a scoped AI agent roster (triggers, autonomy levels, approval gates). The AI agents tab is built from story ownership (owner_agent) instead, and says so rather than presenting an owner as an agent.",
+      "evidence": ".colaberry/plan.json (agents: []), command-center/tabs/agents.js"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Sample mode reuses the real plan.json (actual requirements and stories) and only substitutes a synthetic progress.json/manifest.json, rather than inventing a parallel fictional project.",
+      "rationale": "Shows a believable further-along state without fabricating requirements, customers, or integrations that don't exist.",
+      "evidence": "command-center/sample-data.js"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "REQ-013 (Microsoft SQL Server), REQ-014 (Anthropic API) and REQ-015 (typed FastAPI/Pydantic API) all show fulfilled_by: [] in .colaberry/plan.json — the traceability view renders this as a real gap rather than hiding it. Note: REQ-015 in particular already has working backend code (backend/app/main.py, a real FastAPI app with Pydantic response models, per this repo's own PROGRESS.md) that the plan's fulfilled_by list does not reflect — worth reconciling the plan against the built backend.",
+      "evidence": ".colaberry/plan.json requirements[], command-center/tabs/knowledge-base.js, backend/app/main.py"
+    }
+  ],
+  "demonstrationEvidence": [],
+  "measurementEvents": []
+}

@@ -24,11 +24,6 @@ function releasePosition(schedule, releases, now) {
 export function renderOverview(container, ctx, detail) {
   const { plan, progress, mode } = ctx;
   const totals = progress.totals || {};
-  const banner = document.createElement("div");
-  banner.className = "banner pause";
-  banner.innerHTML =
-    "<strong>Build paused for review.</strong> Overview is built first — the other 8 tabs are reachable now and show an honest “not built yet” state. Say <strong>build the rest</strong> to continue.";
-  container.appendChild(banner);
 
   if (detail) {
     renderDetail(container, ctx, detail);

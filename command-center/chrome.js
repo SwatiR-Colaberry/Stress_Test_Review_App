@@ -101,6 +101,31 @@ export function sampleTag() {
   return span;
 }
 
+const STATE_TAG_CLASS = {
+  verified: "ok",
+  submitted: "warn",
+  in_progress: "unknown",
+  not_started: "unknown",
+};
+
+const STATE_LABEL = {
+  verified: "Verified",
+  submitted: "Submitted",
+  in_progress: "In progress",
+  not_started: "Not started",
+};
+
+export function stateTagHtml(state) {
+  const cls = STATE_TAG_CLASS[state] || "unknown";
+  const label = STATE_LABEL[state] || state || "Unknown";
+  return `<span class="tag ${cls}">${label}</span>`;
+}
+
+export function statusDotHtml(kind, label) {
+  const cls = kind === "ok" ? "ok" : kind === "warn" ? "warn" : kind === "danger" ? "danger" : "";
+  return `<span><span class="status-dot ${cls}"></span>${escapeHtml(label)}</span>`;
+}
+
 export function escapeHtml(str) {
   if (str == null) return "";
   return String(str)
