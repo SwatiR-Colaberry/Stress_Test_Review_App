@@ -43,7 +43,7 @@ Update this file's checkboxes as work lands; each `[x]` should be backed by a pa
 - [ ] REQ-007 — a review is marked `Completed` only once approved feedback is actually posted to Basecamp, and a posting error is retried/logged rather than silently marking Completed — a test asserts both (STORY-006 AC1/AC2); not built — the guardrail (REQ-011) exists, but nothing calls it yet since there's no finalize/post-to-Basecamp code path
 
 ## Review Queue
-- [ ] REQ-002 — detecting a marker creates a Review Queue row with status `Pending`, tied to the exact submission/version (comment id, not thread id) — a test asserts the row and its status (STORY-001 AC1); not built — no persistence/database layer exists yet, so detection (REQ-001) currently produces no row at all
+- [x] REQ-002 — detecting a marker creates a Review Queue row with status `Pending`, tied to the exact submission/version (comment id, not thread id) — a test asserts the row and its status (STORY-001 AC1) — `backend/app/review_queue/test_intake.py` and `backend/app/test_intake_routes.py` assert a Pending item keyed on `comment_id` (with `message_id` alongside), one item per comment on re-processing, and a separate item per new version; exposed via `POST /basecamp/comments/process` + `GET /reviews/queue`. Scope note (session CC-20260924-e18o): the queue is **in-memory only** (lost on restart) and comments arrive via fixtures/HTTP — no live `Basecamp_MessageBoards_MessageComments` (SQL Server) reader yet; both are recorded decisions, not gaps hidden here.
 
 ## Rule Application
 - [ ] REQ-003 — loading rules for an ST0 submission returns only ST0-prefixed rules; an unknown Stress Test routes to manual resolution — a test asserts both (STORY-003 AC1/AC2); not built

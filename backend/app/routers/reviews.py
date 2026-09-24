@@ -1,10 +1,14 @@
-from fastapi import APIRouter, HTTPException
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.guardrails.review_finalization_guardrail import (
     UnsafeFinalizationError,
     assert_safe_to_finalize,
 )
-from app.models import FinalizeCheckResponse, StressTestReview
+from app.models import FinalizeCheckResponse, ReviewItem, StressTestReview
+from app.review_queue.dependencies import get_review_queue_store
+from app.review_queue.store import ReviewQueueStore
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -26,3 +30,9 @@ def finalize_check(review: StressTestReview) -> FinalizeCheckResponse:
             detail={"reason_code": exc.reason_code, "message": str(exc)},
         ) from exc
     return FinalizeCheckResponse(safe=True)
+
+
+@router.get("/queue", response_model=List[ReviewItem])
+def review_queue(store: ReviewQueueStore = Depends(get_review_queue_store)) -> List[ReviewItem]:
+    """Every Review Queue item, oldest comment version first (REQ-002)."""
+    return store.list_items()

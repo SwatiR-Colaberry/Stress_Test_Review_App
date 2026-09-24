@@ -4,7 +4,11 @@ Run with: uvicorn app.main:app --app-dir backend --reload
 """
 from fastapi import FastAPI
 
+from app.logging_config import configure_logging
+
 from app.routers import basecamp, reviews, security
+
+configure_logging()
 
 app = FastAPI(title="Stress Test Review App", version="0.1.0")
 

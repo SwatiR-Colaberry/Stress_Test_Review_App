@@ -1,17 +1,32 @@
-from fastapi import APIRouter
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Header
 
 from app.basecamp.critique_marker_detector import normalize_critique_marker
-from app.models import MarkerDetectRequest, MarkerDetectResponse
+from app.models import BasecampComment, IntakeResult, MarkerDetectRequest, MarkerDetectResponse
+from app.review_queue.dependencies import get_review_queue_store
+from app.review_queue.intake import process_comment
+from app.review_queue.store import ReviewQueueStore
 
 router = APIRouter(prefix="/basecamp", tags=["basecamp"])
 
 
 @router.post("/critique-marker/detect", response_model=MarkerDetectResponse)
 def detect_marker(body: MarkerDetectRequest) -> MarkerDetectResponse:
-    """Enforces REQ-001 over a single comment body. Does not yet create a
-    Review Queue item (REQ-002) or touch MessageId/CommentId version
-    identity — those depend on the Basecamp/SQL Server integration layer,
-    which doesn't exist in this repo yet.
-    """
+    """Read-only REQ-001 check over a bare comment body. Creates nothing;
+    use POST /basecamp/comments/process to run full intake (REQ-002)."""
     normalized = normalize_critique_marker(body.comment_body)
     return MarkerDetectResponse(is_critique_marker=normalized is not None, normalized_marker=normalized)
+
+
+@router.post("/comments/process", response_model=IntakeResult)
+def process_basecamp_comment(
+    comment: BasecampComment,
+    store: ReviewQueueStore = Depends(get_review_queue_store),
+    x_correlation_id: Optional[str] = Header(default=None, max_length=64),
+) -> IntakeResult:
+    """STORY-001: detect the critique marker and, if present, create a Pending
+    Review Queue item for this exact comment version. Idempotent per
+    comment_id. Malformed bodies are rejected with 422 before reaching intake.
+    An X-Correlation-ID header, if sent, is carried into the log line."""
+    return process_comment(comment.model_dump(), store, correlation_id=x_correlation_id)
