@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-001",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-24T17:33:17Z",
+  "sourceCommitSha": "20a5568c6dd7b51372b3fcbe8d76d335d9107ff1",
+  "factProposals": [
+    {
+      "dimension": "data",
+      "value": "A Review Queue item is keyed on the Basecamp CommentId (exact submission version) and also carries MessageId (thread); re-processing the same CommentId returns the existing item, and a new CommentId on the same thread creates a separate item while the earlier one is kept.",
+      "evidence": "backend/app/review_queue/store.py, backend/app/review_queue/test_store.py"
+    },
+    {
+      "dimension": "inputs",
+      "value": "Intake takes one raw comment row shaped like Basecamp_MessageBoards_MessageComments (comment_id, message_id, body, created_at); ids must be real positive integers and malformed rows are rejected and logged without creating an item.",
+      "evidence": "backend/app/models.py (BasecampComment), backend/app/review_queue/test_intake.py"
+    },
+    {
+      "dimension": "exceptions",
+      "value": "If the comment source is unreachable, intake retries at most 3 times (connection/timeout errors only) and then raises a visible CommentSourceUnavailable; the Review Queue is left untouched.",
+      "evidence": "backend/app/basecamp/comment_source.py, backend/app/review_queue/test_run_intake.py"
+    },
+    {
+      "dimension": "outputs",
+      "value": "Every intake outcome (marker detected, no marker, malformed row) emits one JSON log line to stdout carrying the exact comment_id and a correlation_id (taken from X-Correlation-ID when sent).",
+      "evidence": "backend/app/review_queue/intake.py, backend/app/logging_config.py, backend/app/test_logging_config.py"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Read comments through a CommentSource interface with a fixture implementation; the live SQL Server reader for Basecamp_MessageBoards_MessageComments is deferred.",
+      "rationale": "No SQL Server credentials or approved driver dependency (pyodbc/pymssql) available; user chose to defer rather than add an untestable adapter.",
+      "evidence": "backend/app/basecamp/comment_source.py"
+    },
+    {
+      "statement": "Store the Review Queue in memory behind a ReviewQueueStore interface for now.",
+      "rationale": "Choosing a database is an escalation-level decision not yet made; the interface lets a durable store replace it without touching intake.",
+      "evidence": "backend/app/review_queue/store.py"
+    },
+    {
+      "statement": "Treat Basecamp ids strictly as integers (no coercion from booleans, strings or floats).",
+      "rationale": "Lax parsing turned comment_id=True into 1, which could tie a review to the wrong submission version.",
+      "evidence": "backend/app/models.py (BasecampId), backend/app/test_models.py"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Review Queue items are lost when the process restarts (in-memory store only).",
+      "evidence": "backend/app/review_queue/store.py"
+    },
+    {
+      "statement": "No live connection to SQL Server's Basecamp_MessageBoards_MessageComments yet; comments enter via HTTP (POST /basecamp/comments/process) or fixtures.",
+      "evidence": "backend/app/basecamp/comment_source.py (FixtureCommentSource only)"
+    },
+    {
+      "statement": "API routes, including the new intake and queue routes, have no authentication yet.",
+      "evidence": "backend/app/routers/basecamp.py, backend/app/routers/reviews.py"
+    },
+    {
+      "statement": "Malformed bodies sent over HTTP are rejected with 422 by FastAPI before intake runs, so they produce no intake log line (source-driven intake does log them).",
+      "evidence": "backend/app/test_intake_routes.py"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "backend/app/review_queue/test_intake.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/test_intake_routes.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/test_logging_config.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/review_queue/test_run_intake.py"
+    },
+    {
+      "kind": "commit",
+      "ref": "20a5568c6dd7b51372b3fcbe8d76d335d9107ff1"
+    }
+  ],
+  "measurementEvents": []
+}
