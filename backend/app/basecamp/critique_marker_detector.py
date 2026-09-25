@@ -9,7 +9,7 @@ Ported from the original Node.js implementation
 behavior are preserved exactly.
 """
 import re
-from typing import Optional
+from typing import List, Optional
 
 _CRITIQUE_MARKER_PATTERN = re.compile(r"##\s?critique\s?##", re.IGNORECASE)
 
@@ -23,3 +23,21 @@ def normalize_critique_marker(comment_body) -> Optional[str]:
 
 def is_critique_marker(comment_body) -> bool:
     return normalize_critique_marker(comment_body) is not None
+
+
+# The two follow-up markers of the review cycle (Master Spec §4-5), matched the
+# same way as the critique marker: a single optional space inside each "##",
+# any case. Returned in canonical form, in the order they appear in _MARKERS.
+_MARKERS = (
+    ("Critique", _CRITIQUE_MARKER_PATTERN),
+    ("FeedbackGiven", re.compile(r"##\s?feedbackgiven\s?##", re.IGNORECASE)),
+    ("Approved", re.compile(r"##\s?approved\s?##", re.IGNORECASE)),
+)
+
+
+def detect_review_markers(comment_body) -> List[str]:
+    """All review markers present in a comment, e.g. ["Critique"] or
+    ["FeedbackGiven", "Approved"]. Empty for none or non-string input."""
+    if not isinstance(comment_body, str):
+        return []
+    return [name for name, pattern in _MARKERS if pattern.search(comment_body)]

@@ -1,4 +1,4 @@
-from app.basecamp.critique_marker_detector import is_critique_marker, normalize_critique_marker
+from app.basecamp.critique_marker_detector import detect_review_markers, is_critique_marker, normalize_critique_marker
 
 
 def test_accepts_the_four_documented_spacing_variants():
@@ -41,3 +41,18 @@ def test_idempotent_evaluating_the_same_comment_twice_yields_the_same_result():
     body = "## Critique ##"
     assert is_critique_marker(body) == is_critique_marker(body)
     assert normalize_critique_marker(body) == normalize_critique_marker(body)
+
+
+def test_detect_review_markers_finds_each_marker_in_its_spacing_and_case_variants():
+    assert detect_review_markers("## feedbackGiven ##") == ["FeedbackGiven"]
+    assert detect_review_markers("Looks great ##APPROVED##") == ["Approved"]
+    assert detect_review_markers("## Critique##") == ["Critique"]
+
+
+def test_detect_review_markers_reports_every_marker_present():
+    assert detect_review_markers("##FeedbackGiven## and ##Approved##") == ["FeedbackGiven", "Approved"]
+
+
+def test_detect_review_markers_ignores_prose_review_markers_and_bad_input():
+    assert detect_review_markers("Feedback given, approved in principle. ## Review ##") == []
+    assert detect_review_markers(None) == []

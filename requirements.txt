@@ -8,6 +8,16 @@ uvicorn==0.53.0
 # Python 3.10+, see .python-version).
 mcp[cli]==2.2.0
 
+# SQL Server access (REQ-013), per docs/enterprise-portal-build-prompt.txt:
+# pyodbc over the Microsoft ODBC Driver 18. The driver itself is a system
+# install, not a pip package: brew install msodbcsql18 (see
+# directives/ST-historical-comment-extraction.md, Step 2).
+pyodbc==5.3.0
+
+# Loads the local, git-ignored .env into the environment for operational
+# scripts (backend/scripts/). App code reads os.environ only.
+python-dotenv==1.2.3
+
 # Test tooling.
 pytest==9.1.1
 httpx==0.28.1

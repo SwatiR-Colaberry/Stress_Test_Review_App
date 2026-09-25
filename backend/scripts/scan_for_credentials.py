@@ -6,8 +6,15 @@ anything is found. Run with
 
 Ported from the original Node.js implementation
 (backend/src/scripts/scanForCredentials.js).
+
+Files that git ignores (e.g. the local .env, which is SUPPOSED to hold real
+credentials, and data/extracts/) are skipped: they cannot be committed or
+shared through the repo, which is what REQ-016 guards. Tracked files are
+always scanned, even if they match an ignore pattern. If git is unavailable,
+nothing is skipped (scanning more is the safe failure).
 """
 import os
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -30,6 +37,31 @@ def _walk(root):
             yield os.path.join(dirpath, name)
 
 
+def _git_ignored(paths, repo_root=None):
+    """Subset of `paths` that git ignores (untracked and matching .gitignore).
+    Returns an empty set if git cannot answer, so the caller scans everything."""
+    paths = list(paths)
+    if not paths:
+        return set()
+    try:
+        result = subprocess.run(
+            ["git", "check-ignore", "--stdin", "-z"],
+            input="\0".join(paths) + "\0",
+            cwd=repo_root or REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        print(f"note: git unavailable ({type(exc).__name__}); scanning ignored files too", file=sys.stderr)
+        return set()
+    # Exit 0: some paths ignored; 1: none ignored; anything else: git error.
+    if result.returncode not in (0, 1):
+        print("note: git check-ignore failed; scanning ignored files too", file=sys.stderr)
+        return set()
+    return {p for p in result.stdout.split("\0") if p}
+
+
 def _is_likely_binary(data: bytes) -> bool:
     return b"\x00" in data
 
@@ -44,9 +76,11 @@ def _is_test_fixture(file_path: str) -> bool:
 def main() -> int:
     all_findings = []
     scanned = 0
+    candidates = list(_walk(REPO_ROOT))
+    ignored = _git_ignored(candidates)
 
-    for file_path in _walk(REPO_ROOT):
-        if _is_test_fixture(file_path):
+    for file_path in candidates:
+        if file_path in ignored or _is_test_fixture(file_path):
             continue
         ext = os.path.splitext(file_path)[1].lower()
         if ext in SKIP_EXTENSIONS:
@@ -87,7 +121,8 @@ def main() -> int:
         )
         return 1
 
-    print(f"No credential-shaped content found across {scanned} text files.")
+    print(f"No credential-shaped content found across {scanned} text files "
+          f"({len(ignored)} git-ignored files skipped).")
     return 0
 
 

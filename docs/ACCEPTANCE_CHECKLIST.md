@@ -20,7 +20,7 @@ Update this file's checkboxes as work lands; each `[x]` should be backed by a pa
 - [ ] REQ-004 — a Basecamp submission fetch includes comments, attachments, and links; an empty project returns an empty dataset — a test asserts both (STORY-002 AC1/AC2); not built, no Basecamp client exists yet
 
 ## Data Storage
-- [ ] REQ-013 *(constraint, unassigned — `fulfilled_by: []` in `plan.json`)* — the system connects to Microsoft SQL Server — grep for an `mssql`/`tedious` (or equivalent) driver dependency and a connection module; not built, and no story in the current 12-story plan is assigned to build it either
+- [ ] REQ-013 *(constraint, unassigned — `fulfilled_by: []` in `plan.json`)* — the system connects to Microsoft SQL Server — **partially built (session CC-20260924-e18o, 2026-09-25): retrieval only.** `pyodbc` + ODBC Driver 18 are pinned in `requirements.txt`, and `backend/app/db/` holds the typed config (`config.py`), a connection with a timeout, capped retries and classified errors (`connection.py`), schema inspection (`inspection.py`) and logged, parameterised queries (`queries.py`), all unit-tested. These were run read-only against the real server via `backend/scripts/check_db_connection.py` and `extract_st_history.py` (see `directives/ST-historical-comment-extraction.md`). Still open: *storage* (the app writes nothing to SQL Server; the Review Queue is in-memory), a least-privilege login, and a story in the plan that owns this requirement. Left unticked for those reasons.
 
 ## Error Handling
 - [ ] REQ-009 — an ambiguous project ID and an ambiguous Stress Test ID both route to manual resolution rather than a guess — a test asserts both cases (STORY-008 AC1/AC2); not built

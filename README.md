@@ -28,7 +28,16 @@ Then:
 pytest                                                    # run the test suite
 uvicorn app.main:app --app-dir backend --reload           # FastAPI app on localhost
 PYTHONPATH=backend python3 -m app.mcp.server               # local MCP server over stdio (see backend/app/mcp/)
-python3 backend/scripts/scan_for_credentials.py            # repo-wide credential scan
+python3 backend/scripts/scan_for_credentials.py            # repo-wide credential scan (skips git-ignored files)
+```
+
+SQL Server (read-only; needs Microsoft ODBC Driver 18 — `brew install msodbcsql18` — and a local `.env` copied from `.env.example`). Full procedure, safety rules and verification: [directives/ST-historical-comment-extraction.md](directives/ST-historical-comment-extraction.md).
+
+```
+.venv/bin/python backend/scripts/check_db_connection.py    # connect + check the schema the queries rely on
+.venv/bin/python backend/scripts/profile_st_ids.py         # ID/join-quality counts
+.venv/bin/python backend/scripts/select_st_projects.py     # candidate projects for history extraction (ids + counts)
+.venv/bin/python backend/scripts/extract_st_history.py --bcp-ids 2148,2075,...   # extract to data/extracts/ (git-ignored, personal data)
 ```
 
 ## Repo conventions

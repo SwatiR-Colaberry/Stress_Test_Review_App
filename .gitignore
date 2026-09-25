@@ -8,3 +8,6 @@ node_modules/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Database extracts contain personal data (names, emails, submissions). Never commit.
+data/extracts/
