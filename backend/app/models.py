@@ -9,14 +9,19 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field
 
 
+# Longest id accepted from a caller. Bounded so an id can always be written to
+# the audit trail (AuditEvent uses the same limit) and cannot flood it.
+MAX_ID_LENGTH = 128
+
+
 class ReviewerDecision(BaseModel):
-    reviewer_id: Optional[str] = None
+    reviewer_id: Optional[str] = Field(default=None, max_length=MAX_ID_LENGTH)
     outcome: Optional[Literal["approved", "rejected", "pending"]] = None
     decided_at: Optional[str] = None
 
 
 class StressTestReview(BaseModel):
-    review_id: str
+    review_id: str = Field(max_length=MAX_ID_LENGTH)
     final_feedback_text: Optional[str] = None
     ai_draft_author_id: Optional[str] = None
     reviewer_decision: Optional[ReviewerDecision] = None
@@ -137,3 +142,36 @@ class SubmissionDataset(BaseModel):
     requested_by_user_id: str
     retrieved_at: datetime
     submissions: List[Submission] = []
+
+
+# --- Audit trail (STORY-011: REQ-011, REQ-016) ---
+
+# Every action the system takes on a submission. Kept as a closed list so a
+# typo in a caller fails validation instead of writing an unsearchable action.
+AuditAction = Literal[
+    "review_created",
+    "review_already_queued",
+    "comment_no_marker",
+    "comment_rejected_malformed",
+    "finalize_allowed",
+    "finalize_blocked",
+]
+
+
+class AuditEvent(BaseModel):
+    """One append-only audit trail entry: who did what, when, to which submission.
+
+    Ids, outcomes and reason codes only. There is deliberately no free-text
+    field, so comment bodies, personal data and secrets cannot end up in the
+    audit trail (REQ-016).
+    """
+    event_id: str
+    recorded_at: datetime
+    action: AuditAction
+    actor_id: str = Field(min_length=1, max_length=MAX_ID_LENGTH)
+    outcome: Literal["success", "blocked", "failure"]
+    correlation_id: str = Field(min_length=1, max_length=MAX_ID_LENGTH)
+    comment_id: Optional[int] = None
+    message_id: Optional[int] = None
+    review_id: Optional[str] = Field(default=None, max_length=MAX_ID_LENGTH)
+    reason_code: Optional[str] = Field(default=None, max_length=64)

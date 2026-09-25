@@ -4,6 +4,7 @@ import pytest
 
 from app.basecamp.comment_source import CommentSource, CommentSourceUnavailable, FixtureCommentSource
 from app.review_queue import intake
+from app.audit.trail import InMemoryAuditTrail
 from app.review_queue.store import InMemoryReviewQueueStore
 
 _NOW = datetime(2026, 9, 24, 12, 0, tzinfo=timezone.utc)
@@ -26,15 +27,15 @@ def _no_backoff_sleep(monkeypatch):
 
 def test_run_intake_queues_only_the_critique_comments():
     store = InMemoryReviewQueueStore()
-    results = intake.run_intake(FixtureCommentSource(_ROWS), store)
+    results = intake.run_intake(FixtureCommentSource(_ROWS), store, InMemoryAuditTrail())
     assert [r.outcome for r in results] == ["review_created", "no_marker", "review_created"]
     assert [i.comment_id for i in store.list_items()] == [1001, 1003]
 
 
 def test_running_intake_twice_gives_the_same_queue():
     store = InMemoryReviewQueueStore()
-    first = intake.run_intake(FixtureCommentSource(_ROWS), store)
-    second = intake.run_intake(FixtureCommentSource(_ROWS), store)
+    first = intake.run_intake(FixtureCommentSource(_ROWS), store, InMemoryAuditTrail())
+    second = intake.run_intake(FixtureCommentSource(_ROWS), store, InMemoryAuditTrail())
     assert [r.review_id for r in first] == [r.review_id for r in second]
     assert [r.outcome for r in second] == ["already_queued", "no_marker", "already_queued"]
     assert len(store.list_items()) == 2
@@ -43,5 +44,5 @@ def test_running_intake_twice_gives_the_same_queue():
 def test_unreachable_source_raises_and_leaves_the_queue_untouched():
     store = InMemoryReviewQueueStore()
     with pytest.raises(CommentSourceUnavailable):
-        intake.run_intake(_DownSource(), store)
+        intake.run_intake(_DownSource(), store, InMemoryAuditTrail())
     assert store.list_items() == []

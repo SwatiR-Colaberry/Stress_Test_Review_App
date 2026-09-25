@@ -498,34 +498,45 @@
       "criteria": [
         {
           "text": "Given a submission is processed, when an action is taken, then it is logged in the audit trail.",
-          "passed": false
+          "passed": true,
+          "evidence": "backend/app/audit/trail.py (append-only JSONL audit trail, fsync per event, AuditWriteError on failure) wired into backend/app/review_queue/intake.py (review_created / review_already_queued / comment_no_marker / comment_rejected_malformed) and backend/app/routers/reviews.py (finalize_allowed / finalize_blocked); tests: backend/app/audit/test_trail.py, backend/app/review_queue/test_intake.py, backend/app/test_intake_routes.py, backend/app/test_finalize_audit.py"
         },
         {
           "text": "Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action.",
           "passed": true,
-          "evidence": "backend/src/services/guardrails/reviewFinalizationGuardrail.js (assertSafeToFinalize) + reviewFinalizationGuardrail.test.js (9/9 passing)"
+          "evidence": "backend/app/guardrails/review_finalization_guardrail.py (assert_safe_to_finalize) enforced at POST /reviews/finalize-check (backend/app/routers/reviews.py); every blocked attempt returns 409 and is recorded as finalize_blocked with its reason code; tests: backend/app/guardrails/test_review_finalization_guardrail.py, backend/app/test_finalize_audit.py"
         },
         {
           "text": "Trust: The system ensures no credentials are stored in source code or shared documents.",
           "passed": true,
-          "evidence": "backend/src/services/guardrails/credentialLeakGuardrail.js (assertNoCredentialLeaks) + credentialLeakGuardrail.test.js (12/12 passing) + backend/src/scripts/scanForCredentials.js (npm run scan:secrets exits 0 against the repo)"
+          "evidence": "backend/app/guardrails/credential_leak_guardrail.py + backend/scripts/scan_for_credentials.py (exit 0 across the repo); audit events have no free-text field and data/audit/ is git-ignored; tests: backend/app/guardrails/test_credential_leak_guardrail.py, backend/scripts/test_scan_for_credentials.py, backend/app/audit/test_trail.py, backend/app/review_queue/test_intake.py"
         }
       ],
       "files_touched": [
-        "backend/src/scripts/scanForCredentials.js",
-        "backend/src/services/guardrails/credentialLeakGuardrail.js",
-        "backend/src/services/guardrails/credentialLeakGuardrail.test.js",
-        "backend/src/services/guardrails/reviewFinalizationGuardrail.js",
-        "backend/src/services/guardrails/reviewFinalizationGuardrail.test.js",
+        "backend/app/models.py",
+        "backend/app/audit/__init__.py",
+        "backend/app/audit/trail.py",
+        "backend/app/audit/dependencies.py",
+        "backend/app/review_queue/intake.py",
+        "backend/app/routers/basecamp.py",
+        "backend/app/routers/reviews.py",
+        "backend/conftest.py",
+        ".gitignore",
+        "docs/stories/STORY-011.md",
+        "PROGRESS.md",
+        "docs/ACCEPTANCE_CHECKLIST.md",
         "directives/REQ-011-human-approval-guardrail.md",
-        "directives/REQ-016-credential-leak-guardrail.md"
+        "command-center/tabs/data-model.js",
+        ".colaberry/enrichment/STORY-011.json"
       ],
       "tests_added": [
-        "credentialLeakGuardrail.test.js",
-        "reviewFinalizationGuardrail.test.js"
+        "backend/app/audit/test_trail.py",
+        "backend/app/test_finalize_audit.py",
+        "backend/app/review_queue/test_intake.py",
+        "backend/app/test_intake_routes.py"
       ],
-      "notes": "Criteria 2 and 3 genuinely pass and are covered by unit tests (npm test, 30/30 passing repo-wide) plus a real repo-wide scan (npm run scan:secrets, exit 0). Criterion 1 (audit trail logging) is not yet built — it needs the database layer, which does not exist yet per Master Spec §27, and is left false rather than ticked prematurely.",
-      "updated_at": "2026-09-16T00:00:00Z",
+      "notes": "All 3 criteria pass. Audit trail is an append-only JSON Lines file (data/audit/audit_trail.jsonl, git-ignored) rather than a SQL Server table: existing SQL Server tables and procedures must not change (user rule, 2026-09-25). Every intake outcome and every finalize-check attempt (allowed or blocked) writes one event; if the write fails the action is refused (503 over HTTP). Limitation: if the audit write fails right after a review item is created, the item stays and a re-run records it as review_already_queued (no transaction spans queue and audit without a database). Earlier Node-era evidence replaced with the Python files.",
+      "updated_at": "2026-09-25T00:00:00Z",
       "verification": {
         "state": "submitted",
         "criteria_passed": 2,

@@ -34,7 +34,22 @@ The function is pure, synchronous, and dependency-free by design: it does not to
 
 > **Stack note (2026-09-16):** this guard was originally implemented in Node.js/CommonJS; the whole backend was migrated to Python/FastAPI+Pydantic per REQ-015 and explicit user direction. The gate order and every reason code above are unchanged by the port.
 
-This satisfies STORY-011 criterion 2 today. STORY-011 criterion 1 (audit trail logging) is not yet built and is out of scope for this guard — it depends on the database layer, which doesn't exist yet (§27).
+This satisfies STORY-011 criterion 2.
+
+## Audit trail (STORY-011 criterion 1, added 2026-09-25)
+
+Every call to `POST /reviews/finalize-check` is recorded before it answers, in the append-only audit trail (`backend/app/audit/trail.py`, file `data/audit/audit_trail.jsonl`, git-ignored; `AUDIT_TRAIL_PATH` overrides the location):
+
+| Result | HTTP | Audit event |
+|---|---|---|
+| Passes the gate | 200 | `finalize_allowed`, actor = reviewer id |
+| Blocked by any reason code above | 409 | `finalize_blocked`, `reason_code` set, actor = reviewer id or `unidentified` |
+| Audit trail cannot be written | 503 | none — the request is refused, so no approval passes without a record |
+| Malformed request, or an id over 128 characters | 422 | none — rejected before the gate runs |
+
+Critique intake (`backend/app/review_queue/intake.py`) records its outcomes in the same trail. The trail is a file, not a SQL Server table, because existing SQL Server tables and procedures must not change (user rule, 2026-09-25).
+
+**Verify:** `pytest backend/app/test_finalize_audit.py backend/app/audit` passes; for a live check, run the app (`uvicorn app.main:app --app-dir backend`), POST a review whose `reviewer_decision.reviewer_id` is `claude-ai`, and confirm a 409 plus a `finalize_blocked` / `AI_CANNOT_APPROVE` line at the end of `data/audit/audit_trail.jsonl`.
 
 ## Known limitation (logged, not solved here)
 

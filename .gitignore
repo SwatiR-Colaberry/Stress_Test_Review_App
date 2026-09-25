@@ -11,3 +11,6 @@ __pycache__/
 
 # Database extracts contain personal data (names, emails, submissions). Never commit.
 data/extracts/
+
+# Audit trail (STORY-011) holds review/comment ids and reviewer ids. Never commit.
+data/audit/

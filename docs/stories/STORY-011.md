@@ -28,8 +28,8 @@ the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [ ] Given a submission is processed, when an action is taken, then it is logged in the audit trail.
-- [ ] Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action.
-- [ ] Trust: The system ensures no credentials are stored in source code or shared documents.
+- [x] Given a submission is processed, when an action is taken, then it is logged in the audit trail.
+- [x] Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action.
+- [x] Trust: The system ensures no credentials are stored in source code or shared documents.
 
 When every box above is ticked, stop and show the demo.

@@ -5,6 +5,7 @@ from app.basecamp.demo_data import DEMO_EMPTY_PROJECT, DEMO_PROJECT_WITH_SUBMISS
 from app.basecamp.submission_comment_source import SubmissionCommentSource
 from app.basecamp.submission_retrieval import retrieve_project_submissions
 from app.review_queue.intake import run_intake
+from app.audit.trail import InMemoryAuditTrail
 from app.review_queue.store import InMemoryReviewQueueStore
 
 
@@ -22,12 +23,12 @@ def test_retrieved_comments_map_to_intake_rows():
 def test_critique_comment_from_the_api_creates_one_pending_review_and_rerun_does_not_duplicate():
     store = InMemoryReviewQueueStore()
     source = SubmissionCommentSource(retrieve(DEMO_PROJECT_WITH_SUBMISSIONS))
-    first = run_intake(source, store)
-    second = run_intake(source, store)
+    first = run_intake(source, store, InMemoryAuditTrail())
+    second = run_intake(source, store, InMemoryAuditTrail())
     assert [r.outcome for r in first] == ["review_created"]
     assert [r.outcome for r in second] == ["already_queued"]
     assert first[0].review_id == second[0].review_id
 
 
 def test_empty_project_gives_intake_nothing_to_do():
-    assert run_intake(SubmissionCommentSource(retrieve(DEMO_EMPTY_PROJECT)), InMemoryReviewQueueStore()) == []
+    assert run_intake(SubmissionCommentSource(retrieve(DEMO_EMPTY_PROJECT)), InMemoryReviewQueueStore(), InMemoryAuditTrail()) == []

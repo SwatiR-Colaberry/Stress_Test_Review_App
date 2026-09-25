@@ -3,15 +3,23 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
+from app.audit.dependencies import get_audit_trail
+from app.audit.trail import AuditWriteError, InMemoryAuditTrail
 from app.main import app
 from app.review_queue.dependencies import get_review_queue_store
 from app.review_queue.store import InMemoryReviewQueueStore
 
 
 @pytest.fixture
-def client():
+def audit():
+    return InMemoryAuditTrail()
+
+
+@pytest.fixture
+def client(audit):
     store = InMemoryReviewQueueStore()
     app.dependency_overrides[get_review_queue_store] = lambda: store
+    app.dependency_overrides[get_audit_trail] = lambda: audit
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -55,3 +63,22 @@ def test_posting_the_same_comment_twice_creates_one_item(client):
     assert second["outcome"] == "already_queued"
     assert second["review_id"] == first["review_id"]
     assert len(client.get("/reviews/queue").json()) == 1
+
+
+# STORY-011: the route records every outcome, and an audit failure is visible.
+def test_processing_a_comment_over_http_writes_an_audit_event(client, audit):
+    response = client.post("/basecamp/comments/process", json=_comment("##Critique##"), headers={"X-Correlation-ID": "abc-123"})
+    [event] = audit.read_all()
+    assert (event.action, event.review_id, event.correlation_id) == ("review_created", response.json()["review_id"], "abc-123")
+
+
+class _BrokenAuditTrail(InMemoryAuditTrail):
+    def record(self, event):
+        raise AuditWriteError("disk full")
+
+
+def test_audit_failure_returns_503_with_a_classified_error(client):
+    app.dependency_overrides[get_audit_trail] = lambda: _BrokenAuditTrail()
+    response = client.post("/basecamp/comments/process", json=_comment("##Critique##"))
+    assert response.status_code == 503
+    assert response.json()["detail"]["error_class"] == "AuditWriteError"

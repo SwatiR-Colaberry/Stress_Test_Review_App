@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-011",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-25T16:30:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "outputs",
+      "value": "Every critique-intake outcome (review_created, review_already_queued, comment_no_marker, comment_rejected_malformed) and every finalize check (finalize_allowed, finalize_blocked with its reason code) is written as one append-only AuditEvent carrying time, actor, outcome, correlation id and the comment/message/review ids.",
+      "evidence": "backend/app/review_queue/test_intake.py, backend/app/test_finalize_audit.py"
+    },
+    {
+      "dimension": "approval_points",
+      "value": "An approval is allowed only when a non-AI human reviewer has recorded an 'approved' decision with non-empty feedback; every blocked attempt (NO_HUMAN_REVIEW, MISSING_REVIEWER_IDENTITY, AI_CANNOT_APPROVE, NOT_APPROVED, EMPTY_FEEDBACK) is refused with 409 and recorded with the claimed reviewer id, or 'unidentified' when none is named.",
+      "evidence": "backend/app/routers/reviews.py, backend/app/test_finalize_audit.py"
+    },
+    {
+      "dimension": "constraints",
+      "value": "Existing SQL Server tables and stored procedures must not change; the application's SQL Server access is read-only, so application state such as the audit trail is stored outside SQL Server.",
+      "evidence": "backend/app/audit/trail.py (module docstring)"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Audit events hold ids, outcomes and reason codes only (no free-text field, ids capped at 128 characters), and the audit file lives under git-ignored data/audit/, so comment bodies, personal data and secrets do not reach the audit trail or the public repo.",
+      "evidence": "backend/app/models.py (AuditEvent), .gitignore, backend/app/audit/test_trail.py"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Store the audit trail as an append-only JSON Lines file (data/audit/audit_trail.jsonl) behind an AuditTrail interface, instead of the review_audit_log SQL Server table proposed in Master Spec §19.",
+      "rationale": "user rule: no changes to existing SQL Server tables or procedures; a database-backed trail can implement the same interface later if one is approved",
+      "evidence": "backend/app/audit/trail.py"
+    },
+    {
+      "statement": "An action is refused if its audit event cannot be written: 503 from POST /basecamp/comments/process and POST /reviews/finalize-check, and AuditWriteError from process_comment/run_intake.",
+      "rationale": "no submission may be processed or approved without a record",
+      "evidence": "backend/app/routers/basecamp.py, backend/app/routers/reviews.py, backend/app/test_intake_routes.py"
+    },
+    {
+      "statement": "The audit trail is a required argument of critique intake, not optional.",
+      "rationale": "makes 'processed without logging' impossible for any caller rather than a convention",
+      "evidence": "backend/app/review_queue/intake.py"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The review queue and the audit trail are not written in one transaction: if the audit write fails right after a review item is created, the item stays and a re-run records it as review_already_queued rather than review_created.",
+      "evidence": "backend/app/review_queue/test_intake.py (test_rerunning_after_an_audit_failure_records_the_item_without_duplicating_it)"
+    },
+    {
+      "statement": "Submission retrieval from Basecamp (STORY-002) still records its actions only as structured stdout log lines, not in the audit trail.",
+      "evidence": "backend/app/basecamp/submission_retrieval.py"
+    },
+    {
+      "statement": "The audit file's write lock is per process; several server worker processes rely on the operating system's append mode to keep each line intact.",
+      "evidence": "backend/app/audit/trail.py"
+    },
+    {
+      "statement": "AI/system approvers are detected with a static denylist of ids until reviewer authentication exists.",
+      "evidence": "backend/app/guardrails/review_finalization_guardrail.py#L21"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "backend/app/audit/test_trail.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/test_finalize_audit.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/review_queue/test_intake.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/test_intake_routes.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/scripts/test_scan_for_credentials.py"
+    }
+  ],
+  "measurementEvents": []
+}

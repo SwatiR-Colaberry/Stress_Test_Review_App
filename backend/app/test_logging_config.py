@@ -3,6 +3,7 @@ import json
 import logging
 
 from app.logging_config import configure_logging
+from app.audit.trail import InMemoryAuditTrail
 from app.review_queue.intake import process_comment
 from app.review_queue.store import InMemoryReviewQueueStore
 
@@ -22,7 +23,7 @@ def test_detection_event_reaches_the_configured_handler_with_the_comment_id():
     original = handler.setStream(buffer)
     try:
         row = {"comment_id": 5550001, "message_id": 9, "body": "##Critique##", "created_at": "2026-09-24T12:00:00Z"}
-        process_comment(row, InMemoryReviewQueueStore())
+        process_comment(row, InMemoryReviewQueueStore(), InMemoryAuditTrail())
     finally:
         handler.setStream(original)
     [line] = [json.loads(text) for text in buffer.getvalue().splitlines()]
