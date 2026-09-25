@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-003",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-25T18:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "inputs",
+      "value": "The ST0 rules come from a separate official document, 'Stress Test 0 — Rules & Validation Specification', which defines 8 rules (ST0-001 to ST0-008) with fixed failure feedback, 3 stages (structural and artifact checks block; the dataset advisory never blocks) and 8 required fields per Data Science problem.",
+      "evidence": "docs/stress-test-rules/ST0-rules-v1.md, backend/app/rules/test_module.py"
+    },
+    {
+      "dimension": "data",
+      "value": "The Stress Test is identified from the Basecamp step or message title ('Stress Test N - ...'); all 179 ST0-ST5 step names in the history extracts follow that pattern.",
+      "evidence": "backend/app/rules/loader.py (identify_stress_test)"
+    },
+    {
+      "dimension": "exceptions",
+      "value": "A submission whose Stress Test cannot be identified, is ambiguous, or has no rule module, and any rule file that is missing, invalid, the wrong version, or cannot be read in time, is routed to manual resolution with a reason code instead of being reviewed with guessed rules.",
+      "evidence": "backend/app/rules/test_loader.py"
+    },
+    {
+      "dimension": "outputs",
+      "value": "Every rule load writes an audit event with the Stress Test and rule version (rules_loaded) or the manual-resolution reason (rules_manual_resolution).",
+      "evidence": "backend/app/rules/test_loader.py"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "In historical ST0 reviews, reviewers mark the selected Data Science problem by asking students to highlight the whole problem in yellow; Basecamp stores this as HTML background-colour styling, not as text.",
+      "evidence": "directives/rule-modules.md (What the ST0 history showed)"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "Historical ST0 reviewers repeatedly ask for things the ST0 spec does not state: the whole submission in one comment, content typed into the comment rather than screenshots or attached documents, a source link that opens the specific dataset page, and removal of material belonging to later Stress Tests.",
+      "evidence": "directives/rule-modules.md (What the ST0 history showed)"
+    },
+    {
+      "dimension": "human_only_decisions",
+      "value": "Reviewers judge dataset suitability (no sample datasets, not already used by other students, able to support the chosen problem), which the ST0 spec explicitly places outside automated review ('Do not perform dataset quality auditing').",
+      "evidence": "backend/app/rules/modules/ST0/v1.json (out_of_scope), directives/rule-modules.md (What the ST0 history showed)"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "An earlier AI reviewer ('SmartCritic AI') posted 7 ST0 reviews that critiqued financial stress-testing concepts (VaR, Monte Carlo) instead of the ST0 structural rules, and human reviewers then gave the actual ST0 feedback.",
+      "evidence": "directives/rule-modules.md (What the ST0 history showed)"
+    },
+    {
+      "dimension": "unknowns",
+      "value": "The Rules & Validation Specifications for ST1-ST5 are not yet in the repo; until they are, those Stress Tests route to manual resolution (NO_RULE_MODULE).",
+      "evidence": "backend/app/rules/modules/registry.json"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Rule modules are versioned JSON files (modules/<ST>/<version>.json) selected by a registry, validated by a RuleModule contract; adding a Stress Test is a file plus a registry line.",
+      "rationale": "the ST0 spec §17 and REQ-017 require modules that load by Stress Test id and version without changing the core application; JSON needs no new dependency",
+      "evidence": "backend/app/rules/module.py, backend/app/rules/loader.py, directives/rule-modules.md"
+    },
+    {
+      "statement": "ST0-002 'valid public source link' means the link opens without an error.",
+      "rationale": "user decision; historical feedback shows links that were present but dead or pointed at a general Kaggle page",
+      "evidence": "backend/app/rules/modules/ST0/v1.json (ST0-002 evaluation_notes)"
+    },
+    {
+      "statement": "ST0-003 (data collection explanation) has severity Required Fix, not the Master Spec §10 'Needs Attention'.",
+      "rationale": "user decision; the ST0 spec makes the rule blocking in Stage 1, and it is the second most frequent historical feedback",
+      "evidence": "backend/app/rules/test_module.py (test_every_blocking_rule_is_a_required_fix)"
+    },
+    {
+      "statement": "A submission that is not complete in the one comment being reviewed is flagged to the human reviewer, not failed.",
+      "rationale": "user decision; reviewers repeatedly asked students to consolidate, but the spec has no such rule",
+      "evidence": "backend/app/rules/modules/ST0/v1.json (reviewer_notes SPLIT_SUBMISSION)"
+    },
+    {
+      "statement": "Rule loading never raises for identification or file problems; it returns a manual-resolution result with a reason code, and it refuses to return rules if the load cannot be recorded in the audit trail.",
+      "rationale": "a bad rule file must not crash a review, and rules must never be applied without a traceable version",
+      "evidence": "backend/app/rules/loader.py"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "No review flow calls the rule loader yet; STORY-004 (evaluation with Claude) is the first caller.",
+      "evidence": "backend/app/rules/loader.py"
+    },
+    {
+      "statement": "Manual resolution is a returned and recorded result only; there is no queue for a person to work through yet (STORY-008).",
+      "evidence": "backend/app/rules/loader.py"
+    },
+    {
+      "statement": "Only one- or two-digit Stress Test numbers in a 'Stress Test N' title are recognised; abbreviations such as 'ST0' in a title are routed to manual resolution.",
+      "evidence": "backend/app/rules/loader.py (_STRESS_TEST)"
+    },
+    {
+      "statement": "A rule read can take up to 3 attempts of 5 s per file (registry and module), about 30 s in the worst case.",
+      "evidence": "backend/app/rules/loader.py (DEFAULT_TIMEOUT_S, MAX_ATTEMPTS)"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "backend/app/rules/test_module.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/rules/test_loader.py"
+    }
+  ],
+  "measurementEvents": []
+}

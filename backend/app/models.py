@@ -158,6 +158,8 @@ AuditAction = Literal[
     "retrieval_started",
     "retrieval_completed",
     "retrieval_failed",
+    "rules_loaded",
+    "rules_manual_resolution",
 ]
 
 
@@ -177,5 +179,7 @@ class AuditEvent(BaseModel):
     comment_id: Optional[int] = None
     message_id: Optional[int] = None
     project_id: Optional[int] = None  # Basecamp project, for retrieval events
+    stress_test_id: Optional[str] = Field(default=None, max_length=8)  # rule-loading events
+    rule_version: Optional[str] = Field(default=None, max_length=16)  # rule-loading events
     review_id: Optional[str] = Field(default=None, max_length=MAX_ID_LENGTH)
     reason_code: Optional[str] = Field(default=None, max_length=64)

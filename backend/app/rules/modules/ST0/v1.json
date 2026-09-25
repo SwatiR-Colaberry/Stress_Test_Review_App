@@ -1,0 +1,167 @@
+{
+  "stress_test_id": "ST0",
+  "version": "v1",
+  "source_document": "docs/stress-test-rules/ST0-rules-v1.md",
+  "purpose": "ST0 guides students through the structural components required for Stress Test 0 and checks whether the required structural components and artifacts are present. It validates screenshot presence and reminds students to upload dataset file(s). It does not parse dataset files and does not evaluate modeling quality.",
+  "out_of_scope": [
+    "Do not evaluate modeling quality.",
+    "Do not evaluate feature engineering.",
+    "Do not evaluate model validation.",
+    "Do not evaluate forecasting assessment.",
+    "Do not perform dataset quality auditing.",
+    "Do not perform feasibility analysis.",
+    "Do not provide strategic critique.",
+    "Do not act as a modeling assistant, coding tutor, dashboard builder, or approval authority.",
+    "Final approval is manual."
+  ],
+  "rules": [
+    {
+      "id": "ST0-001",
+      "check": "Dataset description is present",
+      "failure_feedback": "Please add a brief description of the dataset, including what the data represents and the main information captured in it.",
+      "default_severity": "Required Fix",
+      "evaluation_notes": [
+        "Describes what the data represents and the main information captured (spec §4)."
+      ]
+    },
+    {
+      "id": "ST0-002",
+      "check": "At least one valid public dataset source link is present",
+      "failure_feedback": "Please provide the public source link for the dataset.",
+      "default_severity": "Required Fix",
+      "evaluation_notes": [
+        "Valid means the link opens without an error (user decision, 2026-09-25)."
+      ]
+    },
+    {
+      "id": "ST0-003",
+      "check": "Data collection explanation is present and separate from dataset description",
+      "failure_feedback": "Please add a brief explanation of how the data was collected or compiled.",
+      "default_severity": "Required Fix",
+      "evaluation_notes": [
+        "Explains how the data was collected, compiled, sourced or generated, separately from the dataset description (spec §4).",
+        "Severity is Required Fix, not the Master Spec §10 'Needs Attention': the ST0 spec makes this rule blocking in Stage 1 (user decision, 2026-09-25)."
+      ]
+    },
+    {
+      "id": "ST0-004",
+      "check": "Dataset screenshot shows column headers and preview rows",
+      "failure_feedback": "Please add a dataset screenshot showing the column headers and preview rows.",
+      "default_severity": "Required Fix",
+      "evaluation_notes": [
+        "Where the project format requires a dataset preview: headers + at least 3 rows (spec §11)."
+      ]
+    },
+    {
+      "id": "ST0-005",
+      "check": "Dataset file(s) are present in final submission",
+      "failure_feedback": "Please upload the dataset file(s) with the final Stress Test submission.",
+      "default_severity": "Required Fix",
+      "evaluation_notes": [
+        "Do not require the student to upload the dataset file in chat; check the final submission for the uploaded dataset file(s) (spec §11)."
+      ]
+    },
+    {
+      "id": "ST0-006",
+      "check": "Problem count is 8–10",
+      "failure_feedback": "If fewer than 8, add enough problems to reach 8–10. If more than 10, reduce the list to 8–10.",
+      "default_severity": "Required Fix"
+    },
+    {
+      "id": "ST0-007",
+      "check": "Every problem contains all required fields",
+      "failure_feedback": "Identify the exact problem number and missing required field(s).",
+      "default_severity": "Required Fix",
+      "evaluation_notes": [
+        "Identify problem sections by meaning and required content, not exact heading text; topic headers and descriptive text before a problem are allowed (spec §5)."
+      ]
+    },
+    {
+      "id": "ST0-008",
+      "check": "Exactly one selected problem is clearly identified",
+      "failure_feedback": "Please clearly identify one selected problem.",
+      "default_severity": "Required Fix",
+      "evaluation_notes": [
+        "For example 'Selected Problem: Problem #X' or an equivalent clear statement; the selected problem should be unambiguous (spec §6)."
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "number": 1,
+      "name": "Structural Check",
+      "kind": "structural",
+      "blocking": true,
+      "rule_ids": ["ST0-001", "ST0-002", "ST0-003", "ST0-006", "ST0-007", "ST0-008"],
+      "instructions": [
+        "If Stage 1 fails, list all Stage 1 structural issues together and stop.",
+        "Do not mix Stage 2 issues into a Stage 1 blocking result."
+      ]
+    },
+    {
+      "number": 2,
+      "name": "Artifact Check",
+      "kind": "artifact",
+      "blocking": true,
+      "rule_ids": ["ST0-004", "ST0-005"],
+      "instructions": [
+        "Only if Stage 1 passes should Stage 2 run.",
+        "If Stage 2 passes, state that no structural issues were detected and continue to advisory checks."
+      ]
+    },
+    {
+      "number": 3,
+      "name": "Dataset Advisory",
+      "kind": "advisory",
+      "blocking": false,
+      "rule_ids": [],
+      "instructions": [
+        "The dataset advisory must not create a structural failure."
+      ]
+    }
+  ],
+  "required_problem_fields": [
+    "Problem",
+    "Solution",
+    "Model Type/s",
+    "Algorithm",
+    "Independent Variable/s",
+    "Dependent Variable",
+    "Target Audience",
+    "Future Capability/ies"
+  ],
+  "problem_count": {"min": 8, "max": 10},
+  "tolerance": [
+    "Case-insensitive labels.",
+    "Minor wording variations are allowed.",
+    "Topic headers are allowed.",
+    "Singular/plural differences are allowed.",
+    "Numbering and punctuation differences are allowed.",
+    "Validate meaning/content, not exact heading text.",
+    "Do not fail solely because a heading differs slightly from the expected label."
+  ],
+  "advisory_guidance": [
+    "ST0 datasets are later used for Power BI dashboards. Prefer multiple meaningful categorical dimensions, several numerical columns and at least one date/time column.",
+    "Numeric identifiers such as Store_ID, Dept_ID and Product_ID are weak dimensions.",
+    "No categorical dimensions, or only one categorical column, may limit meaningful dashboard analysis.",
+    "This advisory does not block structural validation.",
+    "It may influence the human reviewer's final approval decision."
+  ],
+  "reviewer_notes": [
+    {
+      "id": "SPLIT_SUBMISSION",
+      "when": "The submission is not complete in the one comment being reviewed (parts are in earlier or later comments).",
+      "note": "Tell the reviewer that the submission is split across comments. This is not a rule failure.",
+      "source": "User decision, 2026-09-25, from historical ST0 reviews (reviewers repeatedly asked students to consolidate everything into one comment)."
+    }
+  ],
+  "guardrails": [
+    "Use only the ST0 rules loaded by the application.",
+    "Do not apply ST1–ST5 rules.",
+    "Do not invent requirements.",
+    "Do not evaluate modeling quality or algorithm quality.",
+    "Do not treat the dataset advisory as a structural failure.",
+    "Do not approve automatically.",
+    "Human reviewer remains the final authority."
+  ]
+}

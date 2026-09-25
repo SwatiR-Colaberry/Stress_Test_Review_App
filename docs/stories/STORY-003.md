@@ -27,8 +27,8 @@ the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [ ] Given a submission for ST0, When the system loads rules, Then only ST0 rules are loaded.
-- [ ] Given a submission for an unknown Stress Test, When the system loads rules, Then it routes to manual resolution.
-- [ ] Trust: The system logs rule loading events with rule version.
+- [x] Given a submission for ST0, When the system loads rules, Then only ST0 rules are loaded.
+- [x] Given a submission for an unknown Stress Test, When the system loads rules, Then it routes to manual resolution.
+- [x] Trust: The system logs rule loading events with rule version.
 
 When every box above is ticked, stop and show the demo.

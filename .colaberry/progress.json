@@ -194,21 +194,41 @@
       "criteria": [
         {
           "text": "Given a submission for ST0, When the system loads rules, Then only ST0 rules are loaded.",
-          "passed": false
+          "passed": true,
+          "evidence": "backend/app/rules/loader.py load_rules() loads only the identified Stress Test's module at the registry version (backend/app/rules/modules/registry.json -> ST0/v1.json, built word for word from docs/stress-test-rules/ST0-rules-v1.md); RuleModule (backend/app/rules/module.py) rejects any module carrying another Stress Test's rules; tests: backend/app/rules/test_loader.py::test_an_st0_submission_loads_only_st0_rules, backend/app/rules/test_module.py"
         },
         {
           "text": "Given a submission for an unknown Stress Test, When the system loads rules, Then it routes to manual resolution.",
-          "passed": false
+          "passed": true,
+          "evidence": "load_rules() returns outcome manual_resolution with a reason code (NO_RULE_MODULE, STRESS_TEST_NOT_IDENTIFIED, STRESS_TEST_AMBIGUOUS, plus not-found / invalid / version-mismatch / timeout / read-failed) and never guesses; tests: backend/app/rules/test_loader.py"
         },
         {
           "text": "Trust: The system logs rule loading events with rule version.",
-          "passed": false
+          "passed": true,
+          "evidence": "every load_rules() call writes one audit event (rules_loaded with stress_test_id and rule_version, or rules_manual_resolution with the reason code) and a JSON log line; if the audit write fails no rules are returned; tests: backend/app/rules/test_loader.py (Acceptance 3 section)"
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "backend/app/rules/__init__.py",
+        "backend/app/rules/module.py",
+        "backend/app/rules/loader.py",
+        "backend/app/rules/modules/registry.json",
+        "backend/app/rules/modules/ST0/v1.json",
+        "backend/app/models.py",
+        "docs/stress-test-rules/ST0-rules-v1.md",
+        "directives/rule-modules.md",
+        "command-center/tabs/data-model.js",
+        "docs/stories/STORY-003.md",
+        "docs/ACCEPTANCE_CHECKLIST.md",
+        "PROGRESS.md",
+        ".colaberry/enrichment/STORY-003.json"
+      ],
+      "tests_added": [
+        "backend/app/rules/test_module.py",
+        "backend/app/rules/test_loader.py"
+      ],
+      "notes": "All 3 criteria pass. ST0 v1 is built only from the official ST0 Rules & Validation Specification (transcribed to docs/stress-test-rules/ST0-rules-v1.md) plus three dated user decisions: ST0-002 valid = link opens without an error; ST0-003 severity Required Fix; a submission split across comments is a reviewer note, not a failure. Rule loading is not yet called by any review flow (STORY-004 will call load_rules); the manual-resolution queue itself is STORY-008. ST1-ST5 have no module until their specs are provided (NO_RULE_MODULE).",
+      "updated_at": "2026-09-25T00:00:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,
