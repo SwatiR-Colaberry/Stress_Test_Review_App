@@ -1,12 +1,13 @@
 """Sample Basecamp submission records for the MCP resource below.
 
-SAMPLE DATA ONLY. There is no Basecamp API client in this repo yet
-(REQ-004: retrieve submission data; REQ-012: Basecamp OAuth 2.0 — both
-unbuilt, blocked on Master Spec Sec.27's Basecamp environment/credential
-inputs). The shape here matches what Master Spec Sec.2/Sec.4 says a real
+SAMPLE DATA ONLY. A Basecamp API client now exists (REQ-004/REQ-012,
+STORY-002: backend/app/basecamp/api_client.py, submission_retrieval.py), but
+it is not wired to this resource: it needs a registered Basecamp OAuth app and
+tokens that are not available yet (see backend/scripts/basecamp_oauth_setup.py).
+The shape here matches what Master Spec Sec.2/Sec.4 says a real
 submission record must carry (project, student, Stress Test, MessageId,
 CommentId, critique-marker state) so the resource is a faithful stand-in
-for the real thing once it exists, not an arbitrary placeholder.
+until then, not an arbitrary placeholder.
 """
 
 SAMPLE_SUBMISSIONS = [

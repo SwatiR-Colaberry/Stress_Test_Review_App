@@ -3,9 +3,9 @@ Model Context Protocol Python SDK (`mcp` on PyPI, mcp.server.mcpserver.MCPServer
 
 Exposes:
 - One read-only resource, `basecamp://submissions` — required. Currently
-  backed by sample data, honestly labeled as such: REQ-004 (retrieve
-  submission data) and REQ-012 (Basecamp OAuth 2.0) aren't built yet, so
-  there is no live Basecamp connection to read from. The resource's shape
+  backed by sample data, honestly labeled as such: the Basecamp OAuth 2.0
+  client (REQ-004/REQ-012, STORY-002) exists but has no registered app or
+  tokens yet, so it is not wired here and there is no live connection. The resource's shape
   matches what a real submission record will carry once that connector
   exists (see backend/app/mcp/sample_data.py).
 - One tool stub, `finalize_review` — deliberately unimplemented. REQ-007's
@@ -39,9 +39,9 @@ mcp_server = MCPServer(
     title="Basecamp Stress Test submissions (sample)",
     description=(
         "Read-only list of Stress Test submissions. SAMPLE DATA ONLY — no live "
-        "Basecamp connection exists yet (REQ-004/REQ-012 unbuilt; Master Spec "
-        "Sec.27 OAuth credentials not provided). Shape matches what a real "
-        "submission record will carry once the Basecamp client is built."
+        "Basecamp connection yet (the REQ-004/REQ-012 client is built but Master "
+        "Spec Sec.27 OAuth credentials are not provided). Shape matches what a "
+        "real submission record will carry once it is connected."
     ),
     mime_type="application/json",
 )

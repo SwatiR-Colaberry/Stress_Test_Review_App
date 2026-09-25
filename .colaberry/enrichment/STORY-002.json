@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-002",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-25T15:18:05Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "integrations",
+      "value": "Reads Basecamp 3/4 project data read-only from https://3.basecampapi.com/{account_id}: the project dock, the message board's messages (one message = one submission) and each message's comments, following Link-header pagination.",
+      "evidence": "backend/app/basecamp/submission_retrieval.py, backend/app/basecamp/api_client.py"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Basecamp offers no API keys; the only access is an OAuth 2.0 bearer token from 37signals Launchpad, which requires a registered app (client id/secret) and one browser authorization by a Basecamp user. The app then sees exactly what that user can see.",
+      "evidence": "backend/app/basecamp/config.py, backend/app/basecamp/oauth.py"
+    },
+    {
+      "dimension": "data",
+      "value": "Attachments and links are not separate API fields: they are embedded in message and comment HTML as <bc-attachment> tags and <a href> links. @mentions use the same <bc-attachment> tag and must be excluded.",
+      "evidence": "backend/app/basecamp/content_extractor.py, backend/app/basecamp/test_content_extractor.py"
+    },
+    {
+      "dimension": "data",
+      "value": "SQL Server's Basecamp_MessageBoards_MessageComments CommentId and MessageId values (about 1.0e9 to 1.03e10) are Basecamp recording ids, the same ids the Basecamp API returns, so a comment from either source maps to the same Review Queue item.",
+      "evidence": "backend/app/basecamp/submission_comment_source.py, backend/app/basecamp/test_submission_comment_source.py"
+    },
+    {
+      "dimension": "outputs",
+      "value": "Every retrieval writes submission_retrieval_started and then _completed or _failed JSON log lines carrying a timestamp, the requesting user id, the project id, a correlation id, counts and an error class.",
+      "evidence": "backend/app/basecamp/test_submission_retrieval.py"
+    },
+    {
+      "dimension": "unknowns",
+      "value": "Who registers the Basecamp OAuth app and whose Basecamp account authorizes it (personal login vs. a company/service account) is not yet decided.",
+      "evidence": "backend/scripts/basecamp_oauth_setup.py"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "A submission is a message on the project's message board, together with its comments.",
+      "rationale": "Matches the SQL data, where each Stress Test step points to a message board message; confirmed with the student.",
+      "evidence": "backend/app/basecamp/submission_retrieval.py"
+    },
+    {
+      "statement": "Use httpx as the runtime HTTP client for Basecamp.",
+      "rationale": "Already pinned for tests; its MockTransport lets every failure path be tested without a network. User-approved dependency change.",
+      "evidence": "requirements.txt, backend/app/basecamp/api_client.py"
+    },
+    {
+      "statement": "Build and verify against a simulated Basecamp API now; connect live once an OAuth app is registered.",
+      "rationale": "The student cannot provide a client id/secret today, and a username/password shortcut would break REQ-012 and the no-credentials guardrail.",
+      "evidence": "backend/app/basecamp/demo_data.py, backend/scripts/retrieve_submissions.py"
+    },
+    {
+      "statement": "Never retry 401/403; retry 429 after Retry-After (capped at 30 s) and 5xx/network errors, at most 3 attempts; never follow redirects or non-https pagination links.",
+      "rationale": "A rejected token fails the same way again, and the bearer token must never be sent to another host or in clear text.",
+      "evidence": "backend/app/basecamp/api_client.py, backend/app/basecamp/test_api_client.py"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Not yet run against live Basecamp: no OAuth app is registered, so all verification uses simulated API responses.",
+      "evidence": "backend/app/basecamp/demo_data.py"
+    },
+    {
+      "statement": "The access token expires after about two weeks and is not refreshed automatically during retrieval; re-running the setup script gets a new one.",
+      "evidence": "backend/app/basecamp/config.py, backend/scripts/basecamp_oauth_setup.py"
+    },
+    {
+      "statement": "Retrieval runs from a command-line script; the audit user id is supplied by the caller because the app has no user authentication yet.",
+      "evidence": "backend/scripts/retrieve_submissions.py"
+    },
+    {
+      "statement": "Attachment files are listed (name, type, URL) but not downloaded.",
+      "evidence": "backend/app/models.py (SubmissionAttachment)"
+    },
+    {
+      "statement": "Only the message board is read; files uploaded to a project's Docs & Files are not retrieved.",
+      "evidence": "backend/app/basecamp/submission_retrieval.py"
+    }
+  ],
+  "demonstrationEvidence": [
+    { "kind": "test", "ref": "backend/app/basecamp/test_submission_retrieval.py" },
+    { "kind": "test", "ref": "backend/app/basecamp/test_api_client.py" },
+    { "kind": "test", "ref": "backend/app/basecamp/test_submission_comment_source.py" },
+    { "kind": "test", "ref": "backend/app/basecamp/test_oauth.py" },
+    { "kind": "test", "ref": "backend/scripts/test_retrieve_submissions.py" }
+  ],
+  "measurementEvents": []
+}

@@ -90,3 +90,50 @@ class IntakeResult(BaseModel):
     outcome: IntakeOutcome
     comment_id: Optional[int] = None
     review_id: Optional[str] = None
+
+
+# --- Submission data retrieved from the Basecamp API (REQ-004, STORY-002) ---
+
+
+class SubmissionAttachment(BaseModel):
+    """A file embedded in Basecamp rich text as <bc-attachment>. @mentions use
+    the same tag and are NOT attachments; the extractor leaves them out."""
+    filename: Optional[str] = None
+    content_type: Optional[str] = None
+    url: Optional[str] = None
+    sgid: Optional[str] = None
+
+
+class SubmissionLink(BaseModel):
+    """An http(s) link from an <a href> in Basecamp rich text."""
+    url: str
+    text: str = ""
+
+
+class SubmissionComment(BaseModel):
+    comment_id: BasecampId
+    author_id: Optional[int] = None
+    created_at: datetime
+    content_html: str
+    attachments: List[SubmissionAttachment] = []
+    links: List[SubmissionLink] = []
+
+
+class Submission(BaseModel):
+    """One message on a project's message board, with everything a reviewer needs."""
+    message_id: BasecampId
+    title: str
+    author_id: Optional[int] = None
+    created_at: datetime
+    content_html: str
+    attachments: List[SubmissionAttachment] = []
+    links: List[SubmissionLink] = []
+    comments: List[SubmissionComment] = []
+
+
+class SubmissionDataset(BaseModel):
+    """The result of one retrieval. An empty project gives submissions == []."""
+    project_id: BasecampId
+    requested_by_user_id: str
+    retrieved_at: datetime
+    submissions: List[Submission] = []

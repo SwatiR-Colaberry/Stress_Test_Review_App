@@ -18,6 +18,9 @@ pyodbc==5.3.0
 # scripts (backend/scripts/). App code reads os.environ only.
 python-dotenv==1.2.3
 
+# HTTP client for the Basecamp API (REQ-004/REQ-012, backend/app/basecamp/api_client.py).
+# Also used by FastAPI's TestClient in tests.
+httpx==0.28.1
+
 # Test tooling.
 pytest==9.1.1
-httpx==0.28.1

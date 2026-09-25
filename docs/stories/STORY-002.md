@@ -28,8 +28,10 @@ the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [ ] Given a Basecamp project with submissions, when the system retrieves data, then it includes comments, attachments, and links.
-- [ ] Given a Basecamp project with no submissions, when the system attempts to retrieve data, then it returns an empty dataset.
-- [ ] Trust: The system logs all data retrieval actions with timestamps and user IDs.
+- [x] Given a Basecamp project with submissions, when the system retrieves data, then it includes comments, attachments, and links.
+- [x] Given a Basecamp project with no submissions, when the system attempts to retrieve data, then it returns an empty dataset.
+- [x] Trust: The system logs all data retrieval actions with timestamps and user IDs.
 
 When every box above is ticked, stop and show the demo.
+
+> Ticked 2026-09-25 (session CC-20260925-dpme): verified by tests against simulated Basecamp API responses and `retrieve_submissions.py --demo`. Not yet run on live Basecamp: no OAuth app is registered.

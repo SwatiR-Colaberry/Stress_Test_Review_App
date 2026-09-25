@@ -138,21 +138,47 @@
       "criteria": [
         {
           "text": "Given a Basecamp project with submissions, when the system retrieves data, then it includes comments, attachments, and links.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a Basecamp project with no submissions, when the system attempts to retrieve data, then it returns an empty dataset.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs all data retrieval actions with timestamps and user IDs.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "backend/app/models.py",
+        "backend/app/basecamp/content_extractor.py",
+        "backend/app/basecamp/config.py",
+        "backend/app/basecamp/api_client.py",
+        "backend/app/basecamp/submission_retrieval.py",
+        "backend/app/basecamp/submission_comment_source.py",
+        "backend/app/basecamp/demo_data.py",
+        "backend/app/basecamp/oauth.py",
+        "backend/scripts/retrieve_submissions.py",
+        "backend/scripts/basecamp_oauth_setup.py",
+        "backend/app/mcp/sample_data.py",
+        "backend/app/mcp/server.py",
+        "requirements.txt",
+        ".env.example",
+        "docs/ACCEPTANCE_CHECKLIST.md",
+        "docs/stories/STORY-002.md",
+        "PROGRESS.md"
+      ],
+      "tests_added": [
+        "backend/app/basecamp/test_content_extractor.py",
+        "backend/app/basecamp/test_config.py",
+        "backend/app/basecamp/test_api_client.py",
+        "backend/app/basecamp/test_submission_retrieval.py",
+        "backend/app/basecamp/test_oauth.py",
+        "backend/app/basecamp/test_submission_comment_source.py",
+        "backend/scripts/test_retrieve_submissions.py"
+      ],
+      "notes": "All 3 criteria verified by tests against simulated Basecamp API responses (test_submission_retrieval.py: AC1 comments/attachments/links, AC2 empty dataset, trust audit log with timestamp + requested_by_user_id on success, failure and unexpected errors) and by retrieve_submissions.py --demo. NOT yet run against live Basecamp: no OAuth app is registered, and Basecamp offers no API keys. Failure paths tested: 429 (Retry-After, capped), invalid token (401/403, no retry), network failure/5xx (3 attempts). Retrieved comments feed STORY-001 intake unchanged (test_submission_comment_source.py); SQL and API comment ids are the same Basecamp recording ids.",
+      "updated_at": "2026-09-25T15:17:31Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,
