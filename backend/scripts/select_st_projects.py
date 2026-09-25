@@ -1,5 +1,6 @@
 """One-off operational script: list the candidate projects for the ST0-ST5
-history extraction (st_history_selection.sql). Prints project ids and counts
+history extraction (st_history_selection.sql): up to 15 per Stress Test,
+most recent first. Prints project ids and counts
 only (no names, emails, step names or comment text). Read-only.
 
 Run from the repo root:  .venv/bin/python backend/scripts/select_st_projects.py
@@ -43,7 +44,12 @@ def main() -> int:
     print("  ".join(f"{c:>{w}}" for c, w in zip(columns, widths)))
     for row in rows:
         print("  ".join(f"{str(v):>{w}}" for v, w in zip(row, widths)))
-    print(f"\n{len(rows)} projects selected.")
+    per_test = {}
+    for row in rows:
+        per_test[row[0]] = per_test.get(row[0], 0) + 1
+    summary = ", ".join(f"ST{test}: {count}" for test, count in sorted(per_test.items()))
+    distinct = len({row[2] for row in rows})
+    print(f"\n{len(rows)} (project, Stress Test) pairs selected; {distinct} distinct projects. {summary}")
     return 0
 
 

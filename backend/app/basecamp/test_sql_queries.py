@@ -68,7 +68,7 @@ def test_message_ids_are_joined_as_numbers():
 
 
 def test_selection_query_returns_no_personal_data():
-    select_list = _sql("st_history_selection.sql").rsplit("SELECT TOP (15)", 1)[1].split("FROM", 1)[0]
+    select_list = _sql("st_history_selection.sql").rsplit("SELECT\n    StressTest,", 1)[1].split("FROM", 1)[0]
     for column in ["CreatorName", "CreatorEmail", "Comment ", "StepName", "BCP_Name", "Critiquer"]:
         assert column not in select_list, column
 
@@ -78,3 +78,14 @@ def test_queries_are_read_only():
         sql = _sql(path.name).upper()
         for verb in ["INSERT", "UPDATE ", "DELETE", "MERGE", "DROP", "ALTER", "TRUNCATE", "EXEC"]:
             assert verb not in sql, f"{path.name} contains {verb}"
+
+
+def test_selection_picks_15_per_stress_test_by_recency():
+    sql = _sql("st_history_selection.sql")
+    assert "PARTITION BY StressTest ORDER BY LastActivity DESC, BCP_ID DESC" in sql
+    assert "WHERE RecencyRank <= 15" in sql
+    assert "TOP (" not in sql  # a global TOP would cap the whole list, not each Stress Test
+
+
+def test_selection_takes_only_complete_reviews():
+    assert "WHERE LastFeedback > FirstCritique AND Approvals > 0" in _sql("st_history_selection.sql")

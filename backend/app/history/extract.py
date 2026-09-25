@@ -8,6 +8,8 @@ st_critiquer_assignments.sql and:
 - matches each comment to a critiquer: the latest assignment on its thread at
   or before the comment (AssignedCritiquer) and the latest overall
   (ThreadCritiquer);
+- in per-Stress-Test mode, keeps only the selected (project, Stress Test)
+  pairs, so a project picked for ST2 does not bring its other Stress Tests;
 - verifies the extract and summarises it in counts only (no personal data),
   which is safe to print and to store next to the extract.
 Files are written atomically (temp file, then rename), so a re-run overwrites
@@ -19,13 +21,15 @@ import tempfile
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from pydantic import BaseModel
 
 from app.basecamp.critique_marker_detector import detect_review_markers
 
 Row = Dict[str, Any]
+# (BCP_ID, Stress Test number as text, e.g. (2353, "0")), as st_history_selection.sql returns them.
+Pair = Tuple[int, str]
 
 
 class ExtractSummary(BaseModel):
@@ -46,10 +50,19 @@ class ExtractSummary(BaseModel):
     comments_with_thread_critiquer: int
     step_rows: int
     comments_without_step_row: int
+    # Per-Stress-Test mode only; empty when extracting whole projects.
+    pairs_requested: int = 0
+    pairs_missing: List[str] = []
+    projects_per_stress_test: Dict[str, int] = {}
 
     @property
     def ok(self) -> bool:
-        return self.duplicate_comment_ids == 0 and not self.projects_missing and self.comments_without_step_row == 0
+        return (
+            self.duplicate_comment_ids == 0
+            and not self.projects_missing
+            and self.comments_without_step_row == 0
+            and not self.pairs_missing
+        )
 
 
 def to_rows(columns: Sequence[str], rows: Iterable[Sequence[Any]]) -> List[Row]:
@@ -72,6 +85,21 @@ def annotate_markers(comments: List[Row]) -> None:
         row["MarkerAgrees"] = (markers[0] if markers else None) == row.get("MarkerType")
 
 
+def keep_selected_pairs(
+    comments: List[Row], steps: List[Row], assignments: List[Row], pairs: Set[Pair]
+) -> Tuple[List[Row], List[Row], List[Row]]:
+    """Drops every row outside the selected (project, Stress Test) pairs.
+    Run after annotate_markers (comments need StressTest). Critiquer
+    assignments are kept for the threads (MessageId) of the kept comments
+    and steps, since they carry no project or Stress Test of their own."""
+    kept_comments = [r for r in comments if (r["BCP_ID"], r["StressTest"]) in pairs]
+    kept_steps = [r for r in steps if (r["BCP_ID"], stress_test_of(r.get("StepName"))) in pairs]
+    threads = {int(r["MessageId"]) for r in kept_comments}
+    threads |= {int(r["MessageBoardID"]) for r in kept_steps if str(r.get("MessageBoardID") or "").strip().isdigit()}
+    kept_assignments = [a for a in assignments if int(a["MessageId"]) in threads]
+    return kept_comments, kept_steps, kept_assignments
+
+
 def attach_critiquers(comments: List[Row], assignments: List[Row]) -> None:
     by_thread: Dict[int, List[Row]] = defaultdict(list)
     for a in assignments:
@@ -87,7 +115,11 @@ def attach_critiquers(comments: List[Row], assignments: List[Row]) -> None:
 
 
 def summarise(
-    comments: List[Row], assignments: List[Row], steps: List[Row], requested_bcp_ids: Sequence[int]
+    comments: List[Row],
+    assignments: List[Row],
+    steps: List[Row],
+    requested_bcp_ids: Sequence[int],
+    pairs: Optional[Set[Pair]] = None,
 ) -> ExtractSummary:
     ids = Counter(row["CommentId"] for row in comments)
     step_ids = {row["ProjectDetailID"] for row in steps}
@@ -113,7 +145,19 @@ def summarise(
         comments_with_thread_critiquer=sum(1 for row in comments if row["ThreadCritiquer"]),
         step_rows=len(steps),
         comments_without_step_row=sum(1 for row in comments if row.get("ProjectDetailID") not in step_ids),
+        **_pair_coverage(comments, pairs),
     )
+
+
+def _pair_coverage(comments: List[Row], pairs: Optional[Set[Pair]]) -> Dict[str, Any]:
+    if not pairs:
+        return {}
+    found = {(row["BCP_ID"], row["StressTest"]) for row in comments}
+    return {
+        "pairs_requested": len(pairs),
+        "pairs_missing": [f"{bcp_id}/ST{test}" for bcp_id, test in sorted(pairs - found)],
+        "projects_per_stress_test": dict(sorted(Counter(test for _bcp_id, test in found).items())),
+    }
 
 
 def write_csv(path: Path, rows: List[Row], columns: Sequence[str]) -> None:

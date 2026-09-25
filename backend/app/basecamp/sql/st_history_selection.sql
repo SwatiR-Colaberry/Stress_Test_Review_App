@@ -1,14 +1,19 @@
--- Picks the 15 student projects (BCP_ID) with the richest ST0-ST5 review
--- history, for rule-building. Returns ids and counts only: no names, emails,
--- step names or comment text. Read-only.
+-- Picks, SEPARATELY FOR EACH Stress Test (ST0-ST5), the 15 student projects
+-- (BCP_ID) with the most recent review activity in that Stress Test, for
+-- rule-building and historical retrieval. Up to 90 rows (6 x 15); a project
+-- can appear under several Stress Tests. Returns ids, dates and counts only:
+-- no names, emails, step names or comment text. Read-only.
 -- See directives/ST-historical-comment-extraction.md ("Selecting projects").
 --
 -- A "review cycle" is one Stress Test thread in which a ##Critique## comment
--- is later followed by a ##FeedbackGiven## comment. Ranking:
---   1. number of different Stress Tests (0-5) with at least one cycle,
---      so the selection spreads across ST0-ST5;
---   2. number of those threads that also reached ##Approved##;
---   3. most recent activity.
+-- is later followed by a ##FeedbackGiven## comment. Only COMPLETE reviews are
+-- eligible: threads with a cycle that also reached ##Approved## (user
+-- decision, 2026-09-25: in-progress reviews are not final examples for
+-- rule-building or retrieval). Within each Stress Test
+-- they are ranked by the latest comment in that Stress Test's cycle threads
+-- (most recent first); ties broken by the higher BCP_ID so the order is
+-- deterministic. Ids are not meaningful to the user, so recency is the rule
+-- (user decision, 2026-09-25).
 -- Marker matching here uses the same four spacing forms as the history
 -- query; the extract is re-checked with the Python normalizer.
 -- Comments are de-duplicated to one row per CommentId, exactly as in
@@ -74,28 +79,39 @@ threads AS (
     GROUP BY BCP_ID, StressTest, BoardId
 ),
 cycle_threads AS (
-    SELECT * FROM threads WHERE LastFeedback > FirstCritique
+    SELECT * FROM threads WHERE LastFeedback > FirstCritique AND Approvals > 0
 ),
-project_tests AS (
-    SELECT DISTINCT BCP_ID, StressTest FROM cycle_threads
+per_test AS (
+    SELECT
+        StressTest,
+        BCP_ID,
+        COUNT(*) AS CycleThreads,
+        SUM(CASE WHEN Approvals > 0 THEN 1 ELSE 0 END) AS ApprovedThreads,
+        SUM(Comments) AS Comments,
+        SUM(Critiques) AS Critiques,
+        SUM(Feedbacks) AS Feedbacks,
+        SUM(Approvals) AS Approvals,
+        MAX(LastActivity) AS LastActivity
+    FROM cycle_threads
+    GROUP BY StressTest, BCP_ID
 ),
-tests_list AS (
-    SELECT BCP_ID, STRING_AGG(StressTest, ',') WITHIN GROUP (ORDER BY StressTest) AS StressTests
-    FROM project_tests
-    GROUP BY BCP_ID
+ranked AS (
+    SELECT
+        per_test.*,
+        ROW_NUMBER() OVER (PARTITION BY StressTest ORDER BY LastActivity DESC, BCP_ID DESC) AS RecencyRank
+    FROM per_test
 )
-SELECT TOP (15)
-    c.BCP_ID,
-    t.StressTests,
-    COUNT(DISTINCT c.StressTest) AS StressTestsWithCycle,
-    COUNT(*) AS CycleThreads,
-    SUM(CASE WHEN c.Approvals > 0 THEN 1 ELSE 0 END) AS ApprovedThreads,
-    SUM(c.Comments) AS Comments,
-    SUM(c.Critiques) AS Critiques,
-    SUM(c.Feedbacks) AS Feedbacks,
-    SUM(c.Approvals) AS Approvals,
-    CAST(MAX(c.LastActivity) AS date) AS LastActivity
-FROM cycle_threads c
-INNER JOIN tests_list t ON t.BCP_ID = c.BCP_ID
-GROUP BY c.BCP_ID, t.StressTests
-ORDER BY StressTestsWithCycle DESC, ApprovedThreads DESC, MAX(c.LastActivity) DESC;
+SELECT
+    StressTest,
+    RecencyRank,
+    BCP_ID,
+    CycleThreads,
+    ApprovedThreads,
+    Comments,
+    Critiques,
+    Feedbacks,
+    Approvals,
+    CAST(LastActivity AS date) AS LastActivity
+FROM ranked
+WHERE RecencyRank <= 15
+ORDER BY StressTest, RecencyRank;

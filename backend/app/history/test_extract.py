@@ -3,7 +3,15 @@ from datetime import datetime
 
 import pytest
 
-from app.history.extract import annotate_markers, attach_critiquers, stress_test_of, summarise, to_rows, write_csv
+from app.history.extract import (
+    annotate_markers,
+    attach_critiquers,
+    keep_selected_pairs,
+    stress_test_of,
+    summarise,
+    to_rows,
+    write_csv,
+)
 
 
 def _dt(day):
@@ -118,3 +126,49 @@ def test_a_clean_extract_passes_verification():
     annotate_markers(rows)
     attach_critiquers(rows, [])
     assert summarise(rows, [], _STEPS, [2148]).ok
+
+
+# --- Per-Stress-Test selection (15 most recent approved projects per ST) ---
+
+def _step(bcp, test, board, detail_id):
+    return {"BCP_ID": bcp, "StepName": f"Stress Test {test} - Step", "MessageBoardID": str(board),
+            "ProjectDetailID": detail_id}
+
+
+def test_only_the_selected_stress_tests_of_each_project_are_kept():
+    # Project 2353 was selected for ST0 only; its ST2 thread must not come along.
+    comments = [
+        _comment(1, "##Critique##", "Critique", message_id="100", bcp=2353, step="Stress Test 0 - A", detail_id=10),
+        _comment(2, "##Critique##", "Critique", message_id="200", bcp=2353, step="Stress Test 2 - B", detail_id=20),
+        _comment(3, "##Approved##", "Approved", message_id="300", bcp=2075, step="Stress Test 2 - C", detail_id=30),
+    ]
+    steps = [_step(2353, 0, 100, 10), _step(2353, 2, 200, 20), _step(2075, 2, 300, 30)]
+    assignments = [_assignment(1, "100", "R1", 1), _assignment(2, "200", "R2", 1), _assignment(3, "300", "R3", 1)]
+    annotate_markers(comments)
+    pairs = {(2353, "0"), (2075, "2")}
+    kept_comments, kept_steps, kept_assignments = keep_selected_pairs(comments, steps, assignments, pairs)
+    assert [c["CommentId"] for c in kept_comments] == [1, 3]
+    assert [s["ProjectDetailID"] for s in kept_steps] == [10, 30]
+    assert [a["Critiquer"] for a in kept_assignments] == ["R1", "R3"]
+    attach_critiquers(kept_comments, kept_assignments)
+    summary = summarise(kept_comments, kept_assignments, kept_steps, [2075, 2353], pairs)
+    assert summary.ok
+    assert (summary.pairs_requested, summary.pairs_missing) == (2, [])
+    assert summary.projects_per_stress_test == {"0": 1, "2": 1}
+
+
+def test_a_selected_pair_with_no_comments_fails_verification():
+    comments = [_comment(1, "##Critique##", "Critique", bcp=2148, step="Stress Test 2 - X")]
+    annotate_markers(comments)
+    attach_critiquers(comments, [])
+    summary = summarise(comments, [], _STEPS, [2148], pairs={(2148, "2"), (2148, "4")})
+    assert summary.pairs_missing == ["2148/ST4"]
+    assert not summary.ok
+
+
+def test_whole_project_mode_reports_no_pair_fields():
+    comments = [_comment(1, "##Critique##", "Critique")]
+    annotate_markers(comments)
+    attach_critiquers(comments, [])
+    summary = summarise(comments, [], _STEPS, [2148])
+    assert (summary.pairs_requested, summary.pairs_missing, summary.projects_per_stress_test) == (0, [], {})
