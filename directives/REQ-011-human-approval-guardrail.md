@@ -47,7 +47,7 @@ Every call to `POST /reviews/finalize-check` is recorded before it answers, in t
 | Audit trail cannot be written | 503 | none — the request is refused, so no approval passes without a record |
 | Malformed request, or an id over 128 characters | 422 | none — rejected before the gate runs |
 
-Critique intake (`backend/app/review_queue/intake.py`) records its outcomes in the same trail. The trail is a file, not a SQL Server table, because existing SQL Server tables and procedures must not change (user rule, 2026-09-25).
+Critique intake (`backend/app/review_queue/intake.py`) records its outcomes in the same trail, and Basecamp submission retrieval (`backend/app/basecamp/submission_retrieval.py`) records `retrieval_started` / `retrieval_completed` / `retrieval_failed` under the requesting user. The trail is a file, not a SQL Server table, because existing SQL Server tables and procedures must not change (user rule, 2026-09-25).
 
 **Verify:** `pytest backend/app/test_finalize_audit.py backend/app/audit` passes; for a live check, run the app (`uvicorn app.main:app --app-dir backend`), POST a review whose `reviewer_decision.reviewer_id` is `claude-ai`, and confirm a 409 plus a `finalize_blocked` / `AI_CANNOT_APPROVE` line at the end of `data/audit/audit_trail.jsonl`.
 

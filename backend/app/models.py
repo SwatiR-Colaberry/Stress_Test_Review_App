@@ -155,6 +155,9 @@ AuditAction = Literal[
     "comment_rejected_malformed",
     "finalize_allowed",
     "finalize_blocked",
+    "retrieval_started",
+    "retrieval_completed",
+    "retrieval_failed",
 ]
 
 
@@ -173,5 +176,6 @@ class AuditEvent(BaseModel):
     correlation_id: str = Field(min_length=1, max_length=MAX_ID_LENGTH)
     comment_id: Optional[int] = None
     message_id: Optional[int] = None
+    project_id: Optional[int] = None  # Basecamp project, for retrieval events
     review_id: Optional[str] = Field(default=None, max_length=MAX_ID_LENGTH)
     reason_code: Optional[str] = Field(default=None, max_length=64)

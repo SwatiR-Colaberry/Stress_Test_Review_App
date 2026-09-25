@@ -499,7 +499,7 @@
         {
           "text": "Given a submission is processed, when an action is taken, then it is logged in the audit trail.",
           "passed": true,
-          "evidence": "backend/app/audit/trail.py (append-only JSONL audit trail, fsync per event, AuditWriteError on failure) wired into backend/app/review_queue/intake.py (review_created / review_already_queued / comment_no_marker / comment_rejected_malformed) and backend/app/routers/reviews.py (finalize_allowed / finalize_blocked); tests: backend/app/audit/test_trail.py, backend/app/review_queue/test_intake.py, backend/app/test_intake_routes.py, backend/app/test_finalize_audit.py"
+          "evidence": "backend/app/audit/trail.py (append-only JSONL audit trail, fsync per event, AuditWriteError on failure) wired into backend/app/review_queue/intake.py (review_created / review_already_queued / comment_no_marker / comment_rejected_malformed) backend/app/routers/reviews.py (finalize_allowed / finalize_blocked) and backend/app/basecamp/submission_retrieval.py (retrieval_started / _completed / _failed); tests: backend/app/audit/test_trail.py, backend/app/review_queue/test_intake.py, backend/app/test_intake_routes.py, backend/app/test_finalize_audit.py, backend/app/basecamp/test_submission_retrieval.py"
         },
         {
           "text": "Given a submission is processed without human review, when the system attempts to auto-approve, then it blocks the action.",
@@ -527,15 +527,19 @@
         "docs/ACCEPTANCE_CHECKLIST.md",
         "directives/REQ-011-human-approval-guardrail.md",
         "command-center/tabs/data-model.js",
-        ".colaberry/enrichment/STORY-011.json"
+        ".colaberry/enrichment/STORY-011.json",
+        "backend/app/basecamp/submission_retrieval.py",
+        "backend/scripts/retrieve_submissions.py"
       ],
       "tests_added": [
         "backend/app/audit/test_trail.py",
         "backend/app/test_finalize_audit.py",
         "backend/app/review_queue/test_intake.py",
-        "backend/app/test_intake_routes.py"
+        "backend/app/test_intake_routes.py",
+        "backend/app/basecamp/test_submission_retrieval.py",
+        "backend/scripts/test_retrieve_submissions.py"
       ],
-      "notes": "All 3 criteria pass. Audit trail is an append-only JSON Lines file (data/audit/audit_trail.jsonl, git-ignored) rather than a SQL Server table: existing SQL Server tables and procedures must not change (user rule, 2026-09-25). Every intake outcome and every finalize-check attempt (allowed or blocked) writes one event; if the write fails the action is refused (503 over HTTP). Limitation: if the audit write fails right after a review item is created, the item stays and a re-run records it as review_already_queued (no transaction spans queue and audit without a database). Earlier Node-era evidence replaced with the Python files.",
+      "notes": "All 3 criteria pass. Audit trail is an append-only JSON Lines file (data/audit/audit_trail.jsonl, git-ignored) rather than a SQL Server table: existing SQL Server tables and procedures must not change (user rule, 2026-09-25). Every intake outcome, every finalize-check attempt (allowed or blocked) and every Basecamp retrieval (started, completed or failed) writes an event; if the write fails the action is refused (503 over HTTP). Limitation: if the audit write fails right after a review item is created, the item stays and a re-run records it as review_already_queued (no transaction spans queue and audit without a database). Earlier Node-era evidence replaced with the Python files.",
       "updated_at": "2026-09-25T00:00:00Z",
       "verification": {
         "state": "submitted",

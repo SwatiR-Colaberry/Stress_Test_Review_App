@@ -15,7 +15,15 @@ A project whose message board is disabled or empty returns an empty dataset.
 Audit (trust criterion): every retrieval logs submission_retrieval_started and
 then _completed or _failed (including on unexpected errors), each with a timestamp, the requesting user id, the
 project id and a correlation id. On failure the error is logged and re-raised;
-no partial dataset is ever returned. Retries and timeouts live in the client.
+no partial dataset is ever returned.
+
+Audit trail (STORY-011): the same three moments are also recorded in the
+append-only audit trail (retrieval_started / _completed / _failed, actor = the
+requesting user). "started" is recorded before any Basecamp call and
+"completed" before the dataset is returned; if either cannot be written,
+AuditWriteError is raised and no data is returned (retrieval is read-only, so
+a re-run is safe). If "failed" cannot be written, the original error is still
+raised so its cause is not hidden, and audit_write_failed is logged. Retries and timeouts live in the client.
 Read-only: running it twice changes nothing in Basecamp.
 """
 import json
@@ -27,9 +35,10 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from app.audit.trail import AuditTrail, AuditWriteError
 from app.basecamp.api_client import BasecampClient, BasecampError, BasecampResponseError
 from app.basecamp.content_extractor import extract_attachments_and_links
-from app.models import BasecampId, Submission, SubmissionComment, SubmissionDataset
+from app.models import MAX_ID_LENGTH, AuditEvent, BasecampId, Submission, SubmissionComment, SubmissionDataset
 
 logger = logging.getLogger("stress_test_review.submission_retrieval")
 
@@ -38,30 +47,38 @@ def retrieve_project_submissions(
     client: BasecampClient,
     project_id: int,
     requested_by_user_id: str,
+    *,
+    audit: AuditTrail,
     correlation_id: Optional[str] = None,
 ) -> SubmissionDataset:
     if not isinstance(project_id, int) or isinstance(project_id, bool) or project_id <= 0:
         raise ValueError("project_id must be a positive integer")
     if not isinstance(requested_by_user_id, str) or not requested_by_user_id.strip():
         raise ValueError("requested_by_user_id is required for the audit log")
+    if len(requested_by_user_id) > MAX_ID_LENGTH:
+        raise ValueError(f"requested_by_user_id is longer than {MAX_ID_LENGTH} characters")
     correlation_id = correlation_id or str(uuid.uuid4())
-    audit = {"project_id": project_id, "requested_by_user_id": requested_by_user_id,
-             "correlation_id": correlation_id}
+    context = {"project_id": project_id, "requested_by_user_id": requested_by_user_id,
+               "correlation_id": correlation_id}
     started = time.monotonic()
-    _log(logging.INFO, "submission_retrieval_started", **audit)
+    _record(audit, "retrieval_started", "success", context)
+    _log(logging.INFO, "submission_retrieval_started", **context)
     try:
         submissions = _fetch_submissions(client, project_id)
     except BasecampError as exc:
-        _log(logging.ERROR, "submission_retrieval_failed", **audit, outcome="failure",
+        _log(logging.ERROR, "submission_retrieval_failed", **context, outcome="failure",
              error_class=exc.error_class, status=exc.status_code, duration_ms=_elapsed_ms(started))
+        _record_failure(audit, exc.error_class, context)
         raise
     except Exception as exc:
         # Not an expected Basecamp failure (a bug, or an HTTP-layer error the
         # client does not classify). Still close the audit trail, then re-raise.
-        _log(logging.ERROR, "submission_retrieval_failed", **audit, outcome="failure",
+        _log(logging.ERROR, "submission_retrieval_failed", **context, outcome="failure",
              error_class="UnexpectedError", cause=type(exc).__name__, duration_ms=_elapsed_ms(started))
+        _record_failure(audit, "UnexpectedError", context)
         raise
-    _log(logging.INFO, "submission_retrieval_completed", **audit, outcome="success",
+    _record(audit, "retrieval_completed", "success", context)
+    _log(logging.INFO, "submission_retrieval_completed", **context, outcome="success",
          submission_count=len(submissions),
          comment_count=sum(len(s.comments) for s in submissions),
          attachment_count=sum(len(s.attachments) + sum(len(c.attachments) for c in s.comments) for s in submissions),
@@ -136,6 +153,35 @@ def _to_comment(raw: _RawRecording) -> SubmissionComment:
     attachments, links = extract_attachments_and_links(raw.content)
     return SubmissionComment(comment_id=raw.id, author_id=raw.author_id, created_at=raw.created_at,
                              content_html=raw.content or "", attachments=attachments, links=links)
+
+
+def _record(audit: AuditTrail, action: str, outcome: str, context: Dict[str, Any],
+            reason_code: Optional[str] = None) -> None:
+    event = AuditEvent(
+        event_id=str(uuid.uuid4()),
+        recorded_at=datetime.now(timezone.utc),
+        action=action,
+        actor_id=context["requested_by_user_id"],
+        outcome=outcome,
+        correlation_id=context["correlation_id"],
+        project_id=context["project_id"],
+        reason_code=reason_code,
+    )
+    try:
+        audit.record(event)
+    except AuditWriteError:
+        _log(logging.ERROR, "audit_write_failed", **context, audit_action=action, outcome="failure",
+             error_class=AuditWriteError.error_class)
+        raise
+
+
+def _record_failure(audit: AuditTrail, error_class: str, context: Dict[str, Any]) -> None:
+    """Records retrieval_failed. If that write fails too, the caller's original
+    error is what surfaces (audit_write_failed is already logged by _record)."""
+    try:
+        _record(audit, "retrieval_failed", "failure", context, reason_code=error_class)
+    except AuditWriteError:
+        pass  # logged in _record; the Basecamp error being re-raised is the real cause
 
 
 def _elapsed_ms(started: float) -> int:

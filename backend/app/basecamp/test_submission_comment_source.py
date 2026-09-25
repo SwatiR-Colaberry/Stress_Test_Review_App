@@ -11,7 +11,7 @@ from app.review_queue.store import InMemoryReviewQueueStore
 
 def retrieve(project_id):
     with BasecampClient(demo_config(), transport=demo_transport()) as client:
-        return retrieve_project_submissions(client, project_id, "reviewer-1")
+        return retrieve_project_submissions(client, project_id, "reviewer-1", audit=InMemoryAuditTrail())
 
 
 def test_retrieved_comments_map_to_intake_rows():

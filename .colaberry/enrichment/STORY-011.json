@@ -3,13 +3,13 @@
   "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
   "storyId": "STORY-011",
   "projectTruthBaseRevision": 1,
-  "observedAt": "2026-09-25T16:30:00Z",
+  "observedAt": "2026-09-25T17:00:00Z",
   "sourceCommitSha": null,
   "factProposals": [
     {
       "dimension": "outputs",
-      "value": "Every critique-intake outcome (review_created, review_already_queued, comment_no_marker, comment_rejected_malformed) and every finalize check (finalize_allowed, finalize_blocked with its reason code) is written as one append-only AuditEvent carrying time, actor, outcome, correlation id and the comment/message/review ids.",
-      "evidence": "backend/app/review_queue/test_intake.py, backend/app/test_finalize_audit.py"
+      "value": "Every critique-intake outcome (review_created, review_already_queued, comment_no_marker, comment_rejected_malformed) every finalize check (finalize_allowed, finalize_blocked with its reason code) and every Basecamp submission retrieval (retrieval_started, then retrieval_completed or retrieval_failed with its error class, under the requesting user and project id) is written as one append-only AuditEvent carrying time, actor, outcome, correlation id and the comment/message/review ids.",
+      "evidence": "backend/app/review_queue/test_intake.py, backend/app/test_finalize_audit.py, backend/app/basecamp/test_submission_retrieval.py"
     },
     {
       "dimension": "approval_points",
@@ -42,16 +42,17 @@
       "statement": "The audit trail is a required argument of critique intake, not optional.",
       "rationale": "makes 'processed without logging' impossible for any caller rather than a convention",
       "evidence": "backend/app/review_queue/intake.py"
+    },
+    {
+      "statement": "A Basecamp retrieval records retrieval_started before any API call and retrieval_completed before returning data; if either cannot be written no data is returned, while a failure to record retrieval_failed never hides the original Basecamp error.",
+      "rationale": "retrieval is read-only and safe to re-run, so refusing is cheap; the Basecamp error is the real cause and must stay visible",
+      "evidence": "backend/app/basecamp/submission_retrieval.py, backend/app/basecamp/test_submission_retrieval.py"
     }
   ],
   "limitations": [
     {
       "statement": "The review queue and the audit trail are not written in one transaction: if the audit write fails right after a review item is created, the item stays and a re-run records it as review_already_queued rather than review_created.",
       "evidence": "backend/app/review_queue/test_intake.py (test_rerunning_after_an_audit_failure_records_the_item_without_duplicating_it)"
-    },
-    {
-      "statement": "Submission retrieval from Basecamp (STORY-002) still records its actions only as structured stdout log lines, not in the audit trail.",
-      "evidence": "backend/app/basecamp/submission_retrieval.py"
     },
     {
       "statement": "The audit file's write lock is per process; several server worker processes rely on the operating system's append mode to keep each line intact.",
@@ -82,6 +83,10 @@
     {
       "kind": "test",
       "ref": "backend/scripts/test_scan_for_credentials.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/basecamp/test_submission_retrieval.py"
     }
   ],
   "measurementEvents": []

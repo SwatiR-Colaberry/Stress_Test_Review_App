@@ -49,3 +49,25 @@ def test_live_mode_without_config_reports_missing_variables(monkeypatch, capsys)
         monkeypatch.delenv(var, raising=False)
     assert retrieve_submissions.main(["--project-id", "100", "--user-id", "r1"]) == 1
     assert "BASECAMP_ACCESS_TOKEN" in capsys.readouterr().out
+
+
+def test_demo_retrieval_is_recorded_in_the_audit_trail():
+    from app.audit.dependencies import get_audit_trail
+
+    retrieve_submissions.main(["--demo", "--project-id", str(DEMO_PROJECT_WITH_SUBMISSIONS), "--user-id", "r1"])
+    assert [e.action for e in get_audit_trail().read_all()] == ["retrieval_started", "retrieval_completed"]
+
+
+def test_audit_trail_failure_exits_5_and_saves_nothing(tmp_path, monkeypatch, capsys):
+    from app.audit import dependencies
+    from app.audit.trail import AuditWriteError, InMemoryAuditTrail
+
+    class _Broken(InMemoryAuditTrail):
+        def record(self, event):
+            raise AuditWriteError("disk full")
+
+    monkeypatch.setattr(dependencies, "_trail", _Broken())
+    argv = ["--demo", "--project-id", str(DEMO_PROJECT_WITH_SUBMISSIONS), "--user-id", "r1", "--save"]
+    assert retrieve_submissions.main(argv, output_dir=tmp_path) == 5
+    assert "AUDIT TRAIL UNAVAILABLE" in capsys.readouterr().out
+    assert list(tmp_path.iterdir()) == []

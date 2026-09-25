@@ -10,7 +10,8 @@ Run from the repo root:
   .venv/bin/python backend/scripts/retrieve_submissions.py --demo --project-id 100 --user-id you   # fake Basecamp
 Live mode needs BASECAMP_* in .env (see .env.example).
 Exit codes: 0 ok, 1 configuration/input problem, 2 token rejected,
-3 Basecamp unavailable or rate limited, 4 unexpected Basecamp response.
+3 Basecamp unavailable or rate limited, 4 unexpected Basecamp response,
+5 audit trail could not be written (nothing returned; safe to re-run).
 """
 import argparse
 import os
@@ -23,6 +24,8 @@ sys.path.insert(0, str(REPO_ROOT / "backend"))
 
 from dotenv import load_dotenv  # noqa: E402
 
+from app.audit.dependencies import get_audit_trail  # noqa: E402
+from app.audit.trail import AuditWriteError  # noqa: E402
 from app.basecamp.api_client import (  # noqa: E402
     BasecampAuthError, BasecampClient, BasecampRateLimited, BasecampResponseError, BasecampUnavailable,
 )
@@ -57,7 +60,7 @@ def main(argv: Optional[List[str]] = None, output_dir: Path = OUTPUT_DIR) -> int
 
     try:
         with BasecampClient(config, transport=transport) as client:
-            dataset = retrieve_project_submissions(client, args.project_id, args.user_id)
+            dataset = retrieve_project_submissions(client, args.project_id, args.user_id, audit=get_audit_trail())
     except ValueError as exc:
         print(f"INPUT ERROR: {exc}")
         return 1
@@ -68,6 +71,10 @@ def main(argv: Optional[List[str]] = None, output_dir: Path = OUTPUT_DIR) -> int
     except (BasecampUnavailable, BasecampRateLimited) as exc:
         print(f"BASECAMP UNAVAILABLE: {exc}. Nothing was saved; safe to re-run.")
         return 3
+    except AuditWriteError:
+        print("AUDIT TRAIL UNAVAILABLE: the retrieval could not be recorded, so no data was returned or saved. "
+              "Check data/audit/ (or AUDIT_TRAIL_PATH) is writable, then re-run.")
+        return 5
     except BasecampResponseError as exc:
         if exc.status_code == 404:
             print(f"NOT FOUND: project {args.project_id} does not exist or this Basecamp login cannot see it.")
