@@ -1,6 +1,6 @@
 # Stress Test Review Application — Stories
 
-12 stories across 5 releases, walking-skeleton first:
+13 stories across 5 releases, walking-skeleton first:
 the earliest release proves the thinnest end-to-end path including the trust
 spine, and later releases stack features on top of something already working.
 
@@ -29,6 +29,7 @@ system rather than a part of it.
 
 - **[STORY-003](stories/STORY-003.md)** — Load ST0 Rule Module _(waits on STORY-001)_
 - **[STORY-004](stories/STORY-004.md)** — Evaluate Submission with Claude _(waits on STORY-003)_
+- **[STORY-013](stories/STORY-013.md)** — Historical Retrieval with a Vector Database
 
 ## r2 · Human Review Workflow — weeks 5–6
 

@@ -110,6 +110,12 @@ The system must detect a '##Critique##' marker in Basecamp comments, normalizing
 
 Fulfilled by: STORY-001
 
+### REQ-019 — Functional · should
+
+Historical Retrieval with a Vector Database
+
+Fulfilled by: STORY-013
+
 ## Review Completion
 
 ### REQ-007 — Functional · must

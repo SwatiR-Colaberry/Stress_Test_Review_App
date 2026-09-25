@@ -134,7 +134,7 @@ None of these are connected on day one. The indicator must show that honestly ra
 Source: `plan.releases[]` for the bars — each carries `starts_on`, `ends_on`, `story_ids` and `is_demo_target`. `plan.schedule` has `build_start`, `build_end`, `demo_day` and `demo_release_key`. Per story, `plan.stories[].due_on` is the current date and `due_baseline_on` is the date it was FIRST given: show both, because the gap between them is slippage and a chart that quietly moves the target hides it. Status per story comes from the progress file, `stories[].verification.state`, which is one of `not_started`, `in_progress`, `submitted`, `verified`.
 A Gantt view of your releases, and under it every task with its due date. Tasks are clickable and open their own detail. Your releases:
 - **r0** Initial Integration and Detection — 3 stories
-- **r1** Rule Application and AI Evaluation — 2 stories
+- **r1** Rule Application and AI Evaluation — 3 stories
 - **r2** Human Review Workflow — 3 stories
 - **r3** Audit and History — 2 stories
 - **r4** Error Handling and Extensibility — 2 stories
@@ -143,7 +143,7 @@ A Gantt view of your releases, and under it every task with its due date. Tasks 
 Source: `plan.agents[]` — one card each, with `name`, `purpose`, `trigger_type`, `trigger`, `inputs`, `outputs`, `autonomy_level`, `approval_gates`, `escalation_rules`, `skills` and `owns` (the story ids it owns, which you join back to the plan and the progress file). `plan.derived.counts.agents_by_autonomy` gives you the roster breakdown without counting them yourself.
 What is NOT there: whether any agent has ever run. There is no run history, no last-run time and no success rate in these files, because none of that exists until you build the agent and it starts running. Show the design, and show "no runs recorded" — never a zero success rate, which reads as an agent that ran and failed.
 Your plan does not carry a scoped agent roster yet, so build this tab from who owns each story:
-- **System** — owns STORY-001, STORY-003, STORY-004, STORY-006, STORY-007, STORY-008, STORY-009, STORY-010
+- **System** — owns STORY-001, STORY-003, STORY-004, STORY-006, STORY-007, STORY-008, STORY-009, STORY-010, STORY-013
 - **system** — owns STORY-002, STORY-011
 - **Human Reviewer** — owns STORY-005
 - **reviewer** — owns STORY-012
@@ -198,6 +198,7 @@ Your full set, so the Command Center can show all of it:
 - **REQ-016** (SAFE, must) — The system must ensure that no credentials are stored in source code or shared documents.
 - **REQ-017** (NFR, should) — The system must support adding new Stress Test modules (ST1–ST5) as configuration without rebuilding the core application.
 - **REQ-018** (FUNC, must) — The system must provide a web UI for reviewers to manage the Review Queue and perform reviews.
+- **REQ-019** (FUNC, should) — Historical Retrieval with a Vector Database
 
 ## Your stories, in build order
 **r0 · Initial Integration and Detection**
@@ -207,6 +208,7 @@ Your full set, so the Command Center can show all of it:
 **r1 · Rule Application and AI Evaluation**
 - STORY-003 — Load ST0 Rule Module
 - STORY-004 — Evaluate Submission with Claude
+- STORY-013 — Historical Retrieval with a Vector Database
 **r2 · Human Review Workflow**
 - STORY-005 — Human Review of AI Findings
 - STORY-006 — Post Final Feedback to Basecamp

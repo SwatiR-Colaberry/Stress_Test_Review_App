@@ -247,6 +247,16 @@
       "fulfilled_by": [
         "STORY-012"
       ]
+    },
+    {
+      "id": "REQ-019",
+      "kind": "FUNC",
+      "cluster": "Marker Detection",
+      "priority": "should",
+      "statement": "Historical Retrieval with a Vector Database",
+      "fulfilled_by": [
+        "STORY-013"
+      ]
     }
   ],
   "releases": [
@@ -262,8 +272,8 @@
         "STORY-002",
         "STORY-011"
       ],
-      "starts_on": "2026-09-18",
-      "ends_on": "2026-09-20",
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-01",
       "is_demo_target": true
     },
     {
@@ -275,10 +285,11 @@
       "week_start": 3,
       "story_ids": [
         "STORY-003",
-        "STORY-004"
+        "STORY-004",
+        "STORY-013"
       ],
-      "starts_on": "2026-09-21",
-      "ends_on": "2026-09-23",
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-01",
       "is_demo_target": false
     },
     {
@@ -293,8 +304,8 @@
         "STORY-006",
         "STORY-012"
       ],
-      "starts_on": "2026-09-24",
-      "ends_on": "2026-09-25",
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-01",
       "is_demo_target": false
     },
     {
@@ -308,8 +319,8 @@
         "STORY-007",
         "STORY-008"
       ],
-      "starts_on": "2026-09-27",
-      "ends_on": "2026-09-28",
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-01",
       "is_demo_target": false
     },
     {
@@ -323,7 +334,7 @@
         "STORY-009",
         "STORY-010"
       ],
-      "starts_on": "2026-09-30",
+      "starts_on": "2026-10-01",
       "ends_on": "2026-10-01",
       "is_demo_target": false
     }
@@ -351,7 +362,7 @@
         "Comment data is malformed"
       ],
       "task_guidance": "Implement marker detection logic reading Basecamp_MessageBoards_MessageComments directly.",
-      "due_on": "2026-09-18",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-18"
     },
     {
@@ -376,7 +387,7 @@
         "Network failure during data retrieval"
       ],
       "task_guidance": "Use Basecamp API to fetch project data including comments, attachments, and links. Ensure OAuth tokens are securely managed.",
-      "due_on": "2026-09-19",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-19"
     },
     {
@@ -402,7 +413,7 @@
         "Rule loading timeout"
       ],
       "task_guidance": "Implement rule loading logic for ST0, ensuring correct module is loaded based on submission data.",
-      "due_on": "2026-09-21",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-21"
     },
     {
@@ -428,7 +439,7 @@
         "Evaluation exceeds time limit"
       ],
       "task_guidance": "Integrate Claude via Anthropic API, ensuring structured findings are returned for ST0 evaluations.",
-      "due_on": "2026-09-23",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-23"
     },
     {
@@ -454,7 +465,7 @@
         "Network issues during feedback posting"
       ],
       "task_guidance": "Develop a web UI for reviewers to manage and edit AI findings before final approval.",
-      "due_on": "2026-09-24",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-24"
     },
     {
@@ -480,7 +491,7 @@
         "Posting exceeds time limit"
       ],
       "task_guidance": "Implement feedback posting logic using Basecamp's REST API, ensuring retries on failure.",
-      "due_on": "2026-09-24",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-24"
     },
     {
@@ -506,7 +517,7 @@
         "Database connection issues"
       ],
       "task_guidance": "Develop archival logic to store AI drafts and human edits separately in the database.",
-      "due_on": "2026-09-27",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-27"
     },
     {
@@ -532,7 +543,7 @@
         "Routing logic is incorrect"
       ],
       "task_guidance": "Implement logic to detect and route ambiguous identifications to a manual resolution queue.",
-      "due_on": "2026-09-28",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-28"
     },
     {
@@ -558,7 +569,7 @@
         "Error logging fails"
       ],
       "task_guidance": "Develop error handling logic for external API calls, ensuring retries and error logging.",
-      "due_on": "2026-09-30",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-30"
     },
     {
@@ -609,7 +620,7 @@
         "Credentials accidentally stored in code"
       ],
       "task_guidance": "Implement logging for all actions in submission processing. Ensure human review is mandatory before approval. Verify no credentials are hardcoded or stored insecurely.",
-      "due_on": "2026-09-20",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-20"
     },
     {
@@ -635,8 +646,29 @@
         "UI interaction not logged"
       ],
       "task_guidance": "Develop a web interface for reviewers to access and manage the Review Queue. Ensure all actions are logged for audit purposes.",
-      "due_on": "2026-09-25",
+      "due_on": "2026-10-01",
       "due_baseline_on": "2026-09-25"
+    },
+    {
+      "id": "STORY-013",
+      "title": "Historical Retrieval with a Vector Database",
+      "release": "r1",
+      "fulfills": [
+        "REQ-019"
+      ],
+      "narrative": "As a reviewer, I want the AI draft to draw on similar past reviews from the same Stress Test, so that feedback stays consistent with how we reviewed before.",
+      "acceptance": [
+        "Given historical critique and feedback comments for a Stress Test are indexed in a vector database stored outside SQL Server, when a new submission for that Stress Test is reviewed, then the system returns the top 5–10 most similar cases from that same Stress Test only.",
+        "Given a submission for one Stress Test, when historical cases are retrieved, then no case from a different Stress Test is returned.",
+        "Given the vector database or the embedding service is unavailable, when retrieval runs, then the review continues without historical examples and the error is shown to the reviewer.",
+        "Given no similar historical cases exist, when retrieval runs, then the system returns an empty list and says so, rather than failing.",
+        "Trust: Historical examples never override the current Stress Test rules, and existing SQL Server tables and procedures are never changed."
+      ],
+      "owner_agent": "System",
+      "failure_paths": [],
+      "task_guidance": "Implement exactly what the acceptance lines describe for this story, and nothing that belongs to another one.",
+      "due_on": "2026-10-01",
+      "due_baseline_on": "2026-10-01"
     }
   ],
   "agents": [],
@@ -644,14 +676,14 @@
     "name": "Stress Test Review Application",
     "descriptor": "A controlled review platform integrating Basecamp and human reviewers, with AI-assisted draft reviews.",
     "repo_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App",
-    "plan_version": 1,
-    "plan_sha256": "4f266b59089c544f079d772b3865eef4b3883aee89258c55e02ee5df02f7aadf"
+    "plan_version": 2,
+    "plan_sha256": "e9a61c58179105d51b20a3c05d360f61038b417398f4bc019082a8bcb04d2e59"
   },
   "schedule": {
-    "build_start": "2026-09-17",
+    "build_start": "2026-10-01",
     "build_end": "2026-10-01",
     "demo_day": "2026-10-08",
-    "build_weeks": 2,
+    "build_weeks": 1,
     "demo_release_key": "r0",
     "roadmap_release_keys": [
       "r1",
@@ -732,14 +764,14 @@
       "system administrator"
     ],
     "counts": {
-      "requirements_total": 18,
+      "requirements_total": 19,
       "requirements_by_kind": {
         "CONSTRAINT": 4,
-        "FUNC": 9,
+        "FUNC": 10,
         "NFR": 1,
         "SAFE": 4
       },
-      "stories_total": 12,
+      "stories_total": 13,
       "releases_total": 5,
       "agents_total": 0,
       "failure_paths_total": 35,
