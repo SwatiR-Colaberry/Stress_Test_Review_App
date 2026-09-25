@@ -82,7 +82,8 @@
       "failure_feedback": "Please clearly identify one selected problem.",
       "default_severity": "Required Fix",
       "evaluation_notes": [
-        "For example 'Selected Problem: Problem #X' or an equivalent clear statement; the selected problem should be unambiguous (spec §6)."
+        "For example 'Selected Problem: Problem #X' or an equivalent clear statement; the selected problem should be unambiguous (spec §6).",
+        "For now the human reviewer confirms which problem is selected (user decision, 2026-09-25). Hint: students usually highlight the selected problem in yellow, which Basecamp stores in the comment HTML as background-color: rgb(250, 247, 133)."
       ]
     }
   ],
@@ -92,7 +93,14 @@
       "name": "Structural Check",
       "kind": "structural",
       "blocking": true,
-      "rule_ids": ["ST0-001", "ST0-002", "ST0-003", "ST0-006", "ST0-007", "ST0-008"],
+      "rule_ids": [
+        "ST0-001",
+        "ST0-002",
+        "ST0-003",
+        "ST0-006",
+        "ST0-007",
+        "ST0-008"
+      ],
       "instructions": [
         "If Stage 1 fails, list all Stage 1 structural issues together and stop.",
         "Do not mix Stage 2 issues into a Stage 1 blocking result."
@@ -103,7 +111,10 @@
       "name": "Artifact Check",
       "kind": "artifact",
       "blocking": true,
-      "rule_ids": ["ST0-004", "ST0-005"],
+      "rule_ids": [
+        "ST0-004",
+        "ST0-005"
+      ],
       "instructions": [
         "Only if Stage 1 passes should Stage 2 run.",
         "If Stage 2 passes, state that no structural issues were detected and continue to advisory checks."
@@ -130,7 +141,10 @@
     "Target Audience",
     "Future Capability/ies"
   ],
-  "problem_count": {"min": 8, "max": 10},
+  "problem_count": {
+    "min": 8,
+    "max": 10
+  },
   "tolerance": [
     "Case-insensitive labels.",
     "Minor wording variations are allowed.",
@@ -153,6 +167,13 @@
       "when": "The submission is not complete in the one comment being reviewed (parts are in earlier or later comments).",
       "note": "Tell the reviewer that the submission is split across comments. This is not a rule failure.",
       "source": "User decision, 2026-09-25, from historical ST0 reviews (reviewers repeatedly asked students to consolidate everything into one comment)."
+    },
+    {
+      "id": "CONTENT_NOT_IN_TEXT",
+      "when": "Required content (the dataset details or the Data Science problems) is given only as a screenshot, an attached document or an outside link, not as text in the comment.",
+      "note": "Tell the reviewer the content is not in the comment text. The submission must be text; the reviewer passes the student feedback below.",
+      "student_feedback": "Please provide your submission as text in the comment, not as a screenshot or an attached document.",
+      "source": "User decision, 2026-09-25, from historical ST0 reviews (reviewers asked students to type the content into the comment instead of screenshots or documents)."
     }
   ],
   "guardrails": [

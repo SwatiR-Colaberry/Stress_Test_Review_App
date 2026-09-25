@@ -149,3 +149,36 @@ def test_rerunning_after_an_audit_failure_records_the_item_without_duplicating_i
     assert retry.outcome == "already_queued"
     assert len(store.list_items()) == 1
     assert [e.action for e in audit.read_all()] == ["review_already_queued"]
+
+
+# --- ##Please Critique##: counted, with a reminder for the student ---
+
+def test_please_critique_creates_a_review_with_a_reminder_note(store, audit):
+    result = process_comment(_row("##Please Critique## my Dataset and Data Science Problem"), store, audit)
+    assert result.outcome == "review_created"
+    item = store.get_by_comment_id(1001)
+    assert item.status == "Pending"
+    assert "just write ##Critique##" in item.marker_note
+    assert result.marker_note == item.marker_note
+    [event] = audit.read_all()
+    assert (event.action, event.reason_code) == ("review_created", "NONSTANDARD_MARKER")
+
+
+def test_the_standard_marker_has_no_reminder_note(store, audit):
+    result = process_comment(_row("##Critique##"), store, audit)
+    assert store.get_by_comment_id(1001).marker_note is None and result.marker_note is None
+    assert audit.read_all()[0].reason_code is None
+
+
+def test_please_critique_twice_creates_one_item_and_keeps_the_note(store, audit):
+    first = process_comment(_row("##Please Critique##"), store, audit)
+    second = process_comment(_row("##Please Critique##"), store, audit)
+    assert (first.outcome, second.outcome) == ("review_created", "already_queued")
+    assert len(store.list_items()) == 1 and second.marker_note == first.marker_note
+    assert [e.reason_code for e in audit.read_all()] == ["NONSTANDARD_MARKER", "NONSTANDARD_MARKER"]
+
+
+@pytest.mark.parametrize("body", ["#Critique#", "please critique my work"])
+def test_other_near_misses_still_create_nothing(store, audit, body):
+    assert process_comment(_row(body), store, audit).outcome == "no_marker"
+    assert store.list_items() == []

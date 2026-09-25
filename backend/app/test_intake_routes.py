@@ -82,3 +82,10 @@ def test_audit_failure_returns_503_with_a_classified_error(client):
     response = client.post("/basecamp/comments/process", json=_comment("##Critique##"))
     assert response.status_code == 503
     assert response.json()["detail"]["error_class"] == "AuditWriteError"
+
+
+def test_please_critique_over_http_returns_the_reminder_note(client):
+    body = client.post("/basecamp/comments/process", json=_comment("##Please Critique## my work")).json()
+    assert body["outcome"] == "review_created"
+    assert "just write ##Critique##" in body["marker_note"]
+    assert client.get("/reviews/queue").json()[0]["marker_note"] == body["marker_note"]

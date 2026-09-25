@@ -18,7 +18,7 @@ A rule module is **versioned configuration, not code**: one JSON file per Stress
 
 Only what the spec says goes into a module. Where the spec's wording needs a decision, the decision goes into the rule's `evaluation_notes` with its source (spec section or dated user decision). Something the reviewer should know that is **not** a rule failure goes into `reviewer_notes` (for ST0: `SPLIT_SUBMISSION`, when the submission is not all in one comment).
 
-ST0 v1 decisions (2026-09-25): ST0-002 "valid" = the link opens without an error; ST0-003 severity is Required Fix (blocking in Stage 1), not the Master Spec §10 "Needs Attention"; a split submission is a reviewer note, not a failure.
+ST0 v1 decisions (2026-09-25): ST0-002 "valid" = the link opens without an error; ST0-003 severity is Required Fix (blocking in Stage 1), not the Master Spec §10 "Needs Attention"; a split submission is a reviewer note (`SPLIT_SUBMISSION`), not a failure; content given only as a screenshot, document or outside link is a reviewer note (`CONTENT_NOT_IN_TEXT`) whose `student_feedback` asks for the submission as text in the comment; for ST0-008 the human reviewer confirms the selected problem for now (hint: the yellow highlight is `background-color: rgb(250, 247, 133)` in the comment HTML). v1 was updated in place for the last three because no review had used it yet; from now on any change gets a new version.
 
 ## What the ST0 history showed (2026-09-25)
 
@@ -35,7 +35,7 @@ Read-only review of 211 ST0 comments from 29 projects (both history extracts; co
 
 Asked for by reviewers but **not in the spec**: the whole submission in one comment (~6 projects; now the `SPLIT_SUBMISSION` reviewer note); content typed into the comment rather than screenshots, documents or outside links (3); the selected problem highlighted in yellow — stored by Basecamp as HTML background-colour styling (344 uses), so selection must be read from the HTML, not plain text; removing material that belongs to later Stress Tests (3). Reviewers also judge **dataset suitability** (sample datasets, datasets already used by others, fit to the chosen problem; 4 projects), which the spec leaves to the human reviewer.
 
-An earlier AI reviewer ("SmartCritic AI") posted 7 ST0 reviews critiquing financial stress-testing concepts (VaR, Monte Carlo) instead of the ST0 rules; human reviewers then gave the real feedback. These must be excluded from historical examples (STORY-013). Students also used `##Please Critique##` (5 comments, 4 not detected) and `#Critique#` (STORY-001 follow-up).
+An earlier AI reviewer ("SmartCritic AI") posted 7 ST0 reviews critiquing financial stress-testing concepts (VaR, Monte Carlo) instead of the ST0 rules; human reviewers then gave the real feedback. These must be excluded from historical examples (STORY-013). Students also used `##Please Critique##` (5 comments, 4 not detected at the time) and `#Critique#`. Since 2026-09-25 `##Please Critique##` counts, with a reminder note for the reviewer (see `docs/stories/STORY-001.md`); `#Critique#` still does not.
 
 ## How loading works
 

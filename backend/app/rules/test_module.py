@@ -70,8 +70,11 @@ def test_problem_fields_and_count_match_spec_section_5():
 def test_user_decisions_are_recorded():
     module = _st0()
     assert any("opens without an error" in note for note in module.rule("ST0-002").evaluation_notes)
-    [split] = module.reviewer_notes
-    assert split.id == "SPLIT_SUBMISSION" and "not a rule failure" in split.note
+    notes = {note.id: note for note in module.reviewer_notes}
+    assert set(notes) == {"SPLIT_SUBMISSION", "CONTENT_NOT_IN_TEXT"}
+    assert "not a rule failure" in notes["SPLIT_SUBMISSION"].note
+    assert "as text in the comment" in notes["CONTENT_NOT_IN_TEXT"].student_feedback
+    assert any("rgb(250, 247, 133)" in n and "human reviewer" in n for n in module.rule("ST0-008").evaluation_notes)
 
 
 # --- RuleModule rejects broken modules ---

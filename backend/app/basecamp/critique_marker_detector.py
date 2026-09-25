@@ -4,12 +4,20 @@ accept `##Critique##`, `## Critique##`, `##Critique ##`, `## Critique ##`
 (any case), and must NOT trigger on `Critique`, `#Critique`, `##Review##`,
 or prose that merely contains the word "critique".
 
+Non-standard request (user decision, 2026-09-25): `##Please Critique##`
+(any case/spacing) also asks for a review, but it is not the marker students
+are taught. classify_critique_marker() reports it as "nonstandard" so intake
+can create the review AND remind the student to write `##Critique##` next
+time. normalize_critique_marker()/is_critique_marker() keep their original
+meaning (the standard marker only), and detect_review_markers() (used for the
+history extracts, compared with SQL) is unchanged.
+
 Ported from the original Node.js implementation
 (backend/src/services/basecamp/critiqueMarkerDetector.js); the regex and
 behavior are preserved exactly.
 """
 import re
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 _CRITIQUE_MARKER_PATTERN = re.compile(r"##\s?critique\s?##", re.IGNORECASE)
 
@@ -23,6 +31,22 @@ def normalize_critique_marker(comment_body) -> Optional[str]:
 
 def is_critique_marker(comment_body) -> bool:
     return normalize_critique_marker(comment_body) is not None
+
+
+_PLEASE_CRITIQUE_PATTERN = re.compile(r"##\s*please\s+critique\s*##", re.IGNORECASE)
+
+CritiqueMarkerKind = Literal["standard", "nonstandard"]
+
+
+def classify_critique_marker(comment_body) -> Optional[CritiqueMarkerKind]:
+    """"standard" for ##Critique## (and its spacing variants), "nonstandard"
+    for ##Please Critique##, None for anything else. A comment with both is
+    standard: the student did write the taught marker."""
+    if is_critique_marker(comment_body):
+        return "standard"
+    if isinstance(comment_body, str) and _PLEASE_CRITIQUE_PATTERN.search(comment_body):
+        return "nonstandard"
+    return None
 
 
 # The two follow-up markers of the review cycle (Master Spec §4-5), matched the

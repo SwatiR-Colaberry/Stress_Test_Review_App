@@ -10,7 +10,7 @@ As a reviewer, I want the AI draft to draw on similar past reviews from the same
 
 - **REQ-019** (Functional, should) — Historical Retrieval with a Vector Database
 
-> **Intended wording (not yet in the portal, 2026-09-25):** REQ-019 was auto-created from the story title, with cluster "Marker Detection" and priority "should". The intended requirement is: *"The system must retrieve a small set (top 5–10) of relevant historical reviews for a submission, filtered to the same Stress Test and ranked by semantic similarity using a vector database stored outside SQL Server, without changing existing SQL Server tables or procedures."* — cluster Historical Retrieval, priority must. Correct it in the portal; `plan.json` is not edited by hand so the plan keeps syncing.
+> **Intended wording (not yet in the portal, 2026-09-25):** REQ-019 was auto-created from the story title, with cluster "Marker Detection" and priority "should". The intended requirement is: *"The system must retrieve the top 15 relevant historical reviews for a submission, filtered to the same Stress Test and ranked by semantic similarity using a vector database stored outside SQL Server, without changing existing SQL Server tables or procedures."* — cluster Historical Retrieval, priority must. **Top 15, not the Master Spec §14 "top 5–10": user decision, 2026-09-25.** Correct it in the portal; `plan.json` is not edited by hand so the plan keeps syncing.
 
 ## How to build it
 
@@ -19,7 +19,7 @@ Implement exactly what the acceptance lines describe for this story, and nothing
 Guidance (Master Spec §14–15, Figure 4, and user decisions of 2026-09-25):
 
 - **First data to index:** the per-Stress-Test history extract, `data/extracts/<date>-per-stress-test/` (15 most recent approved projects for each of ST0–ST5; see `directives/ST-historical-comment-extraction.md`). Later, completed reviews from this app are added to the same index (STORY-007).
-- **Retrieval order:** filter by Stress Test (and rule id once STORY-003 exists), then rank by vector similarity, then return the top 5–10.
+- **Retrieval order:** filter by Stress Test (and rule id, now that STORY-003 provides rule modules), then rank by vector similarity, then return the **top 15** (user decision, 2026-09-25; replaces "5–10").
 - **Storage:** the vector database lives outside SQL Server; existing SQL Server tables and procedures must not change. The index holds student text and personal data, so it stays out of git like `data/extracts/`.
 - **Choose the vector database and embedding service at the start of the story.** Both are new dependencies (and the embedding service may be a paid external service), so they need approval before they are added.
 - Every external call (embedding service, vector database) gets an explicit timeout and capped retries; indexing the same case twice must not create a duplicate entry.
@@ -31,6 +31,8 @@ Guidance (Master Spec §14–15, Figure 4, and user decisions of 2026-09-25):
 - No similar historical cases found
 
 ## Acceptance — your stop condition
+
+> **Pending portal change (2026-09-25):** the first line below still says "top 5–10"; the user decided on **top 15**. Change it in the portal so this file and `.colaberry/progress.json` update on the next sync.
 
 Tick each box as it genuinely passes. This file is yours — the platform reads
 the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in

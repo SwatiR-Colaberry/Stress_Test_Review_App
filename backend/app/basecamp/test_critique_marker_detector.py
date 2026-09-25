@@ -1,4 +1,11 @@
-from app.basecamp.critique_marker_detector import detect_review_markers, is_critique_marker, normalize_critique_marker
+import pytest
+
+from app.basecamp.critique_marker_detector import (
+    classify_critique_marker,
+    detect_review_markers,
+    is_critique_marker,
+    normalize_critique_marker,
+)
 
 
 def test_accepts_the_four_documented_spacing_variants():
@@ -56,3 +63,30 @@ def test_detect_review_markers_reports_every_marker_present():
 def test_detect_review_markers_ignores_prose_review_markers_and_bad_input():
     assert detect_review_markers("Feedback given, approved in principle. ## Review ##") == []
     assert detect_review_markers(None) == []
+
+
+# --- ##Please Critique## counts as a non-standard request (user decision, 2026-09-25) ---
+
+
+@pytest.mark.parametrize("body", [
+    "##Please Critique## my Dataset and Data Science Problem",
+    "## please critique ##",
+    "##PLEASE   CRITIQUE##",
+])
+def test_please_critique_is_a_nonstandard_request(body):
+    assert classify_critique_marker(body) == "nonstandard"
+    assert is_critique_marker(body) is False  # the standard check is unchanged
+
+
+@pytest.mark.parametrize("body", ["##Critique##", "Please    ##Critique##", "## Critique ##"])
+def test_the_taught_marker_is_standard(body):
+    assert classify_critique_marker(body) == "standard"
+
+
+def test_a_comment_with_both_markers_is_standard():
+    assert classify_critique_marker("##Please Critique## ... ##Critique##") == "standard"
+
+
+@pytest.mark.parametrize("body", ["#Critique#", "please critique my work", "##Please Review##", "## Review ##", None, 42])
+def test_other_forms_are_still_not_critique_requests(body):
+    assert classify_critique_marker(body) is None

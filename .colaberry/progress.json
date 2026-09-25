@@ -102,7 +102,8 @@
         "backend/app/review_queue/dependencies.py",
         "docs/ACCEPTANCE_CHECKLIST.md",
         "docs/stories/STORY-001.md",
-        "PROGRESS.md"
+        "PROGRESS.md",
+        "backend/app/basecamp/critique_marker_detector.py"
       ],
       "tests_added": [
         "backend/app/test_models.py",
@@ -113,7 +114,7 @@
         "backend/app/test_intake_routes.py",
         "backend/app/test_logging_config.py"
       ],
-      "notes": "All 3 criteria verified by tests (review_queue/test_intake.py, test_intake_routes.py, test_logging_config.py) and a live uvicorn+curl run. Comments come via a CommentSource interface with fixtures/HTTP; the live SQL Server reader for Basecamp_MessageBoards_MessageComments is deferred (needs credentials + driver). Review Queue is in-memory until a database is chosen.",
+      "notes": "All 3 criteria verified by tests (review_queue/test_intake.py, test_intake_routes.py, test_logging_config.py) and a live uvicorn+curl run. Comments come via a CommentSource interface with fixtures/HTTP; the live SQL Server reader for Basecamp_MessageBoards_MessageComments is deferred (needs credentials + driver). Review Queue is in-memory until a database is chosen. 2026-09-25 (user decision): '##Please Critique##' also creates the review item, with a marker_note reminding the student to write ##Critique## next time, audited as NONSTANDARD_MARKER; #Critique# and prose still do not count. Tests: backend/app/basecamp/test_critique_marker_detector.py, backend/app/review_queue/test_intake.py, backend/app/test_intake_routes.py.",
       "updated_at": "2026-09-24T17:32:32Z",
       "verification": {
         "state": "verified",

@@ -21,7 +21,9 @@ from app.models import BasecampComment, ReviewItem
 
 class ReviewQueueStore(ABC):
     @abstractmethod
-    def create_pending(self, comment: BasecampComment) -> Tuple[ReviewItem, bool]:
+    def create_pending(
+        self, comment: BasecampComment, marker_note: Optional[str] = None
+    ) -> Tuple[ReviewItem, bool]:
         """Returns (item, created). created is False when an item for this
         comment_id already existed; the existing item is returned unchanged."""
 
@@ -45,7 +47,9 @@ class InMemoryReviewQueueStore(ReviewQueueStore):
         self._clock = clock
         self._new_id = new_id
 
-    def create_pending(self, comment: BasecampComment) -> Tuple[ReviewItem, bool]:
+    def create_pending(
+        self, comment: BasecampComment, marker_note: Optional[str] = None
+    ) -> Tuple[ReviewItem, bool]:
         # Check and insert under one lock so two concurrent calls for the
         # same comment cannot both create an item.
         with self._lock:
@@ -58,6 +62,7 @@ class InMemoryReviewQueueStore(ReviewQueueStore):
                 message_id=comment.message_id,
                 status="Pending",
                 created_at=self._clock(),
+                marker_note=marker_note,
             )
             self._items[comment.comment_id] = item
             return item, True

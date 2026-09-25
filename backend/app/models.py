@@ -84,6 +84,9 @@ class ReviewItem(BaseModel):
     message_id: BasecampId
     status: ReviewStatus = "Pending"
     created_at: datetime
+    # Set when the student asked for review with a non-standard marker
+    # (e.g. ##Please Critique##): the reviewer reminds them to use ##Critique##.
+    marker_note: Optional[str] = None
 
 
 IntakeOutcome = Literal["review_created", "already_queued", "no_marker", "malformed"]
@@ -95,6 +98,7 @@ class IntakeResult(BaseModel):
     outcome: IntakeOutcome
     comment_id: Optional[int] = None
     review_id: Optional[str] = None
+    marker_note: Optional[str] = None
 
 
 # --- Submission data retrieved from the Basecamp API (REQ-004, STORY-002) ---

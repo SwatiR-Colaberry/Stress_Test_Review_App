@@ -30,7 +30,7 @@ from pydantic import ValidationError
 
 from app.audit.trail import AuditTrail, AuditWriteError
 from app.basecamp.comment_source import CommentSource, fetch_with_retry
-from app.basecamp.critique_marker_detector import is_critique_marker
+from app.basecamp.critique_marker_detector import classify_critique_marker
 from app.models import AuditEvent, BasecampComment, IntakeResult
 from app.review_queue.store import ReviewQueueStore
 
@@ -39,6 +39,12 @@ logger = logging.getLogger("stress_test_review.intake")
 
 # Intake runs unattended, so its audit entries are recorded under this actor.
 SYSTEM_ACTOR_ID = "system"
+
+# Stored on the review item when the student used ##Please Critique## (user
+# decision, 2026-09-25): counted, and the reviewer reminds the student.
+NONSTANDARD_MARKER_NOTE = (
+    "Student used '##Please Critique##'. Remind them: next time, just write ##Critique##."
+)
 
 _AUDIT_ACTIONS = {
     "review_created": "review_created",
@@ -72,7 +78,8 @@ def process_comment(
         _record(audit, result, correlation_id, outcome="failure", reason_code="ValidationError")
         return result
 
-    if not is_critique_marker(comment.body):
+    marker = classify_critique_marker(comment.body)
+    if marker is None:
         _log(
             logging.INFO,
             "critique_marker_not_found",
@@ -85,7 +92,9 @@ def process_comment(
         _record(audit, result, correlation_id, message_id=comment.message_id)
         return result
 
-    item, created = store.create_pending(comment)
+    item, created = store.create_pending(
+        comment, marker_note=NONSTANDARD_MARKER_NOTE if marker == "nonstandard" else None
+    )
     outcome = "review_created" if created else "already_queued"
     _log(
         logging.INFO,
@@ -97,9 +106,12 @@ def process_comment(
         review_status=item.status,
         outcome="success",
         intake_outcome=outcome,
+        marker=marker,
     )
-    result = IntakeResult(outcome=outcome, comment_id=comment.comment_id, review_id=item.review_id)
-    _record(audit, result, correlation_id, message_id=comment.message_id)
+    result = IntakeResult(outcome=outcome, comment_id=comment.comment_id, review_id=item.review_id,
+                          marker_note=item.marker_note)
+    _record(audit, result, correlation_id, message_id=comment.message_id,
+            reason_code="NONSTANDARD_MARKER" if item.marker_note else None)
     return result
 
 

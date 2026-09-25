@@ -15,6 +15,8 @@ As a system, I want to detect critique markers in Basecamp comments, so that I c
 
 Implement marker detection logic reading Basecamp_MessageBoards_MessageComments directly.
 
+> **Added 2026-09-25 (user decision):** `##Please Critique##` (any case/spacing) also counts as a critique request. It creates the Pending review item like `##Critique##`, but the item carries a note for the reviewer to remind the student: *"next time, just write ##Critique##"*. `#Critique#` and plain prose still do not count. See `backend/app/basecamp/critique_marker_detector.py` (`classify_critique_marker`) and `backend/app/review_queue/intake.py`.
+
 ## Failure paths you must handle
 
 - Comment does not contain a valid marker

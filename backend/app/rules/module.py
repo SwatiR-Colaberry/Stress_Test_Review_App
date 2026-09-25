@@ -12,7 +12,7 @@ mixed-up file fails loudly instead of being applied:
 - stages are numbered 1..n in order, and an advisory stage never blocks.
 Unknown fields are rejected, so a typo cannot silently drop a setting.
 """
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -44,10 +44,12 @@ class Stage(_Strict):
 
 
 class ReviewerNote(_Strict):
-    """Something to tell the human reviewer. Never a rule failure."""
+    """Something to tell the human reviewer. Never a rule failure.
+    student_feedback, when set, is wording the reviewer can pass on."""
     id: str = Field(pattern=r"^[A-Z_]+$")
     when: str = Field(min_length=1)
     note: str = Field(min_length=1)
+    student_feedback: Optional[str] = None
     source: str = Field(min_length=1)
 
 
