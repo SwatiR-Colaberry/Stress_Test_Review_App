@@ -3,7 +3,7 @@
   "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
   "storyId": "STORY-003",
   "projectTruthBaseRevision": 1,
-  "observedAt": "2026-09-25T18:00:00Z",
+  "observedAt": "2026-09-25T19:00:00Z",
   "sourceCommitSha": null,
   "factProposals": [
     {
@@ -77,6 +77,16 @@
       "statement": "Rule loading never raises for identification or file problems; it returns a manual-resolution result with a reason code, and it refuses to return rules if the load cannot be recorded in the audit trail.",
       "rationale": "a bad rule file must not crash a review, and rules must never be applied without a traceable version",
       "evidence": "backend/app/rules/loader.py"
+    },
+    {
+      "statement": "Content given only as a screenshot, an attached document or an outside link is flagged to the reviewer (CONTENT_NOT_IN_TEXT) with feedback asking the student to provide the submission as text in the comment.",
+      "rationale": "user decision; historical reviewers asked students to type the content into the comment, and the review reads comment text",
+      "evidence": "backend/app/rules/modules/ST0/v1.json (reviewer_notes), backend/app/rules/test_module.py"
+    },
+    {
+      "statement": "For ST0-008 the human reviewer confirms which problem is selected for now; the yellow highlight students use appears in the comment HTML as background-color: rgb(250, 247, 133).",
+      "rationale": "user decision; automated selection detection from the HTML highlight is deferred",
+      "evidence": "backend/app/rules/modules/ST0/v1.json (ST0-008 evaluation_notes)"
     }
   ],
   "limitations": [

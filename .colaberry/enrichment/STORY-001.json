@@ -3,7 +3,7 @@
   "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
   "storyId": "STORY-001",
   "projectTruthBaseRevision": 1,
-  "observedAt": "2026-09-24T17:33:17Z",
+  "observedAt": "2026-09-25T19:00:00Z",
   "sourceCommitSha": "20a5568c6dd7b51372b3fcbe8d76d335d9107ff1",
   "factProposals": [
     {
@@ -25,6 +25,11 @@
       "dimension": "outputs",
       "value": "Every intake outcome (marker detected, no marker, malformed row) emits one JSON log line to stdout carrying the exact comment_id and a correlation_id (taken from X-Correlation-ID when sent).",
       "evidence": "backend/app/review_queue/intake.py, backend/app/logging_config.py, backend/app/test_logging_config.py"
+    },
+    {
+      "dimension": "inputs",
+      "value": "Some students request review with '##Please Critique##' instead of '##Critique##' (5 comments in the history extracts, 4 of which the original detector missed).",
+      "evidence": "backend/app/basecamp/test_critique_marker_detector.py, directives/rule-modules.md (What the ST0 history showed)"
     }
   ],
   "decisions": [
@@ -42,6 +47,11 @@
       "statement": "Treat Basecamp ids strictly as integers (no coercion from booleans, strings or floats).",
       "rationale": "Lax parsing turned comment_id=True into 1, which could tie a review to the wrong submission version.",
       "evidence": "backend/app/models.py (BasecampId), backend/app/test_models.py"
+    },
+    {
+      "statement": "'##Please Critique##' (any case/spacing) creates the review item like '##Critique##', flagged with a marker_note so the reviewer reminds the student to write ##Critique## next time; '#Critique#' and prose still do not count.",
+      "rationale": "user decision, 2026-09-25: do not miss real review requests, but keep teaching the standard marker",
+      "evidence": "backend/app/basecamp/critique_marker_detector.py (classify_critique_marker), backend/app/review_queue/test_intake.py"
     }
   ],
   "limitations": [
