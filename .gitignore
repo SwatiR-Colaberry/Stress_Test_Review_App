@@ -14,3 +14,6 @@ data/extracts/
 
 # Audit trail (STORY-011) holds review/comment ids and reviewer ids. Never commit.
 data/audit/
+
+# AI evaluations (STORY-004): results quote student submissions; usage log and locks. Never commit.
+data/evaluations/

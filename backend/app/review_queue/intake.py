@@ -7,7 +7,11 @@ carrying the exact comment_id, so any review can be traced back to the
 comment that triggered it.
 
 Failure modes handled here: malformed row (logged, no item), comment without
-a valid marker (logged, no item), duplicate processing (existing item
+a valid marker (logged, no item), a reviewer's comment that also carries
+##FeedbackGiven## or ##Approved## (e.g. quoting "##Critique##"; 13 of 553
+critique detections in the 2026-09-25 history extract): no item, audited as
+comment_no_marker with reason REVIEWER_FEEDBACK (STORY-004 follow-up,
+user-approved 2026-09-28), duplicate processing (existing item
 returned, no second item). run_intake adds the source-unreachable path:
 fetching is retried with a cap (see comment_source.fetch_with_retry) and, if
 it still fails, CommentSourceUnavailable propagates and the queue is untouched.
@@ -30,7 +34,7 @@ from pydantic import ValidationError
 
 from app.audit.trail import AuditTrail, AuditWriteError
 from app.basecamp.comment_source import CommentSource, fetch_with_retry
-from app.basecamp.critique_marker_detector import classify_critique_marker
+from app.basecamp.critique_marker_detector import classify_critique_marker, detect_review_markers
 from app.models import AuditEvent, BasecampComment, IntakeResult
 from app.review_queue.store import ReviewQueueStore
 
@@ -79,6 +83,18 @@ def process_comment(
         return result
 
     marker = classify_critique_marker(comment.body)
+    if marker is not None and {"FeedbackGiven", "Approved"} & set(detect_review_markers(comment.body)):
+        _log(
+            logging.INFO,
+            "critique_marker_in_reviewer_feedback",
+            correlation_id,
+            comment_id=comment.comment_id,
+            message_id=comment.message_id,
+            outcome="success",
+        )
+        result = IntakeResult(outcome="no_marker", comment_id=comment.comment_id)
+        _record(audit, result, correlation_id, message_id=comment.message_id, reason_code="REVIEWER_FEEDBACK")
+        return result
     if marker is None:
         _log(
             logging.INFO,

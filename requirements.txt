@@ -22,5 +22,9 @@ python-dotenv==1.2.3
 # Also used by FastAPI's TestClient in tests.
 httpx==0.28.1
 
+# Claude API for AI draft evaluations (REQ-005, STORY-004,
+# backend/app/evaluation/claude_client.py). Official SDK; 1.x brings httpx2.
+anthropic==1.8.0
+
 # Test tooling.
 pytest==9.1.1

@@ -27,8 +27,14 @@ the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [ ] Given a valid submission, When Claude evaluates it, Then structured draft findings are returned.
-- [ ] Given an invalid submission, When Claude evaluates it, Then an error is returned.
-- [ ] Trust: The system logs evaluation events with submission ID and rule ID.
+- [x] Given a valid submission, When Claude evaluates it, Then structured draft findings are returned.
+- [x] Given an invalid submission, When Claude evaluates it, Then an error is returned.
+- [x] Trust: The system logs evaluation events with submission ID and rule ID.
 
 When every box above is ticked, stop and show the demo.
+
+## Build notes (2026-09-28)
+
+- Evidence: `backend/app/evaluation/` (entry point `evaluate.py`), tests in the same folder, demo `backend/scripts/evaluate_demo.py`, how to run and verify in `directives/ai-evaluation.md`.
+- Live check: 15 historical ST0 submissions evaluated with the real API for $0.26 (`backend/scripts/compare_st0_history.py`); the side-by-side report is git-ignored (it quotes students and reviewers).
+- Not yet: reviewer notes (content only in a Word file; submission split over comments), the evaluator using previous versions and feedback (the thread reader is built), and saving the reviewer's final feedback (with the reviewer UI, STORY-005).

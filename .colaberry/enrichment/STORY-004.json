@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-004",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-28T17:30:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "integrations",
+      "value": "Draft reviews call Claude (claude-sonnet-5) through the official Anthropic Python SDK, with the key read from the git-ignored .env; one request per rule stage with structured JSON output.",
+      "evidence": "backend/app/evaluation/claude_client.py"
+    },
+    {
+      "dimension": "outputs",
+      "value": "An AI evaluation returns the rule ids that pass plus FAIL or ADVISORY findings, each with rule id, severity, evidence, reason, suggested student feedback and a confidence score; it has no approval or status field.",
+      "evidence": "backend/app/models.py (DraftFinding, EvaluationResult)"
+    },
+    {
+      "dimension": "approval_points",
+      "value": "ADVISORY marks a rule the AI cannot judge from the text (for example what a screenshot shows or whether a link opens); the human reviewer checks it.",
+      "evidence": "backend/app/evaluation/prompt.py"
+    },
+    {
+      "dimension": "data",
+      "value": "Students mark the selected problem with a yellow highlight stored in two forms: an inline style background-color: rgb(250, 247, 133) (12 of 45 ST0 critique comments in the history) and Basecamp's newer <mark style=\"background-color: var(--highlight-bg-1)\"> (8 of 45).",
+      "evidence": "backend/app/evaluation/text.py"
+    },
+    {
+      "dimension": "inputs",
+      "value": "Most ST0 submissions list their Data Science problems as blocks of labelled fields without numbering: counting 'Problem N' finds a count in 12 of 45 historical critique comments, counting the required field labels in 36 of 45.",
+      "evidence": "backend/app/evaluation/prechecks.py (estimate_problem_count)"
+    },
+    {
+      "dimension": "inputs",
+      "value": "Students often paste the dataset URL as plain text rather than as a Basecamp link (2 of the 15 ST0 comparison cases).",
+      "evidence": "backend/app/evaluation/prechecks.py"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "Reviewers sometimes write '##Critique##' inside their own feedback comments together with ##FeedbackGiven## or ##Approved## (13 of 553 critique detections in the history extract), and sometimes post a bare ##Critique## themselves.",
+      "evidence": "backend/app/review_queue/intake.py, backend/app/evaluation/history_comparison.py"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "After the reviewer's ##FeedbackGiven## the thread continues: the student posts an updated version with a new ##Critique##, and that version should be reviewed against the feedback given last time.",
+      "evidence": "backend/app/evaluation/thread.py"
+    },
+    {
+      "dimension": "exceptions",
+      "value": "Some submissions put their content only in an attached Word document; the evaluator cannot read it and such a submission currently gets FAIL on every rule.",
+      "evidence": "directives/ai-evaluation.md (Not yet)"
+    },
+    {
+      "dimension": "constraints",
+      "value": "AI evaluation cost is bounded by a per-call output cap, a manual-resolution threshold on input tokens and a daily token limit from the environment; 15 historical ST0 submissions cost $0.26 in total with Claude Sonnet 5 at low effort.",
+      "evidence": "backend/app/evaluation/config.py, directives/ai-evaluation.md"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Tests remove every Anthropic credential source so no test can reach the paid API; the evaluation scripts read the project .env over the shell so another project's key is never used.",
+      "evidence": "backend/conftest.py, backend/scripts/compare_st0_history.py"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Evaluate with claude-sonnet-5 at low effort, using a cached system prompt built only from the rule module, plain text with [SELECTED] markers, deterministic pre-checks, structured output and a pass list instead of PASS findings.",
+      "rationale": "user decision (token-saving rules, 2026-09-28)",
+      "evidence": "backend/app/evaluation/prompt.py, backend/app/evaluation/config.py"
+    },
+    {
+      "statement": "Stage order is applied in code: Stage 2 is only requested after a Stage 1 answer with no FAIL.",
+      "rationale": "the ST0 spec says a Stage 1 failure stops the review; code is deterministic, a model instruction is not, and it saves a call",
+      "evidence": "backend/app/evaluation/evaluate.py"
+    },
+    {
+      "statement": "Severity on a finding is taken from the rule module, not from Claude's answer, and an answer that misses or adds rule ids is rejected.",
+      "rationale": "rules and severities are versioned configuration; the model must not change them",
+      "evidence": "backend/app/evaluation/evaluate.py"
+    },
+    {
+      "statement": "An evaluation is idempotent on (comment_id, rule_version); only a stored success blocks a later Claude call, and the result is stored before the finding/completed audit events.",
+      "rationale": "user decision; storing first means an audit failure never costs a second paid call",
+      "evidence": "backend/app/evaluation/store.py, backend/app/evaluation/evaluate.py"
+    },
+    {
+      "statement": "The SDK's automatic retries are off; the client retries at most twice with Retry-After capped at 30 seconds.",
+      "rationale": "the SDK honours any Retry-After however long, which would break the no-unbounded-waits rule",
+      "evidence": "backend/app/evaluation/claude_client.py"
+    },
+    {
+      "statement": "Evaluation results, the usage ledger and locks are git-ignored JSON Lines files, not SQL Server tables.",
+      "rationale": "SQL Server is read-only (user rule, 2026-09-25)",
+      "evidence": "backend/app/evaluation/store.py"
+    },
+    {
+      "statement": "A comment carrying ##Critique## together with ##FeedbackGiven## or ##Approved## is treated as reviewer feedback: the intake does not queue it and the evaluator refuses it.",
+      "rationale": "user-approved fix after the historical comparison graded reviewer comments as submissions",
+      "evidence": "backend/app/review_queue/intake.py, backend/app/evaluation/input_check.py"
+    },
+    {
+      "statement": "Previous feedback on the same thread is looked up exactly by thread id; the vector database (STORY-013) is kept for finding similar cases from other students.",
+      "rationale": "agreed with the user: an exact lookup cannot mix students up and costs nothing; similarity search is what a vector database is for",
+      "evidence": "backend/app/evaluation/thread.py, directives/ai-evaluation.md"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Reviewer notes from the rule module (CONTENT_NOT_IN_TEXT, SPLIT_SUBMISSION) are not produced yet.",
+      "evidence": "directives/ai-evaluation.md (Not yet)"
+    },
+    {
+      "statement": "The evaluator reads only the reviewed comment; previous versions and the reviewer's previous feedback are not yet passed to Claude (the thread reader is built but not wired in).",
+      "evidence": "backend/app/evaluation/thread.py"
+    },
+    {
+      "statement": "A call that times out reports no token usage, so the daily usage ledger can undercount.",
+      "evidence": "backend/app/evaluation/store.py"
+    },
+    {
+      "statement": "A reviewer who posts a bare ##Critique## with no other marker is still queued as a submission; telling reviewers from students needs the critiquer list.",
+      "evidence": "backend/app/review_queue/intake.py"
+    },
+    {
+      "statement": "Agreement with human feedback is measured by keyword hints only; the reviewer must read the side-by-side report to judge it.",
+      "evidence": "backend/app/evaluation/history_comparison.py (RULE_HINTS)"
+    }
+  ],
+  "demonstrationEvidence": [
+    {"kind": "test", "ref": "backend/app/evaluation/test_evaluate.py"},
+    {"kind": "test", "ref": "backend/app/evaluation/test_claude_client.py"},
+    {"kind": "test", "ref": "backend/app/evaluation/test_input_check.py"},
+    {"kind": "test", "ref": "backend/app/evaluation/test_thread.py"},
+    {"kind": "test", "ref": "backend/app/review_queue/test_intake.py"},
+    {"kind": "demo", "ref": "backend/scripts/evaluate_demo.py"}
+  ],
+  "measurementEvents": []
+}

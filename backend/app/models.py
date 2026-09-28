@@ -6,7 +6,9 @@ from datetime import datetime
 from typing import List, Optional
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.rules.module import Severity
 
 
 # Longest id accepted from a caller. Bounded so an id can always be written to
@@ -164,6 +166,12 @@ AuditAction = Literal[
     "retrieval_failed",
     "rules_loaded",
     "rules_manual_resolution",
+    "evaluation_started",
+    "evaluation_finding",
+    "evaluation_completed",
+    "evaluation_failed",
+    "evaluation_already_done",
+    "evaluation_manual_resolution",
 ]
 
 
@@ -185,5 +193,104 @@ class AuditEvent(BaseModel):
     project_id: Optional[int] = None  # Basecamp project, for retrieval events
     stress_test_id: Optional[str] = Field(default=None, max_length=8)  # rule-loading events
     rule_version: Optional[str] = Field(default=None, max_length=16)  # rule-loading events
+    rule_id: Optional[str] = Field(default=None, max_length=16)  # evaluation_finding events
     review_id: Optional[str] = Field(default=None, max_length=MAX_ID_LENGTH)
     reason_code: Optional[str] = Field(default=None, max_length=64)
+
+
+# --- AI draft evaluation (STORY-004: REQ-005; Master Spec §13) ---
+
+RuleId = Annotated[str, Field(pattern=r"^ST[0-9]-[0-9]{3}$")]
+
+# PASS is not a finding: passes come back as a list of rule ids, and only
+# FAIL / ADVISORY get the full structure (fewer output tokens).
+# ADVISORY = the rule cannot be judged from the text (e.g. what a screenshot
+# shows, whether a link opens); the human reviewer must check it.
+FindingStatus = Literal["FAIL", "ADVISORY"]
+
+
+class DraftFinding(BaseModel):
+    """One AI draft finding against one rule. A draft only: a human reviewer
+    decides what reaches the student (STORY-005). Unknown fields are rejected,
+    so a malformed Claude reply fails validation instead of being half-used.
+    Length caps are tight on purpose: they bound output tokens."""
+    model_config = ConfigDict(extra="forbid")
+
+    rule_id: RuleId
+    status: FindingStatus
+    severity: Severity
+    evidence: str = Field(min_length=1, max_length=300)
+    reason: str = Field(min_length=1, max_length=300)
+    suggested_feedback: str = Field(min_length=1, max_length=400)
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+def _no_rule_twice(passed: List[str], findings: List[DraftFinding]) -> None:
+    ids = passed + [finding.rule_id for finding in findings]
+    if len(ids) != len(set(ids)):
+        raise ValueError("a rule id appears more than once across passed_rule_ids and findings")
+
+
+class ClaudeStageAnswer(BaseModel):
+    """What Claude returns for one stage (the structured-output schema).
+    Everything else in EvaluationResult is filled in by code."""
+    model_config = ConfigDict(extra="forbid")
+
+    passed_rule_ids: List[RuleId]
+    findings: List[DraftFinding]
+
+    @model_validator(mode="after")
+    def _distinct(self) -> "ClaudeStageAnswer":
+        _no_rule_twice(self.passed_rule_ids, self.findings)
+        return self
+
+
+class PrecheckResults(BaseModel):
+    """Deterministic facts computed in Python before any Claude call and
+    passed to Claude, so it does not have to count or look for them."""
+    problem_count: Optional[int] = Field(ge=0)  # None: could not be counted from the text
+    selected_count: int = Field(ge=0)  # [SELECTED] (yellow-highlighted) blocks
+    link_count: int = Field(ge=0)
+    dataset_link_present: bool  # a link to a known dataset host (e.g. Kaggle)
+    dataset_file_count: int = Field(ge=0)  # attachments like .csv / .xlsx
+    image_count: int = Field(ge=0)  # image attachments (possible screenshots)
+
+
+class TokenUsage(BaseModel):
+    input_tokens: int = Field(default=0, ge=0)
+    cache_creation_input_tokens: int = Field(default=0, ge=0)
+    cache_read_input_tokens: int = Field(default=0, ge=0)
+    output_tokens: int = Field(default=0, ge=0)
+
+    @property
+    def total(self) -> int:
+        return (self.input_tokens + self.cache_creation_input_tokens
+                + self.cache_read_input_tokens + self.output_tokens)
+
+    def __add__(self, other: "TokenUsage") -> "TokenUsage":
+        return TokenUsage(**{name: getattr(self, name) + getattr(other, name) for name in TokenUsage.model_fields})
+
+
+class EvaluationResult(BaseModel):
+    """Claude's draft for one submission version (the critiqued comment).
+    There is deliberately no status or approval field: an AI evaluation can
+    never approve a submission (REQ-011). An empty findings list means no
+    rule failed, not that the submission is approved."""
+    comment_id: BasecampId  # the submission id: the exact version reviewed
+    message_id: BasecampId
+    stress_test_id: str = Field(pattern=r"^ST[0-9]$")
+    rule_version: str = Field(pattern=r"^v[0-9]+$")
+    model: str = Field(min_length=1)
+    evaluated_at: datetime
+    correlation_id: str = Field(min_length=1, max_length=MAX_ID_LENGTH)
+    # [1] when Stage 1 failed (Stage 2 is then not evaluated), else [1, 2].
+    stages_evaluated: List[int] = Field(min_length=1)
+    passed_rule_ids: List[RuleId]
+    findings: List[DraftFinding]
+    prechecks: PrecheckResults
+    usage: TokenUsage
+
+    @model_validator(mode="after")
+    def _distinct(self) -> "EvaluationResult":
+        _no_rule_twice(self.passed_rule_ids, self.findings)
+        return self

@@ -114,8 +114,8 @@
         "backend/app/test_intake_routes.py",
         "backend/app/test_logging_config.py"
       ],
-      "notes": "All 3 criteria verified by tests (review_queue/test_intake.py, test_intake_routes.py, test_logging_config.py) and a live uvicorn+curl run. Comments come via a CommentSource interface with fixtures/HTTP; the live SQL Server reader for Basecamp_MessageBoards_MessageComments is deferred (needs credentials + driver). Review Queue is in-memory until a database is chosen. 2026-09-25 (user decision): '##Please Critique##' also creates the review item, with a marker_note reminding the student to write ##Critique## next time, audited as NONSTANDARD_MARKER; #Critique# and prose still do not count. Tests: backend/app/basecamp/test_critique_marker_detector.py, backend/app/review_queue/test_intake.py, backend/app/test_intake_routes.py.",
-      "updated_at": "2026-09-24T17:32:32Z",
+      "notes": "All 3 criteria verified by tests (review_queue/test_intake.py, test_intake_routes.py, test_logging_config.py) and a live uvicorn+curl run. Comments come via a CommentSource interface with fixtures/HTTP; the live SQL Server reader for Basecamp_MessageBoards_MessageComments is deferred (needs credentials + driver). Review Queue is in-memory until a database is chosen. 2026-09-25 (user decision): '##Please Critique##' also creates the review item, with a marker_note reminding the student to write ##Critique## next time, audited as NONSTANDARD_MARKER; #Critique# and prose still do not count. Tests: backend/app/basecamp/test_critique_marker_detector.py, backend/app/review_queue/test_intake.py, backend/app/test_intake_routes.py. | 2026-09-28 (STORY-004 follow-up, user-approved): a comment that carries ##Critique## together with ##FeedbackGiven## or ##Approved## is a reviewer's comment and no longer creates a review item; audited as comment_no_marker with reason REVIEWER_FEEDBACK (13 of 553 in the history extract). Test: backend/app/review_queue/test_intake.py::test_a_reviewer_comment_quoting_the_critique_marker_creates_no_item.",
+      "updated_at": "2026-09-28T17:30:00Z",
       "verification": {
         "state": "verified",
         "criteria_passed": 3,
@@ -253,21 +253,64 @@
       "criteria": [
         {
           "text": "Given a valid submission, When Claude evaluates it, Then structured draft findings are returned.",
-          "passed": false
+          "passed": true,
+          "evidence": "backend/app/evaluation/evaluate.py evaluate_submission(): input check + deterministic pre-checks, then Claude (claude-sonnet-5 via the official anthropic SDK, backend/app/evaluation/claude_client.py) per blocking stage with structured output (output_config.format from ClaudeStageAnswer); returns an EvaluationResult (backend/app/models.py) with passed rule ids and FAIL/ADVISORY DraftFindings carrying rule_id, status, severity (from the rule module), evidence, reason, suggested_feedback and confidence; answers that do not cover exactly the stage's rules are rejected; tests: backend/app/evaluation/test_evaluate.py::test_a_valid_submission_returns_structured_draft_findings, test_claude_client.py; demo: backend/scripts/evaluate_demo.py; live: 15 historical ST0 submissions evaluated with the real API (backend/scripts/compare_st0_history.py), 15/15 schema-valid"
         },
         {
           "text": "Given an invalid submission, When Claude evaluates it, Then an error is returned.",
-          "passed": false
+          "passed": true,
+          "evidence": "an incomplete or invalid submission raises SubmissionIncompleteError (SUBMISSION_EMPTY incl. screenshot-only, COMMENT_NOT_FOUND, SUBMISSION_TOO_LARGE, NOT_A_SUBMISSION for a reviewer's comment, RULES_NOT_LOADED) before any Claude call and nothing is stored; Claude failures raise typed errors (unreachable, timeout, auth, malformed, refused) after at most 2 retries; oversized input -> manual resolution; tests: backend/app/evaluation/test_input_check.py, test_evaluate.py::test_an_invalid_submission_returns_an_error_without_calling_claude, test_claude_failures_are_errors_and_can_be_retried_later"
         },
         {
           "text": "Trust: The system logs evaluation events with submission ID and rule ID.",
-          "passed": false
+          "passed": true,
+          "evidence": "every evaluation writes audit events carrying comment_id (submission id), message_id, stress_test_id and rule_version: evaluation_started, one evaluation_finding per evaluated rule with rule_id and PASS/FAIL/ADVISORY, evaluation_completed; failures write evaluation_failed / evaluation_manual_resolution with a reason code; replays write evaluation_already_done; plus JSON log lines; tests: backend/app/evaluation/test_evaluate.py::test_every_evaluated_rule_is_audited_with_submission_and_rule_id; demo output in backend/scripts/evaluate_demo.py"
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "backend/app/models.py",
+        "backend/app/evaluation/__init__.py",
+        "backend/app/evaluation/text.py",
+        "backend/app/evaluation/input_check.py",
+        "backend/app/evaluation/prechecks.py",
+        "backend/app/evaluation/prompt.py",
+        "backend/app/evaluation/config.py",
+        "backend/app/evaluation/claude_client.py",
+        "backend/app/evaluation/store.py",
+        "backend/app/evaluation/evaluate.py",
+        "backend/app/evaluation/thread.py",
+        "backend/app/evaluation/fake.py",
+        "backend/app/evaluation/history_comparison.py",
+        "backend/scripts/evaluate_demo.py",
+        "backend/scripts/compare_st0_history.py",
+        "backend/app/review_queue/intake.py",
+        "backend/conftest.py",
+        "requirements.txt",
+        ".env.example",
+        ".gitignore",
+        "directives/ai-evaluation.md",
+        "docs/ACCEPTANCE_CHECKLIST.md",
+        "docs/stories/STORY-004.md",
+        "command-center/tabs/data-model.js",
+        ".colaberry/enrichment/STORY-004.json",
+        "PROGRESS.md"
+      ],
+      "tests_added": [
+        "backend/app/test_models.py",
+        "backend/app/evaluation/test_text.py",
+        "backend/app/evaluation/test_input_check.py",
+        "backend/app/evaluation/test_prechecks.py",
+        "backend/app/evaluation/test_prompt.py",
+        "backend/app/evaluation/test_config.py",
+        "backend/app/evaluation/test_claude_client.py",
+        "backend/app/evaluation/test_store.py",
+        "backend/app/evaluation/test_evaluate.py",
+        "backend/app/evaluation/test_thread.py",
+        "backend/scripts/test_compare_st0_history.py",
+        "backend/app/review_queue/test_intake.py"
+      ],
+      "notes": "All 3 criteria pass (pytest 559/559, credential scan clean). Built with the user's token-saving rules: cached rule-module system prompt, plain text with [SELECTED] for the yellow highlight, deterministic pre-checks, structured output, pass list + FAIL/ADVISORY findings, Stage 2 only after a clean Stage 1, effort low, idempotent on (comment_id, rule_version), count_tokens + manual resolution above 20k tokens, per-call usage ledger with a daily token limit, 60 s timeout and at most 2 retries (Retry-After capped at 30 s). Live check on 15 historical ST0 submissions: $0.26 in total, cache hit on every call after the first; agreement hints in the git-ignored report. Found in the comparison: 13 of 553 critique detections in the history are reviewer comments quoting ##Critique## with ##FeedbackGiven##/##Approved##; the evaluator refuses them (NOT_A_SUBMISSION) and the STORY-001 intake now skips them (user-approved). Not yet: reviewer notes (CONTENT_NOT_IN_TEXT, SPLIT_SUBMISSION) are not produced; the thread reader (thread.py) is built but the evaluator does not yet use previous versions/feedback; the history store for final human feedback comes with the reviewer UI (STORY-005). Results/usage are local git-ignored JSONL files (SQL Server stays read-only).",
+      "updated_at": "2026-09-28T17:30:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

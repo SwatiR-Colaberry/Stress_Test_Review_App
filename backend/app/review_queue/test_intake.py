@@ -182,3 +182,27 @@ def test_please_critique_twice_creates_one_item_and_keeps_the_note(store, audit)
 def test_other_near_misses_still_create_nothing(store, audit, body):
     assert process_comment(_row(body), store, audit).outcome == "no_marker"
     assert store.list_items() == []
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "Thanks for your ##Critique## request. Please add the source link. ##FeedbackGiven##",
+        "##Critique## looks good now. ##Approved##",
+        "## Critique ## ##feedbackgiven##",
+    ],
+)
+def test_a_reviewer_comment_quoting_the_critique_marker_creates_no_item(store, audit, body):
+    """STORY-004 follow-up: 13 of 553 critique detections in the history
+    extract were reviewer comments carrying ##FeedbackGiven## / ##Approved##."""
+    result = process_comment(_row(body), store, audit)
+    assert result.outcome == "no_marker"
+    assert result.review_id is None
+    assert store.list_items() == []
+    [event] = audit.read_all()
+    assert (event.action, event.reason_code) == ("comment_no_marker", "REVIEWER_FEEDBACK")
+
+
+def test_a_student_critique_after_feedback_is_still_queued(store, audit):
+    result = process_comment(_row("Updated with the source link. ##Critique##", comment_id=1002), store, audit)
+    assert result.outcome == "review_created"
