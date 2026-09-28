@@ -1,0 +1,39 @@
+# Runs the backend test suite and the credential scan on every push and
+# pull request to main. Tests use fakes only: no SQL Server, Basecamp or
+# Claude API access, and no secrets are needed.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+
+      # pyodbc loads the unixODBC library at import time; the SQL Server
+      # driver itself is not needed because tests never connect.
+      - name: Install unixODBC
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends unixodbc
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Scan for credentials
+        run: python backend/scripts/scan_for_credentials.py

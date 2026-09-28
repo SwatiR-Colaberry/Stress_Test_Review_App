@@ -39,10 +39,10 @@ Key invariant: Claude Code owns `BuildManifest` emission, `PROGRESS.md`, `/direc
 |---|---|---|---|
 | 1. Directives | What to do (SOPs) | `/directives` | Human-readable. Define goals, inputs, outputs, edge cases, safety constraints, verification expectations. Living documents. |
 | 2. Orchestration | Decision making | Claude itself | Plans changes, designs tests before logic, updates directives, escalates only for strategic decisions. Never executes business logic directly. |
-| 3. Execution | Doing the work | `backend/app/`, `backend/scripts/`, `frontend/src/` (future), `/scripts` | Deterministic scripts and services. Repeatable, testable, auditable, safe to rerun. |
-| 4. Verification | Proving it works | `/tests` (Playwright in `/tests/systemV2`), `pytest` (backend), `tsc --noEmit` (frontend, once built) | Unit, integration, E2E. Tests are first-class citizens, not afterthoughts. |
+| 3. Execution | Doing the work | `backend/app/`, `backend/scripts/` | Deterministic scripts and services. Repeatable, testable, auditable, safe to rerun. |
+| 4. Verification | Proving it works | `pytest` (colocated `test_*.py` files in `backend/`), run locally and in GitHub Actions | Unit, integration, E2E. Tests are first-class citizens, not afterthoughts. |
 
-Execution code lives inside `/backend` and `/frontend` (the actual stack); one-off operational scripts live in `/scripts` or `backend/scripts/`. The `/execution`, `/intelligence`, and `/system` top-level directories also exist (see Folder Responsibilities below); each has its own subdirectory CLAUDE.md that defines local conventions.
+Execution code lives in `/backend` (Python). One-off operational scripts live in `backend/scripts/`. There is no frontend yet; the Command Center (`index.html` + `command-center/`) is a static page that reads `.colaberry/*.json`.
 
 ---
 
@@ -50,36 +50,35 @@ Execution code lives inside `/backend` and `/frontend` (the actual stack); one-o
 
 Claude must respect these boundaries.
 
-> **Stack correction (2026-09-16, needs DRI sign-off before merge per this file's own Configuration Ownership section):** this file was copied from SupplyMind_AI as a starting template (see README) and originally described a Node.js/Express/TypeScript backend. Per REQ-015 (`.colaberry/plan.json`) and explicit user direction, the backend is Python + FastAPI + Pydantic instead — the bullet below reflects what's actually built. Sections further down this file that are SupplyMind-specific and not about the language (alumni/briefings/openclaw/Mandrill/Cory-briefing content) were **not** touched here — that's a larger, separate cleanup than this stack fix, flagged but not attempted.
+> **Stack:** Python 3.12 + FastAPI + Pydantic v2, tested with pytest (REQ-015). This file started as a copy of the SupplyMind_AI template (Node/TypeScript); the Node-specific and SupplyMind-specific parts were replaced on 2026-09-28 at the project owner's direction (Swati). DRI review still applies per Configuration Ownership above.
 
 - **`/backend`** - Python + FastAPI + Pydantic backend. Subfolders:
   - `backend/app/main.py` - FastAPI app instance; mounts routers
   - `backend/app/models.py` - Pydantic models — the typed request/response contract (see Contract Enforcement Layer below)
   - `backend/app/routers/` - FastAPI route modules, one per resource area
   - `backend/app/guardrails/` - safety/security guardrails (e.g. human-approval finalization, credential-leak scanning) — pure, dependency-free logic, colocated `test_*.py`
-  - `backend/app/basecamp/` - Basecamp-facing logic (marker detection today; the API client itself once built)
+  - `backend/app/basecamp/` - Basecamp-facing logic: marker detection, the OAuth/API client, submission retrieval, and the read-only SQL queries (`sql/`)
+  - `backend/app/db/` - read-only SQL Server connection (config, retry, inspection, typed query results)
+  - `backend/app/review_queue/` - comment intake and the Review Queue store
+  - `backend/app/audit/` - the append-only audit trail
+  - `backend/app/rules/` - versioned Stress Test rule modules (JSON) and the loader
+  - `backend/app/history/` - historical Stress Test extraction
   - `backend/app/mcp/` - local MCP server (official `mcp` SDK) exposing this app's data/actions to MCP clients like Claude Code; registered via root `.mcp.json`
   - `backend/scripts/` - one-off operational scripts (`scan_for_credentials.py`, etc.). Disposable but auditable. Each script has a single clear responsibility.
-- **`/frontend`** - React + CRA + TypeScript frontend. Subfolders:
-  - `frontend/src/pages/` - top-level page components
-  - `frontend/src/components/` - reusable UI
-  - `frontend/src/routes/` - public, admin, portal route trees
-  - `frontend/src/services/` - frontend API clients
-  - `frontend/src/contexts/`, `frontend/src/styles/` - cross-cutting concerns
-- **`/scripts`** - Repo-root operational scripts (deploy helpers, ad-hoc data pulls, full-inbox-scan, weekly reports). Same single-responsibility rule as `backend/scripts/`.
+- **`/command-center`** + `index.html` - static Command Center page (plain JavaScript modules, no build step), published with GitHub Pages; reads `.colaberry/plan.json`, `progress.json`, `manifest.json`. `.nojekyll` at the root is required so Pages serves the `.colaberry/` folder.
 - **`/directives`** - SOPs and runbooks. Step-by-step, human-readable. Must define how success is verified.
-- **`/tests`** - Automated verification layer. Currently includes Playwright/browser flows in `/tests/systemV2`. Future API contract and visual regression tests live here.
-- **`/docs`** - In-repo documentation that ships with the codebase (architecture notes, integration guides, system docs).
-- **`/nginx`** - Production nginx config (multi-stage Docker build context).
+- **`/docs`** - In-repo documentation that ships with the codebase (requirements, stories, rule specifications, data contract).
+- **`/data`** - Local working data. `data/extracts/` and `data/audit/` are git-ignored and never committed (they contain personal data).
 - **`/tmp`** - Scratch space. Always safe to delete. Never committed.
-- **`/execution`** - Legacy Python execution scripts (pre-Node migration). Read-only reference; new work goes in `/backend` or `/scripts`.
-- **`/intelligence`** - Reserved/in-flight intelligence subsystem outside the main backend tree. Check before adding here vs `backend/app/`.
-- **`/system`** - Portal-owned auto-generated state maps. **DO NOT manually edit.** See `system/CLAUDE.md`.
-- **`/preview-db-init`** - Postgres init scripts for the preview-stack Docker images.
+
+## Data rules (non-negotiable)
+
+- **SQL Server is read-only.** Never create, alter or drop tables, procs or views there, and never INSERT/UPDATE/DELETE. Only SELECT queries, through the read-only connection in `backend/app/db/`. Anything the app must store goes in the app's own storage, never in SQL Server.
+- The repo is public: no secrets, server names, logins or student data in code, commits, logs or docs. Extracts and audit files stay under git-ignored `data/`.
 
 No business logic in directives. No orchestration in disposable scripts. No execution or testing inside Claude responses.
 
-**Subdirectory CLAUDE.md files** define local conventions per top-level dir. Claude loads them additively when working inside that subtree. See `backend/CLAUDE.md`, `frontend/CLAUDE.md`, `backend/scripts/CLAUDE.md`, `directives/CLAUDE.md`, `system/CLAUDE.md`, `tests/CLAUDE.md`. (None of these subdirectory files exist yet in this repo — listed here as the template's convention, not a claim they're present.)
+**Subdirectory CLAUDE.md files** may be added per top-level folder (e.g. `backend/CLAUDE.md`); Claude loads them additively when working inside that subtree. None exist yet.
 
 ---
 
@@ -95,11 +94,11 @@ Code is read 100x more often than it is written. Modules must be small enough to
 | Function | ~50 lines | 100 lines |
 | Class / module export surface | ~5-7 public symbols | 12 |
 
-When a file or function exceeds the hard ceiling, the next change to it MUST split it before adding new code. Existing oversize files (e.g., `openclawContentResponseAgent.ts`, `openclawPlatformPostingService.ts`) are grandfathered until touched; each subsequent modification is an opportunity to extract.
+When a file or function exceeds the hard ceiling, the next change to it MUST split it before adding new code. Existing oversize files are grandfathered until touched; each subsequent modification is an opportunity to extract.
 
 ## Composition rules
 
-- **One responsibility per module.** A file named `userValidator.ts` should not also send emails. A file named `briefingService.ts` should not also format Markdown for the dashboard.
+- **One responsibility per module.** A file named `intake.py` should not also call Claude. A file named `loader.py` should not also format reviewer feedback.
 - **No circular dependencies.** A imports B imports A is a code smell that signals a missing third module C that both depend on.
 - **Extract reusable logic.** When the same 5+ lines of non-trivial logic appear in three places, lift them. Three is the threshold; two is sometimes a coincidence.
 - **Prefer composition over inheritance.** Class hierarchies more than two levels deep are forbidden in this repo unless modeling a third-party API requires it.
@@ -119,11 +118,10 @@ Every module exposes explicit input and output contracts. Untyped inputs and amb
 | Surface | Contract mechanism |
 |---|---|
 | Python backend modules | Type hints are mandatory on public function signatures. Pydantic `BaseModel` is the contract for any data crossing a module boundary (see `backend/app/models.py`) — no untyped dict passed between modules where a model could exist. |
-| TypeScript frontend modules (once built) | TypeScript types are mandatory. `tsc --noEmit` must pass before merge. No `any` without a written justification comment. |
 | Inbound HTTP routes | Request body, query params, and route params validated with Pydantic models (FastAPI does this automatically at the route boundary). Reject malformed input with 422; never let malformed input reach business logic. |
 | Outbound API responses | Response shape declared via `response_model=` on the FastAPI route AND enforced by Pydantic at serialization (a field that doesn't fit the model fails loudly, not silently). |
 | Background jobs and scripts | Job inputs typed; outputs typed and persisted. Untyped JSON blobs forbidden as inter-module currency. |
-| Database access | Once a database layer exists: an ORM's models (e.g. SQLAlchemy) are the contract. Raw SQL only when no model exists; the result must be typed at the call site. |
+| Database access | SQL Server (read-only): parameterized SELECTs stored as `.sql` files in `backend/app/basecamp/sql/`, results typed at the call site. The app's own storage, once chosen: typed models are the contract. |
 
 ## Rules
 
@@ -221,7 +219,7 @@ Claude must never halt silently. Escalation must be rare and high-signal.
 
 **Process:**
 1. Write `/tmp/escalation.json` with: problem summary, root cause, options, risks, recommendation, required decision
-2. Notify the owner. Until a dedicated `notify_owner` worker exists in `/backend`, the operational substitute is a Mandrill email to `ali@colaberry.com` containing the escalation contents.
+2. Notify the owner. Until a dedicated `notify_owner` worker exists in `/backend`, the operational substitute is telling the user in the session and emailing `ali@colaberry.com` with the escalation contents.
 3. Continue work that is not blocked by the escalation.
 
 ---
@@ -243,11 +241,11 @@ Testing is mandatory and gated. Claude designs tests; tools execute them. The cu
 
 ## End-to-End & UI testing
 
-Validates routing, links, forms, auth flows, permissions, UI state. Browser automation (Playwright) is used in `/tests/systemV2`. Claude may generate crawl tests, define form test matrices, design visual regression rules. Claude must NOT manually simulate UI behavior in prose. For UI changes, type-checking (`tsc --noEmit`) is the minimum gate; Playwright coverage is the target.
+Validates end-to-end flows through the FastAPI app (FastAPI `TestClient` in pytest) and, for the Command Center, a browser check that every tab loads. Claude must NOT manually simulate UI behavior in prose.
 
 ## Worker / scheduled-job testing
 
-Workers and scheduled jobs (Cory briefings, content generation, intelligence runs, openclaw outreach) are tested as routing logic: correct script selection, retry behavior, idempotency, error handling. Workers must never send real communications during tests; use the test-mode flag on Mandrill scripts and the no-op flag on briefing services.
+Workers and scheduled jobs (Basecamp retrieval, history extraction, AI evaluation) are tested as routing logic: correct script selection, retry behavior, idempotency, error handling. Tests must never call real Basecamp, SQL Server or the Claude API, and never post to Basecamp; use fakes.
 
 ## Directive validation
 
@@ -267,7 +265,7 @@ The Testing & Validation Rules section above defines what gets tested. This sect
 |---|---|---|
 | Unit | ~70% | Pure logic, formatters, calculators, prompt builders, query composers |
 | Integration | ~20% | Service-level tests touching dev sandbox DB, mock external APIs, queue flows |
-| End-to-end | ~10% | Playwright in `/tests/systemV2`, real browser flows against staging |
+| End-to-end | ~10% | Full API flows with FastAPI `TestClient`; browser checks of the Command Center |
 
 A suite that inverts this pyramid (more E2E than unit) is a process violation. E2E tests are slow, flaky, and expensive to maintain. Push assertions down the pyramid whenever possible.
 
@@ -307,11 +305,10 @@ Every script, worker, webhook handler, and side-effecting service in this repo M
 
 | Operation | Idempotency mechanism |
 |---|---|
-| Mandrill email send | Application-level dedup table keyed on `(recipient, subject, business_event_id)` for transactional sends; campaign sends dedup by `(campaign_id, recipient)` |
-| Basecamp todo create | Check existing todos in target list by content+assignee before POST |
-| Database write from a webhook | Unique constraint on `(source_id, event_type)` plus `INSERT ... ON CONFLICT DO NOTHING` |
-| Lead capture from external sources | Dedup by `(email + source)` before insert |
-| Briefing service runs | Daily run keyed on `(date, recipient)` so re-running the cron does not double-send |
+| Review Queue intake | Keyed on Basecamp `comment_id`: the same comment never creates two review items |
+| Basecamp comment post (future) | Check for an existing posted review for the same `comment_id` before POST |
+| Audit trail write | Append-only; one event per action, identified by `event_id` |
+| AI evaluation (future) | Keyed on `(comment_id, rule_version)`: re-running does not create a second draft or a second paid Claude call |
 
 ## Violations are production defects
 
@@ -334,7 +331,7 @@ Design the failure path before the happy path. Every shipped system must answer 
 |---|---|
 | Timeout | Every outbound HTTP, DB, or queue call has an explicit timeout (no infinite hangs) |
 | Retry strategy | Documented in code: which exceptions retry, max attempts, backoff curve |
-| Circuit breaker | When upstream fails N times in a window, stop calling and surface a clear error. See `openclawCircuitBreaker.ts` for the canonical pattern in this repo |
+| Circuit breaker | When upstream fails N times in a window, stop calling and surface a clear error. |
 | Fallback | If primary path fails and a degraded path exists, fall back deterministically. If no fallback exists, fail fast and log clearly |
 | Dead-letter handling | Failed jobs/messages that cannot be retried go to a dead-letter store with full context for manual triage |
 
@@ -355,14 +352,14 @@ Adapted from the 12-Factor App methodology to this stack. Every shipped module s
 | Principle | Application here |
 |---|---|
 | Config separated from code | All config in env vars or `/config`. No hostnames, credentials, feature flags, or environment-specific values hardcoded in source. |
-| Stateless execution where possible | Services should hold no in-memory state across requests. State lives in Postgres, CCPP, or explicit caches. Worker scripts are designed to restart cleanly. |
+| Stateless execution where possible | Services should hold no in-memory state across requests. State lives in the app's own storage (not SQL Server) or explicit caches. Worker scripts are designed to restart cleanly. |
 | Idempotent processes | See Idempotency & Replayability section. Every job, script, and webhook handler must be safe to run twice. |
 | Logs as structured event streams | See Observability Framework section. JSON-structured logs to stdout, never to ad-hoc files. |
-| Dev/prod parity | Local Docker, dev VPS, and prod VPS run the same compose definitions. Schema drift between environments is a defect. |
-| Explicit dependencies | All runtime deps declared in the manifest file native to the project's language, checked into that project's root - `package.json` for Node/TypeScript, `requirements.txt` or `pyproject.toml` for Python, `go.mod` for Go, and so on. No globally-installed CLI tools assumed. Container builds are reproducible. This principle is the same across every language this repo hierarchy contains; only the manifest format changes. A project with a dependency not recorded in its own manifest - including a dev/test-only dependency - is incomplete, regardless of stack. |
-| Single-responsibility scripts | Each script in `backend/scripts/` and `/scripts` does one thing. A script that "also does X" should be split. |
+| Dev/prod parity | Local and CI run the same Python version (`.python-version`) and pinned `requirements.txt`. |
+| Explicit dependencies | All runtime deps declared in the manifest file native to the project's language, checked into that project's root - here `requirements.txt`, with exact pinned versions. No globally-installed CLI tools assumed. A project with a dependency not recorded in its own manifest - including a dev/test-only dependency - is incomplete, regardless of stack. |
+| Single-responsibility scripts | Each script in `backend/scripts/` does one thing. A script that "also does X" should be split. |
 | Disposability | Workers must shut down cleanly on SIGTERM and start fast. No long boot rituals. |
-| Build / release / run separation | `git push` triggers build, `docker compose up --build` is the release, the running container is the run stage. Code changes do not patch a running container. |
+| Build / release / run separation | `git push` runs the tests in GitHub Actions; a deployment process is not defined yet. |
 
 Deviations from these principles must be logged in the relevant directive or in the file's header comment, with reasoning.
 
@@ -375,14 +372,14 @@ Security is not a layer on top of the app, it is woven into every module. The ru
 ## Input validation
 
 - Every input from outside the trust boundary (HTTP request, webhook payload, file upload, scraped content) is validated against a schema before it is used. See Contract Enforcement Layer.
-- Untrusted input is never interpolated into SQL, shell commands, regex patterns, or HTML. Use parameterized queries (Sequelize is fine), spawn-with-args (no shell strings), and a templating engine that auto-escapes (React, no `dangerouslySetInnerHTML` without justification).
+- Untrusted input is never interpolated into SQL, shell commands, regex patterns, or HTML. Use parameterized queries (`?` placeholders with pyodbc), `subprocess` with an argument list (never `shell=True` with input), and escape anything inserted into HTML.
 
 ## Secrets management
 
 - No secrets in source code. No secrets in commit history. No secrets in logs. No secrets in error messages.
-- Secrets live in env vars on the production VPS or in the CCPP `Basecamp_AuthInfo`-style rotation tables. Never in `.env` files committed to git.
+- Secrets live in environment variables or the git-ignored `.env` (see `.env.example` for names only). Never in files committed to git. `backend/scripts/scan_for_credentials.py` must pass before every commit.
 - If a secret is accidentally committed, treat it as compromised: rotate immediately, then clean history.
-- All scripts that read secrets must redact them in any log output (`process.env.MANDRILL_API_KEY` becomes `<redacted>` in any log line that references it).
+- All scripts that read secrets must redact them in any log output (e.g. `DB_PASSWORD` or `ANTHROPIC_API_KEY` becomes `<redacted>`; use Pydantic `SecretStr`).
 
 ## External calls
 
@@ -394,7 +391,7 @@ Every outbound call to an external API MUST include:
 
 ## Dependencies
 
-- New dependencies require a deliberate add. Drive-by `npm install` is not allowed.
+- New dependencies require a deliberate add. Drive-by `pip install` is not allowed; every dependency is pinned in `requirements.txt`.
 - Dependencies with known CVEs must be updated before any other change ships.
 - Transitive dependencies are reviewed when adding direct dependencies.
 
@@ -469,7 +466,7 @@ After every completed implementation change, before marking the change "done" in
 
 **What goes in `PROGRESS.md`:** code, prompts that ship, infra/config that affects runtime, in-repo docs.
 
-**What does NOT go in `PROGRESS.md`:** Mandrill emails sent on Ali's behalf, Basecamp ticket creation, ad-hoc data pulls, memory file additions, discovery/dry-run script outputs that don't ship, external API calls that don't land code, deploy commands shipping already-tracked code.
+**What does NOT go in `PROGRESS.md`:** emails sent, Basecamp ticket creation, ad-hoc data pulls, memory file additions, discovery/dry-run script outputs that don't ship, external API calls that don't land code, deploy commands shipping already-tracked code.
 
 **Required entry format** (append under the relevant task):
 
@@ -478,14 +475,14 @@ After every completed implementation change, before marking the change "done" in
   - Date: YYYY-MM-DD
   - Session: CC-<YYYYMMDD>-<id>
   - What changed: <one line>
-  - Verification: <test name | deploy URL | "user confirmed" | "TypeScript passes">
+  - Verification: <test name | deploy URL | "user confirmed" | "pytest N/N">
   - Notes: <only if blocker, deviation, or non-obvious decision>
 ```
 
 **Hard gates:**
 1. **No code change is "done" without a PROGRESS.md entry.** Definition of Done explicitly blocks on this.
-2. **No `[x]` mark without verification evidence on the same line.** Forbidden: marking complete based on intent. Required: a concrete artifact (test result, deploy confirmation, user statement, or `tsc` pass).
-3. **Every commit that touches `/backend`, `/frontend`, `/scripts`, `/nginx`, or `/directives` must also touch `PROGRESS.md`.** If it doesn't, the change is incomplete.
+2. **No `[x]` mark without verification evidence on the same line.** Forbidden: marking complete based on intent. Required: a concrete artifact (test result, deploy confirmation, user statement, or pytest pass).
+3. **Every commit that touches `/backend`, `/command-center` or `/directives` must also touch `PROGRESS.md`.** If it doesn't, the change is incomplete.
 4. **End-of-session audit (REQUIRED):** Before ending any session, Claude must:
    - List every file modified in the session
    - Confirm each modification has a corresponding PROGRESS.md entry **tagged with this session's ID**
@@ -515,15 +512,9 @@ Because other instances may be writing `PROGRESS.md` while you work:
 - **Only ever edit or audit entries carrying your own Session ID.** Never rewrite, "clean up," or re-check another instance's entries.
 - **Commit only the files you changed** (`git add <explicit paths>`, not `git add -A`). Another instance's uncommitted work may be sitting in the same working tree.
 
-## Per-session change report (HTML)
+## Per-session change report
 
-After every completed change (same cadence as the PROGRESS.md gate), regenerate a detailed, styled HTML changelog for your session and open it in the user's browser:
-
-```
-node scripts/generateSessionChangelog.js <SessionID>
-```
-
-The script reads `PROGRESS.md`, selects the entries tagged with your Session ID, renders `docs/sessions/SESSION_<SessionID>.html` (one card per change: title, date, what changed, verification, files touched, notes), and auto-opens it. **One HTML per session, keyed on the Session ID**, so concurrent instances never overwrite each other's report. Pass `--no-open` to regenerate without launching the browser. This means: every PROGRESS.md entry you write must carry your `Session:` tag (see the entry format) so the report can find it.
+There is no session-changelog script in this repo. The Build Notes artifact (https://claude.ai/artifact/8jG1ktHc4zqczETSXeL6hE) is the human-readable report; `/close-story STORY-nnn` updates it at the end of each story.
 
 ## Verification rule
 
@@ -531,7 +522,7 @@ Before any coding work begins: confirm both files exist, read both fully, summar
 
 ## Daily executive report
 
-The daily executive report concept in this repo is implemented as the **Cory briefing** service in `backend/src/services/`. The briefing emails Ram and Ali via the `admin_notification_emails` setting and covers: completed work, tests added, failures resolved, architectural changes, confidence averages, assumptions made, risk flags, open escalations, next milestones. Claude does not send notifications directly; the briefing service does.
+Not built for this project. Progress is reported through `PROGRESS.md`, the Command Center and the Build Notes artifact.
 
 ---
 
@@ -541,13 +532,13 @@ The Logging section above tracks WHAT changed in the codebase. This section trac
 
 ## Structured logging
 
-All logs are JSON, written to stdout, captured by the container runtime. No `console.log` of unstructured strings in production code paths. Each log line must include:
+All logs are JSON, written to stdout, via `backend/app/logging_config.py`. No `print()` of unstructured strings in production code paths. Each log line must include:
 
 ```json
 {
   "timestamp": "ISO-8601",
   "level": "info | warn | error",
-  "service": "backend | briefing | openclaw-content | ...",
+  "service": "backend | scripts",
   "event": "short_event_name",
   "correlation_id": "uuid",
   "duration_ms": 123,
@@ -577,7 +568,7 @@ If a failure cannot be traced from symptom back to root cause using a single cor
 
 ## Required at every external boundary
 
-Calls to Mandrill, Basecamp, OpenAI, Apollo, Skool, OIED, and any other external system must log: request start, request end, duration, status code, and any error body. Failures log the full error body (with secrets redacted). No external call is allowed to fail silently.
+Calls to Basecamp, SQL Server, the Claude API, and any other external system must log: request start, request end, duration, status code, and any error body. Failures log the full error body (with secrets redacted). No external call is allowed to fail silently.
 
 ## Error classification
 
@@ -587,39 +578,9 @@ Every caught exception is tagged with a stable `error_class` string before being
 
 # UI/UX Design
 
-**The full design system (palette, tokens, component patterns, accessibility rules, target audience) lives in 5 design skills.** Invoke whichever fits:
+No application frontend exists yet. The Command Center is a static page; keep it plain HTML/CSS/JavaScript with no build step. If a frontend is built later, add its conventions here.
 
-| Skill | When |
-|---|---|
-| `/baseline-ui` | Output the complete design system reference (colors, tokens, components) |
-| `/frontend-design` | Generate any React + Bootstrap page, component, or layout |
-| `/fixing-accessibility` | WCAG 2.1 AA audit and remediation |
-| `/fixing-motion-performance` | Animation, rendering, bundle optimization |
-| `/ui-ux-design` | Strategic design: research, wireframes, prototyping, design review |
-
-Also see `frontend/CLAUDE.md` for frontend-local conventions. The design system itself is NOT duplicated in this root file (it would drift). Skills are the source of truth.
-
-**Target audience:** enterprise executives, 35-60. Clean, calm, authoritative. Bloomberg meets Salesforce, not consumer SaaS.
-
----
-
-# Outreach Content Policy
-
-Outbound social content (Reddit, Quora, HN, LinkedIn, Dev.to, Skool, etc.) follows the OpenClaw platform strategy: PASSIVE_SIGNAL / HYBRID_ENGAGEMENT / AUTHORITY_BROADCAST. Byline rules differ per strategy; Skool-specific banned-phrase patterns are enforced at both generation and quality-gate layers.
-
-**Full strategy taxonomy, byline rules, banned-phrase list, and on-flag protocol live in the `openclaw-outreach` skill.** Invoke via `/openclaw-outreach`.
-
-Code locations: `backend/src/services/agents/openclaw/openclawPlatformStrategy.ts` (`enforceSignOff()`), `backend/src/services/agents/skool/skoolQualityGateAgent.ts`, `backend/src/services/agents/skool/skoolPlatformStrategy.ts`.
-
----
-
-# Screenshot Capture + Review HTML
-
-Sprints that ship user-facing portal changes end with an HTML review doc embedding real production screenshots (not CSS mockups). All capture scripts route through `scripts/captureHelpers.js` for safe-width downscaling (1800px ceiling).
-
-**Full capture protocol (safe-width rules, helper API, JWT refresh) and review-doc structure (per-stop pattern, compile button, naming conventions) live in the `screenshot-review` skill.** Invoke via `/screenshot-review`.
-
-Quick reference: capture script at `scripts/captureProductionScreenshots.js`, output to `docs/screenshots/<YYYY-MM-DD>-deploy/`, walkthrough naming `docs/<SPRINT>_REVIEW.html`, reference pattern at `docs/POST_DEPLOY_WALKTHROUGH.html`.
+**Target audience:** reviewers and program staff. Clean, calm, readable.
 
 ---
 
@@ -630,26 +591,20 @@ Claude may assume:
 - VS Code / VSCodium / Cursor may be used
 - Git is present
 - CI runs automated tests - see the Continuous Integration section below for what's required where it doesn't exist yet
-- Production VPS access is via `ssh root@95.216.199.47` to the stack at `/opt/colaberry-accelerator`. Deploys are `git pull origin main && docker compose -f docker-compose.production.yml up -d --build [service]`.
+- Python 3.12 with a local `.venv` (`.venv/bin/python -m pytest backend` runs the tests)
 
 Claude must NOT assume:
 - Moltbot exists
 - Proprietary automation platforms exist
-- Production credentials exist locally (Mandrill, MSSQL, Basecamp tokens live in the prod backend container env, not in the local repo)
+- Credentials exist (SQL Server, Basecamp and Claude API values live only in the git-ignored `.env`; code must fail clearly when they are missing)
 
 ---
 
 # Continuous Integration & Dependency Manifests (Cross-Project, Any Language)
 
-This file's rules apply wherever it governs, which is not always one single Node/TypeScript codebase - some projects under this hierarchy are a different stack entirely (e.g. a pure Python project with no `backend/`/`frontend`/Docker layout at all). The two rules below are stated once here, generically, instead of repeated per-project, because they hold regardless of implementation language.
+**Dependency manifests.** Every project checks its runtime dependencies into `requirements.txt` at the repo root, pinned to exact versions. This includes dev/test-only dependencies (a local test-database stub, a mocking library) - not just what ships to production. A project missing this manifest at its root is incomplete, independent of what language it's written in. Adding a dependency to a project that has no root manifest yet is the moment to create one, not a reason to skip it.
 
-**Dependency manifests.** Every project checks its runtime dependencies into the manifest file native to its own language, at that project's root - `package.json`/`package-lock.json` for Node/TypeScript, `requirements.txt` or `pyproject.toml` for Python, `go.mod`/`go.sum` for Go, `Gemfile` for Ruby, etc. This includes dev/test-only dependencies (a local test-database stub, a mocking library) - not just what ships to production. A project missing this manifest at its root is incomplete, independent of what language it's written in. Adding a dependency to a project that has no root manifest yet is the moment to create one, not a reason to skip it.
-
-**Continuous Integration.** Every project must have its test suite wired to run automatically on push/PR (GitHub Actions is the default choice unless the project's hosting forces otherwise), blocking merge on failure - the same "production systems must be deterministic" principle this file opens with, applied to whether tests actually ran rather than whether someone remembered to run them locally. What's language-specific is only the command CI invokes: `tsc --noEmit` + a JS/TS test runner for a Node/TypeScript project, `pytest` for a Python project, `go test ./...` for Go, and so on - CLAUDE.md does not hardcode one, because it is not tied to one language.
-
-- **Where CI does not yet exist for a project:** this is a real gap, not a documentation nit - flag it in that project's own PROGRESS.md as a known follow-up, the same way any other missing piece of infrastructure gets flagged.
-- **Introducing CI for the first time is a production-infrastructure change** under this file's own Autonomy Model (see Strategic Decisions), so it is not added unilaterally - escalate or get explicit direction first, then add it, then log it exactly like any other shipped change (PROGRESS.md entry, commit naming what was added and why).
-- A project without CI is not automatically non-compliant while first-time setup is pending sign-off, but "we'll get to it" is not a permanent state - it stays on that project's own follow-up list until it's actually done.
+**Continuous Integration.** `.github/workflows/tests.yml` runs `pytest` and the credential scan on every push and pull request to `main` (added 2026-09-28 at the project owner's direction). A failing run must be fixed before more work is stacked on it.
 
 ---
 
@@ -674,7 +629,7 @@ A change is complete only if ALL of the following are true:
 - Tests exist and pass at the minimum standard for the layer (see Testing & Validation Rules)
 - Directives updated if necessary
 - No secrets introduced
-- Validation scripts pass (`pytest` for the Python backend; `tsc --noEmit` for TypeScript layers, e.g. the frontend once built)
+- Validation scripts pass (`pytest` and `backend/scripts/scan_for_credentials.py`)
 - A junior developer can understand the change
 - Assumptions logged (if any)
 - No unresolved governance boundary crossed

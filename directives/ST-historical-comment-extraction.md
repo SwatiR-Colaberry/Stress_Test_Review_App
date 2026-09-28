@@ -71,7 +71,8 @@ User decisions (2026-09-25): 15 per Stress Test (the earlier "15 projects in tot
 
 ## Safety rules
 
-- **Read-only.** Only `SELECT`. `test_queries_are_read_only` rejects any stored query that contains a write or `EXEC`. Use a least-privilege login (Master Spec §18) if IT can provide one.
+- **Read-only.** Only `SELECT`. `test_queries_are_read_only` rejects any stored query that contains a write or `EXEC`. The connection opens with `ApplicationIntent=ReadOnly`, and the login in the local `.env` is the read-only one provided for this app (project owner, 2026-09-28; Master Spec §18).
+- **Server certificate.** `DB_TRUST_SERVER_CERTIFICATE=yes` is the accepted setting (project owner decision, 2026-09-28): the same server and setting are used by the current review process. Traffic is still encrypted; only the certificate chain is not checked. This closes the earlier follow-up to obtain the CA certificate.
 - **Bounded.** Every connection and every query gets an explicit timeout. Retries are capped (the same policy as `fetch_with_retry`: at most 3 attempts), and a failure surfaces as a visible error.
 - **Personal data.** Extracts contain student and reviewer names, emails and submission text. They are written only under `data/extracts/`, which `.gitignore` excludes. **Never commit an extract** (this repo is public), and never paste rows into docs, tickets or chats. Aggregates (counts, rule patterns) may be shared.
 - **Size.** `StepHTML` and `Comment` are large text columns. Always run the counts query first.
