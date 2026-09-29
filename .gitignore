@@ -17,3 +17,6 @@ data/audit/
 
 # AI evaluations (STORY-004): results quote student submissions; usage log and locks. Never commit.
 data/evaluations/
+
+# Vector index (STORY-013): embeds student submissions and reviewer feedback. Never commit.
+data/vector_index/

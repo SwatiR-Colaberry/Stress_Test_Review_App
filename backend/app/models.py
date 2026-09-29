@@ -172,6 +172,9 @@ AuditAction = Literal[
     "evaluation_failed",
     "evaluation_already_done",
     "evaluation_manual_resolution",
+    # Historical retrieval (STORY-013): which past reviews informed a draft.
+    # reason_code = found / none_found / the error class when unavailable.
+    "history_retrieved",
 ]
 
 
@@ -196,6 +199,64 @@ class AuditEvent(BaseModel):
     rule_id: Optional[str] = Field(default=None, max_length=16)  # evaluation_finding events
     review_id: Optional[str] = Field(default=None, max_length=MAX_ID_LENGTH)
     reason_code: Optional[str] = Field(default=None, max_length=64)
+
+
+# --- Historical retrieval (REQ-019, STORY-013) --------------------------------
+
+# Most similar cases a retrieval may return. The configured k (default 10)
+# must stay within this; it bounds the history's share of the Claude prompt.
+MAX_HISTORY_CASES = 15
+
+StressTestId = Annotated[str, Field(pattern=r"^ST[0-9]$")]
+
+
+class HistoricalCase(BaseModel):
+    """One past review: what the student submitted and what the human reviewer
+    wrote back, for one Stress Test. case_id is the idempotency key of the
+    vector index: indexing the same case_id again replaces, never duplicates.
+    Texts are excerpts, capped so a case cannot flood the prompt."""
+    model_config = ConfigDict(extra="forbid")
+
+    case_id: str = Field(min_length=1, max_length=MAX_ID_LENGTH)
+    stress_test_id: StressTestId
+    submission_excerpt: str = Field(min_length=1, max_length=2000)
+    reviewer_feedback: str = Field(min_length=1, max_length=2000)
+
+
+class SimilarCase(HistoricalCase):
+    """A historical case returned by a search, with its cosine similarity to
+    the submission under review (1.0 = same direction, higher = closer)."""
+    similarity: float = Field(ge=-1.0, le=1.0)
+
+
+HistoryStatus = Literal["found", "none_found", "unavailable"]
+
+
+class HistoryRetrieval(BaseModel):
+    """The outcome of looking up similar past reviews for one submission.
+    Retrieval never fails a review: when the vector index or the embedding
+    model cannot be used, status is 'unavailable', cases is empty and message
+    / error_class say why, so the reviewer sees it (REQ-019)."""
+    model_config = ConfigDict(extra="forbid")
+
+    stress_test_id: StressTestId
+    status: HistoryStatus
+    cases: List[SimilarCase] = Field(max_length=MAX_HISTORY_CASES)
+    message: str = Field(min_length=1, max_length=300)
+    error_class: Optional[str] = Field(default=None, max_length=64)
+
+    @model_validator(mode="after")
+    def _consistent(self) -> "HistoryRetrieval":
+        # Same Stress Test only: a case from another Stress Test is a contract
+        # violation even if the index returned it.
+        foreign = [case.case_id for case in self.cases if case.stress_test_id != self.stress_test_id]
+        if foreign:
+            raise ValueError(f"cases from a different Stress Test: {foreign}")
+        if (self.status == "found") != bool(self.cases):
+            raise ValueError("status 'found' requires cases; other statuses require none")
+        if (self.status == "unavailable") != (self.error_class is not None):
+            raise ValueError("error_class is set exactly when status is 'unavailable'")
+        return self
 
 
 # --- AI draft evaluation (STORY-004: REQ-005; Master Spec §13) ---
@@ -289,6 +350,10 @@ class EvaluationResult(BaseModel):
     findings: List[DraftFinding]
     prechecks: PrecheckResults
     usage: TokenUsage
+    # Similar past reviews shown to Claude as examples (STORY-013), and what
+    # the reviewer sees about them: found / none found / unavailable + why.
+    # None: no retrieval was run (results stored before STORY-013 load too).
+    history: Optional[HistoryRetrieval] = None
 
     @model_validator(mode="after")
     def _distinct(self) -> "EvaluationResult":

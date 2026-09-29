@@ -44,10 +44,15 @@ from app.evaluation.store import (
     UsageLedger,
     UsageRecord,
 )
-from app.models import AuditEvent, DraftFinding, EvaluationResult, Submission, TokenUsage
+from app.models import AuditEvent, DraftFinding, EvaluationResult, HistoryRetrieval, Submission, TokenUsage
 from app.rules.loader import RuleLoadResult
 
 logger = logging.getLogger("stress_test_review.evaluation")
+
+# (stress_test_id, submission_text) -> similar past reviews (STORY-013,
+# app.history.retrieval.retrieve_similar_cases with its index and model bound).
+# It reports an outage in its result instead of raising, so the review goes on.
+HistoryLookup = Callable[[str, str], HistoryRetrieval]
 
 
 class EvaluationManualResolutionError(Exception):
@@ -126,6 +131,7 @@ def evaluate_submission(
     actor_id: str = "system",
     correlation_id: Optional[str] = None,
     clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+    history: Optional[HistoryLookup] = None,
 ) -> EvaluationResult:
     recorder = _Recorder(audit, actor_id, correlation_id or str(uuid.uuid4()),
                          comment_id, submission.message_id, rules)
@@ -146,7 +152,8 @@ def evaluate_submission(
             return stored
         recorder.record("evaluation_started", "success")
         try:
-            result = store.put(_run(submission, comment_id, evaluator, ledger, config, recorder, clock, rules))
+            result = store.put(_run(submission, comment_id, evaluator, ledger, config, recorder, clock, rules,
+                                    history))
         except EvaluationManualResolutionError as error:
             recorder.record_failure("evaluation_manual_resolution", error.reason_code)
             raise
@@ -163,9 +170,10 @@ def evaluate_submission(
 
 def _run(submission: Submission, comment_id: int, evaluator: Evaluator, ledger: UsageLedger,
          config: EvaluationConfig, recorder: _Recorder, clock: Callable[[], datetime],
-         rules: RuleLoadResult) -> EvaluationResult:
+         rules: RuleLoadResult, history: Optional[HistoryLookup] = None) -> EvaluationResult:
     checked = prepare_evaluation_input(submission, comment_id, rules)
     prechecks = run_prechecks(checked)
+    past = _retrieve_history(history, checked, recorder)
     stages: List[int] = []
     passed: List[str] = []
     findings: List[DraftFinding] = []
@@ -173,7 +181,8 @@ def _run(submission: Submission, comment_id: int, evaluator: Evaluator, ledger: 
     model = evaluator.model
 
     for stage in [s for s in checked.module.stages if s.blocking and s.rule_ids]:
-        reply = _evaluate_stage(checked, stage.number, stage.rule_ids, prechecks, evaluator, ledger, config, clock)
+        reply = _evaluate_stage(checked, stage.number, stage.rule_ids, prechecks, evaluator, ledger, config, clock,
+                                past)
         stages.append(stage.number)
         passed += reply.answer.passed_rule_ids
         findings += [
@@ -189,14 +198,35 @@ def _run(submission: Submission, comment_id: int, evaluator: Evaluator, ledger: 
         stress_test_id=checked.module.stress_test_id, rule_version=checked.module.version,
         model=model, evaluated_at=clock(), correlation_id=recorder.correlation_id,
         stages_evaluated=stages, passed_rule_ids=passed, findings=findings,
-        prechecks=prechecks, usage=usage,
+        prechecks=prechecks, usage=usage, history=past,
     )
+
+
+def _retrieve_history(history: Optional[HistoryLookup], checked: EvaluationInput,
+                      recorder: _Recorder) -> Optional[HistoryRetrieval]:
+    """Once per submission (both stages see the same examples). An outage is
+    in the result, not raised: the evaluation continues without examples."""
+    if history is None:
+        return None
+    test = checked.module.stress_test_id
+    try:
+        past = history(test, checked.content_text)
+    except Exception as error:  # noqa: BLE001 — optional examples must never stop a review (REQ-019)
+        # The lookup reports outages in its result; reaching here is a bug in
+        # it. Log the class (never the message: it may quote text) and go on.
+        recorder.log(logging.ERROR, "history_lookup_failed", error_class=type(error).__name__)
+        past = HistoryRetrieval(stress_test_id=test, status="unavailable", cases=[], error_class="HistoryLookupFailed",
+                                message="Historical examples are unavailable (the lookup failed unexpectedly); "
+                                        "this review continues without them.")
+    recorder.record("history_retrieved", "failure" if past.status == "unavailable" else "success",
+                    reason_code=past.error_class or past.status)
+    return past
 
 
 def _evaluate_stage(checked: EvaluationInput, stage_number: int, rule_ids: List[str], prechecks,
                     evaluator: Evaluator, ledger: UsageLedger, config: EvaluationConfig,
-                    clock: Callable[[], datetime]) -> ClaudeReply:
-    prompt = build_prompt(checked, stage_number, prechecks)
+                    clock: Callable[[], datetime], past: Optional[HistoryRetrieval] = None) -> ClaudeReply:
+    prompt = build_prompt(checked, stage_number, prechecks, past)
     input_tokens = evaluator.count_tokens(prompt)
     if input_tokens > config.max_input_tokens:
         raise EvaluationManualResolutionError(

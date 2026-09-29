@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-013",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-29T10:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "systems",
+      "value": "Past reviews are kept in an embedded LanceDB vector database stored as local files outside SQL Server; retrieval filters to the submission's Stress Test before ranking by cosine similarity.",
+      "evidence": "backend/app/history/lancedb_index.py"
+    },
+    {
+      "dimension": "integrations",
+      "value": "Text embeddings are computed locally with fastembed (BAAI/bge-small-en-v1.5, 384 dimensions); no external embedding service or key is used, and the model is downloaded once on first use.",
+      "evidence": "backend/app/history/embedder.py"
+    },
+    {
+      "dimension": "data",
+      "value": "A historical case is one review round: a student's ##Critique## submission and the next reviewer comment marked ##FeedbackGiven## or ##Approved## in the same thread; a thread with a resubmission gives several cases.",
+      "evidence": "backend/app/history/cases.py"
+    },
+    {
+      "dimension": "outputs",
+      "value": "Every AI evaluation carries a history outcome the reviewer can read: found (with the similar cases), none_found, or unavailable with the reason; it is also recorded in the audit trail as history_retrieved.",
+      "evidence": "backend/app/models.py (HistoryRetrieval, EvaluationResult.history)"
+    },
+    {
+      "dimension": "constraints",
+      "value": "Historical examples are given to Claude only as labelled examples in the user message; the rule module stays the system prompt, only the stage's rule ids are accepted, and severities come from the module.",
+      "evidence": "backend/app/evaluation/prompt.py"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Return the top 10 similar cases by default, configurable from 1 to 15 with HISTORY_TOP_K.",
+      "rationale": "user decision 2026-09-28: meets the acceptance line 'top 5-10'; with 15 approved threads per Stress Test indexed, a fixed top 15 would have returned every case",
+      "evidence": "backend/app/history/config.py"
+    },
+    {
+      "statement": "Use LanceDB embedded (files under a git-ignored folder) as the vector database, behind a VectorIndex interface.",
+      "rationale": "user asked to follow the finished stories, which all store app data as local git-ignored files behind an interface; no server to run; another engine can be swapped in as one class",
+      "evidence": "backend/app/history/vector_index.py"
+    },
+    {
+      "statement": "Compute embeddings locally instead of calling a paid embedding API.",
+      "rationale": "user decision 2026-09-28: free, and student text never leaves the machine",
+      "evidence": "backend/app/history/embedder.py"
+    },
+    {
+      "statement": "Cut each past submission and past feedback to 600 characters in the Claude prompt (2,000 in the index).",
+      "rationale": "10 full cases would add about 10k input tokens per stage and push many submissions over the 20k input limit into manual resolution",
+      "evidence": "backend/app/evaluation/prompt.py"
+    },
+    {
+      "statement": "An index that was never built is reported as unavailable, not as 'no similar cases'.",
+      "rationale": "a setup mistake must not look like an empty history to the reviewer",
+      "evidence": "backend/app/history/lancedb_index.py"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Retrieval does not filter by rule id: historical reviewer feedback is not tagged with rule ids, so a case is a whole submission and its whole answer.",
+      "evidence": "backend/app/history/cases.py"
+    },
+    {
+      "statement": "Only the history extract is indexed; completed reviews from this app are not added yet (STORY-007).",
+      "evidence": "backend/scripts/build_history_index.py"
+    },
+    {
+      "statement": "Screenshots and attached files are indexed only as their [image: name] / [file: name] markers; their content is not embedded.",
+      "evidence": "backend/app/evaluation/text.py"
+    },
+    {
+      "statement": "The embedding model reads about the first 512 tokens of a submission; longer submissions are matched on their beginning.",
+      "evidence": "backend/app/history/embedder.py"
+    },
+    {
+      "statement": "Evaluations stored before this story keep no history; a replay returns the stored result unchanged.",
+      "evidence": "backend/app/evaluation/evaluate.py"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "backend/app/history/test_retrieval.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/history/test_lancedb_index.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/evaluation/test_evaluate_history.py"
+    },
+    {
+      "kind": "script",
+      "ref": "backend/scripts/history_demo.py"
+    }
+  ],
+  "measurementEvents": []
+}

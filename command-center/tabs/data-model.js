@@ -72,6 +72,19 @@ const ENTITIES = [
     relates: ["belongs to ReviewItem", "optionally created by Reviewer"],
   },
   {
+    name: "HistoricalCase",
+    reqs: ["REQ-019"],
+    note: "Built (STORY-013): one past review round — a student's ##Critique## submission and the reviewer's answer — in a vector index for similarity search. Stored in LanceDB files under the git-ignored data/vector_index/, not SQL Server (read-only). Retrieval filters to the same Stress Test, then ranks; the top 10 reach Claude as examples only, never as rules. What was found (or why not) is kept on the evaluation result as history.",
+    fields: [
+      ["case_id", "string", "primary key — the submission's Basecamp comment id; re-indexing replaces, never duplicates"],
+      ["stress_test_id", "string", "e.g. ST0 — the retrieval filter"],
+      ["submission_excerpt", "text", "plain text, review markers removed, ≤ 2,000 characters"],
+      ["reviewer_feedback", "text", "the human reviewer's answer, ≤ 2,000 characters"],
+      ["vector", "float[384]", "embedding of the submission (bge-small-en-v1.5, run locally)"],
+    ],
+    relates: ["examples for an AI draft Finding (EvaluationResult.history)", "later fed by completed reviews (STORY-007)"],
+  },
+  {
     name: "ReviewHistoryEntry",
     reqs: ["REQ-008", "REQ-011"],
     note: "The audit trail: every AI draft and human edit, preserved rather than overwritten.",
@@ -94,7 +107,7 @@ const ENTITIES = [
     fields: [
       ["event_id", "uuid", "primary key"],
       ["recorded_at", "timestamp", ""],
-      ["action", "enum", "review_created | review_already_queued | comment_no_marker | comment_rejected_malformed | finalize_allowed | finalize_blocked | retrieval_started | retrieval_completed | retrieval_failed | rules_loaded | rules_manual_resolution | evaluation_started | evaluation_finding | evaluation_completed | evaluation_failed | evaluation_already_done | evaluation_manual_resolution"],
+      ["action", "enum", "review_created | review_already_queued | comment_no_marker | comment_rejected_malformed | finalize_allowed | finalize_blocked | retrieval_started | retrieval_completed | retrieval_failed | rules_loaded | rules_manual_resolution | evaluation_started | evaluation_finding | evaluation_completed | evaluation_failed | evaluation_already_done | evaluation_manual_resolution | history_retrieved"],
       ["actor_id", "string", "\"system\" for intake; reviewer id for finalize; requesting user for retrieval; \"unidentified\" if none named"],
       ["outcome", "enum", "success | blocked | failure"],
       ["correlation_id", "string", "X-Correlation-ID or generated"],
@@ -105,7 +118,7 @@ const ENTITIES = [
       ["rule_version", "string", "nullable — e.g. v1 (rule-loading and evaluation events)"],
       ["rule_id", "string", "nullable — e.g. ST0-003 (evaluation_finding events)"],
       ["review_id", "string", "nullable — fk → ReviewItem"],
-      ["reason_code", "string", "nullable — e.g. AI_CANNOT_APPROVE, REVIEWER_FEEDBACK, or PASS / FAIL / ADVISORY on evaluation_finding"],
+      ["reason_code", "string", "nullable — e.g. AI_CANNOT_APPROVE, REVIEWER_FEEDBACK, PASS / FAIL / ADVISORY on evaluation_finding, found / none_found / error class on history_retrieved"],
     ],
     relates: ["optionally about ReviewItem"],
   },

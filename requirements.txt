@@ -26,5 +26,12 @@ httpx==0.28.1
 # backend/app/evaluation/claude_client.py). Official SDK; 1.x brings httpx2.
 anthropic==1.8.0
 
+# Historical retrieval (REQ-019, STORY-013). Vector database: LanceDB, embedded
+# (files under the git-ignored data/vector_index/, no server; SQL Server is not
+# used). Embeddings: fastembed, run locally (ONNX), so student text never leaves
+# this machine; the model is downloaded once to a local cache outside the repo.
+lancedb==0.39.0
+fastembed==0.8.1
+
 # Test tooling.
 pytest==9.1.1

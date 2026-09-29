@@ -664,29 +664,65 @@
       "criteria": [
         {
           "text": "Given historical critique and feedback comments for a Stress Test are indexed in a vector database stored outside SQL Server, when a new submission for that Stress Test is reviewed, then the system returns the top 5–10 most similar cases from that same Stress Test only.",
-          "passed": false
+          "passed": true,
+          "evidence": "Cases (student ##Critique## submission + the reviewer's ##FeedbackGiven##/##Approved## answer, backend/app/history/cases.py) are embedded locally (fastembed bge-small-en-v1.5, backend/app/history/embedder.py) into LanceDB under the git-ignored data/vector_index/ (backend/app/history/lancedb_index.py), not SQL Server; retrieve_similar_cases() (backend/app/history/retrieval.py) filters to the Stress Test then returns the top HISTORY_TOP_K (default 10, allowed 1-15) by cosine similarity; the evaluator passes them to Claude (backend/app/evaluation/evaluate.py). Tests: backend/app/history/test_retrieval.py::test_found_returns_the_top_k_most_similar, test_lancedb_index.py::test_top_k_only / ::test_most_similar_first_same_stress_test_only. Live: real index 472 cases; backend/scripts/history_demo.py returned 10 ST0 cases (similarity 0.850-0.779) for an ST0 submission."
         },
         {
           "text": "Given a submission for one Stress Test, when historical cases are retrieved, then no case from a different Stress Test is returned.",
-          "passed": false
+          "passed": true,
+          "evidence": "The Stress Test filter runs before ranking (LanceDB prefilter on stress_test_id, backend/app/history/lancedb_index.py), HistoryRetrieval (backend/app/models.py) rejects a case from another Stress Test, and retrieval reports an index that leaks one as ContractViolation rather than filtering it. Tests: test_retrieval.py::test_only_the_same_stress_test_is_returned (ST0/ST1/ST2 with exact-match decoys), ::test_an_index_that_leaks_another_stress_test_is_reported_not_used, test_vector_index.py::test_search_never_returns_another_stress_test_even_when_it_is_closer, test_evaluate_history.py::test_with_real_retrieval_only_the_same_stress_test_reaches_the_prompt. Live demo: the same text as ST3 returned ST3 only."
         },
         {
           "text": "Given the vector database or the embedding service is unavailable, when retrieval runs, then the review continues without historical examples and the error is shown to the reviewer.",
-          "passed": false
+          "passed": true,
+          "evidence": "Every index and model call is bounded (backend/app/history/bounded.py: timeout per attempt, at most 3 attempts); an outage becomes HistoryRetrieval status 'unavailable' with error_class and a reviewer message 'Historical examples are unavailable (...); this review continues without them.', stored on EvaluationResult.history and audited as history_retrieved/failure; the evaluation runs both stages without examples; an unexpected lookup error is handled the same way (HistoryLookupFailed). Tests: test_retrieval.py::test_unavailable_returns_empty_with_a_visible_error, test_evaluate_history.py::test_an_unavailable_history_does_not_stop_the_review, ::test_with_real_retrieval_an_embedding_outage_still_evaluates, ::test_an_unexpected_error_in_the_lookup_does_not_stop_the_review, test_embedder.py, test_bounded.py. Live demo: missing index -> unavailable, evaluation stages [1, 2]. No reviewer UI exists yet (STORY-012): the message is on the result."
         },
         {
           "text": "Given no similar historical cases exist, when retrieval runs, then the system returns an empty list and says so, rather than failing.",
-          "passed": false
+          "passed": true,
+          "evidence": "status 'none_found', cases [] and message 'No similar past reviews: no past reviews are indexed for ST5. The evaluation uses the ST5 rules only.' (backend/app/history/retrieval.py). Tests: test_retrieval.py::test_nothing_indexed_for_the_stress_test_is_an_empty_list_that_says_so, ::test_blank_submission_text_is_none_found_without_calling_the_model, test_lancedb_index.py::test_a_stress_test_with_no_cases_returns_an_empty_list, test_evaluate_history.py::test_none_found_is_on_the_result_and_the_prompt_has_no_examples. Live demo: an index with no ST0 cases -> none_found."
         },
         {
           "text": "Trust: Historical examples never override the current Stress Test rules, and existing SQL Server tables and procedures are never changed.",
-          "passed": false
+          "passed": true,
+          "evidence": "Examples sit only in the user message, labelled 'They are NOT rules: the ST0 rules in the system prompt decide every verdict' (backend/app/evaluation/prompt.py); the system prompt (the rule module) is byte-identical with or without them; only the stage's rule ids are accepted and severity always comes from the module. Tests: test_evaluate_history.py::test_a_past_review_cannot_change_the_rules_or_their_severity, ::test_a_past_review_cannot_add_a_rule, ::test_found_cases_reach_both_stages_as_labelled_examples_before_the_submission, ::test_without_history_the_prompt_is_exactly_as_before. SQL Server: no .sql file or db module changed in this story; the index is LanceDB files; SQL Server was only read (the extract predates this story)."
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "requirements.txt",
+        ".gitignore",
+        ".env.example",
+        "backend/app/models.py",
+        "backend/app/history/bounded.py",
+        "backend/app/history/vector_index.py",
+        "backend/app/history/lancedb_index.py",
+        "backend/app/history/embedder.py",
+        "backend/app/history/config.py",
+        "backend/app/history/retrieval.py",
+        "backend/app/history/cases.py",
+        "backend/app/evaluation/prompt.py",
+        "backend/app/evaluation/evaluate.py",
+        "backend/scripts/build_history_index.py",
+        "backend/scripts/history_demo.py",
+        "directives/historical-retrieval.md",
+        "docs/ACCEPTANCE_CHECKLIST.md",
+        "docs/stories/STORY-013.md",
+        "command-center/tabs/data-model.js",
+        ".colaberry/enrichment/STORY-013.json",
+        "PROGRESS.md"
+      ],
+      "tests_added": [
+        "backend/app/history/test_vector_index.py",
+        "backend/app/history/test_bounded.py",
+        "backend/app/history/test_embedder.py",
+        "backend/app/history/test_lancedb_index.py",
+        "backend/app/history/test_retrieval.py",
+        "backend/app/history/test_cases.py",
+        "backend/app/evaluation/test_evaluate_history.py",
+        "backend/scripts/test_build_history_index.py"
+      ],
+      "notes": "User decisions 2026-09-28: HISTORY_TOP_K setting, default 10 (meets 'top 5-10'; replaces the 2026-09-25 'top 15'); LanceDB embedded (matches the file-based stores of STORY-001/004/011); local fastembed embeddings (free, text stays local); STORY-004 prompt.py/evaluate.py changed additively (no history = identical prompts). No rule-id filter (historical feedback is not tagged by rule). First index: 472 cases from the 2026-09-25 per-Stress-Test extract. Completed reviews are not indexed yet (STORY-007). The reviewer sees the history message on the evaluation result; no UI yet (STORY-012).",
+      "updated_at": "2026-09-29T10:00:00Z",
       "verification": null
     }
   ]
