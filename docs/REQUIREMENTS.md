@@ -122,6 +122,12 @@ Sign in with Basecamp as Reviewer or Admin
 
 Fulfilled by: STORY-014
 
+### REQ-021 — Functional · should
+
+Images in Reviewer Feedback
+
+Fulfilled by: STORY-015
+
 ## Review Completion
 
 ### REQ-007 — Functional · must

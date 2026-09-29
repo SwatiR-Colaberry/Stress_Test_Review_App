@@ -135,7 +135,7 @@ Source: `plan.releases[]` for the bars — each carries `starts_on`, `ends_on`, 
 A Gantt view of your releases, and under it every task with its due date. Tasks are clickable and open their own detail. Your releases:
 - **r0** Initial Integration and Detection — 3 stories
 - **r1** Rule Application and AI Evaluation — 3 stories
-- **r2** Human Review Workflow — 4 stories
+- **r2** Human Review Workflow — 5 stories
 - **r3** Audit and History — 2 stories
 - **r4** Error Handling and Extensibility — 2 stories
 
@@ -143,7 +143,7 @@ A Gantt view of your releases, and under it every task with its due date. Tasks 
 Source: `plan.agents[]` — one card each, with `name`, `purpose`, `trigger_type`, `trigger`, `inputs`, `outputs`, `autonomy_level`, `approval_gates`, `escalation_rules`, `skills` and `owns` (the story ids it owns, which you join back to the plan and the progress file). `plan.derived.counts.agents_by_autonomy` gives you the roster breakdown without counting them yourself.
 What is NOT there: whether any agent has ever run. There is no run history, no last-run time and no success rate in these files, because none of that exists until you build the agent and it starts running. Show the design, and show "no runs recorded" — never a zero success rate, which reads as an agent that ran and failed.
 Your plan does not carry a scoped agent roster yet, so build this tab from who owns each story:
-- **System** — owns STORY-001, STORY-003, STORY-004, STORY-006, STORY-007, STORY-008, STORY-009, STORY-010, STORY-013, STORY-014
+- **System** — owns STORY-001, STORY-003, STORY-004, STORY-006, STORY-007, STORY-008, STORY-009, STORY-010, STORY-013, STORY-014, STORY-015
 - **system** — owns STORY-002, STORY-011
 - **Human Reviewer** — owns STORY-005
 - **reviewer** — owns STORY-012
@@ -200,6 +200,7 @@ Your full set, so the Command Center can show all of it:
 - **REQ-018** (FUNC, must) — The system must provide a web UI for reviewers to manage the Review Queue and perform reviews.
 - **REQ-019** (FUNC, should) — Historical Retrieval with a Vector Database
 - **REQ-020** (FUNC, should) — Sign in with Basecamp as Reviewer or Admin
+- **REQ-021** (FUNC, should) — Images in Reviewer Feedback
 
 ## Your stories, in build order
 **r0 · Initial Integration and Detection**
@@ -215,6 +216,7 @@ Your full set, so the Command Center can show all of it:
 - STORY-006 — Post Final Feedback to Basecamp
 - STORY-012 — Web UI for Review Queue Management
 - STORY-014 — Sign in with Basecamp as Reviewer or Admin
+- STORY-015 — Images in Reviewer Feedback
 **r3 · Audit and History**
 - STORY-007 — Preserve Review History
 - STORY-008 — Handle Ambiguous Identifications

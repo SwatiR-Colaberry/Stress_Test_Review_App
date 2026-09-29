@@ -2,14 +2,14 @@
   "schema_version": 2,
   "project": "Stress Test Review Application",
   "totals": {
-    "stories_total": 15,
+    "stories_total": 16,
     "stories_verified": 7,
     "stories_submitted": 0,
     "stories_in_progress": 7,
-    "stories_not_started": 1,
-    "criteria_total": 53,
+    "stories_not_started": 2,
+    "criteria_total": 51,
     "criteria_passed": 25,
-    "points_awarded": 1114
+    "points_awarded": 1164
   },
   "stories": [
     {
@@ -756,6 +756,48 @@
         },
         {
           "text": "Trust: every sign-in, refusal, sign-out and role change is logged with who and when, and no password or token appears in logs or the repo",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-015",
+      "release": "r2",
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given a finding under review, when I attach a PNG, JPG or GIF under 10 MB, then it is saved with that finding and shown in my preview",
+          "passed": false
+        },
+        {
+          "text": "Given a file that is not an image or is over 10 MB, when I attach it, then it is refused with a message and nothing is saved",
+          "passed": false
+        },
+        {
+          "text": "Given prepared feedback with images, when it is posted to Basecamp, then each image appears in the posted comment next to its point",
+          "passed": false
+        },
+        {
+          "text": "Given a posting retry, when the same feedback is posted again, then each image appears in Basecamp only once",
+          "passed": false
+        },
+        {
+          "text": "Trust: every image attached, removed or uploaded is logged with reviewer and time, and images are never committed to the repo",
           "passed": false
         }
       ],
