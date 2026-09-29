@@ -1,22 +1,22 @@
 {
-  "generated_at": "2026-09-28T17:06:23.613Z",
-  "plan_version": 2,
-  "plan_sha256": "e9a61c58179105d51b20a3c05d360f61038b417398f4bc019082a8bcb04d2e59",
-  "correlation_id": "17df878e-1748-4f07-b805-38f53b0f4626",
+  "generated_at": "2026-09-29T12:06:53.478Z",
+  "plan_version": 5,
+  "plan_sha256": "db0ec2ff3ae71a9b0a23856cc42f72d154c1936e8cd8782a51d4141374a6d213",
+  "correlation_id": null,
   "project_id": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
   "truth_revision": 1,
   "files": [
     {
       "path": "docs/REQUIREMENTS.md",
-      "sha256": "236dd0a42ca6a0ed5e4eca23bc805e41ced19c5c733823ef6fc03ebd22bcada2"
+      "sha256": "825ee75fc1bcc5f76a79a49964f0eba0e6c4bdebaf29d4912e20e8e474fea44b"
     },
     {
       "path": "docs/STORIES.md",
-      "sha256": "d72d0e09313abd98e8406c309c9bae5f201d75999e840895ce8cc1eb223778af"
+      "sha256": "75afaaadc308d5302fa9b65f5ec7f8276ee6f226c736b3615f4fbe9373ceb5ae"
     },
     {
       "path": "docs/TRACEABILITY.md",
-      "sha256": "08a7eb3d084747968c81a750b92188da6511997c6f00b8945e792a2355df631f"
+      "sha256": "51cc861e6edb97ccf067faa8021ab90aa23557751726f0c10a2f648173ac5483"
     },
     {
       "path": "docs/DATA_CONTRACT.md",
@@ -79,16 +79,28 @@
       "sha256": "ebccd57ca8c681e541f868bbb2a165bbeff39441f15aa737f3ddcf5b97c984d4"
     },
     {
+      "path": "docs/stories/STORY-014.md",
+      "sha256": "01554018ea35a85e9cc90de9d8f0d5f7bc76cd53c75ec5b53fdfea25ccd126ff"
+    },
+    {
+      "path": "docs/stories/STORY-015.md",
+      "sha256": "7131177361c264ffe8a5ddcaf0c28a41729c2cf76fd048eeaca9d64f7ddf77a0"
+    },
+    {
+      "path": "docs/stories/STORY-016.md",
+      "sha256": "e9f953dda07c8be04ef5bb5e09282cee1b0a46f51dd0baeccdb844045e50a170"
+    },
+    {
       "path": "docs/stories/STORY-000.md",
-      "sha256": "b154560afe7a157b8e18414b8314105eadbe375577a4c528c093be28a63332e1"
+      "sha256": "8ffb83ab6a8bb3862d3a5a1d623f59b8c79f34d84e9c18711e2c36acbd08dc8f"
     },
     {
       "path": ".colaberry/plan.json",
-      "sha256": "89e41fddb7c293bcf201999326d75951882387fa97993bb970de5c561f45b01e"
+      "sha256": "c7047b34f341c872e7cbef7256c6274a75a8d0f02a2af74b887c4cf1ad8e6ea1"
     },
     {
       "path": ".colaberry/progress.json",
-      "sha256": "58a426b2455b8a73e37b188c2e0ca91e93301e614a46b1acead860db46fe8339"
+      "sha256": "35affe3051d1592ee265c8ba5c73c02cbad9b81059c443e4daa3890f0d8bb37c"
     },
     {
       "path": ".colaberry/profile.json",
