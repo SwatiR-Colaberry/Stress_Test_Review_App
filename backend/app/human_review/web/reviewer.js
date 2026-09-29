@@ -21,7 +21,10 @@ const REASONS = {
   ACTION_ID_REUSED: "This click was already used for a different change. Please try again.",
   EMPTY_FEEDBACK: "Nothing to send: approve at least one finding or add your own note.",
   FEEDBACK_TOO_LONG: "The feedback is over 10,000 characters. Please shorten some points.",
-  REVIEW_NOT_FOUND: "This review is not in the Review Queue.",
+  // The queue is in memory until it gets its own storage, so a server restart
+  // drops open reviews. Decisions already saved are kept on disk.
+  REVIEW_NOT_FOUND: "The server no longer has this review (it may have restarted), so this was not saved. " +
+    "Decisions saved earlier are kept. Open the review again from the Review Queue.",
   NO_AI_DRAFT: "This review has no AI draft yet.",
 };
 

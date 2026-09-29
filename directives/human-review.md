@@ -66,7 +66,8 @@ it; the rebuild applies it once, so the state is still right.
 ## Not yet
 
 - The Review Queue is still in memory (STORY-001 decision): after a restart a review must be
-  taken in again to open it. Saved reviewer actions survive on disk.
+  taken in again to open it. Saved reviewer actions survive on disk. A page left open across a
+  restart says so ("The server no longer has this review…") instead of saving.
 - Preparing does not change the queue status to "Feedback Generated" (queue store has no
   update yet) — STORY-006 / STORY-012.
 - Student name and Basecamp link only arrive for comments retrieved through the Basecamp API.
