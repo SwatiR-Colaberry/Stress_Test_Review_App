@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-005",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-29T14:30:00Z",
+  "sourceCommitSha": "0cb58b9cc014ffce8ba90cbecdaa828b980c0c53",
+  "factProposals": [
+    {
+      "dimension": "approval_points",
+      "value": "A human reviewer must decide every AI finding (approve, edit or reject) before feedback can be prepared; the prepared feedback names that reviewer, and the review is then locked.",
+      "evidence": "backend/app/human_review/prepare.py"
+    },
+    {
+      "dimension": "human_only_decisions",
+      "value": "Only a named human may act on a review: AI/system identities (claude, system, bot, ...) and blank ids are refused for every reviewer action and for preparing feedback.",
+      "evidence": "backend/app/human_review/store.py"
+    },
+    {
+      "dimension": "outputs",
+      "value": "Prepared feedback is a numbered list of the approved findings in the reviewer's wording, saved once per review as ready_to_post for the posting step.",
+      "evidence": "backend/app/human_review/prepare.py"
+    },
+    {
+      "dimension": "data",
+      "value": "Reviewer actions are an append-only log (reviewer, time, action) kept beside the unchanged AI draft, so each review's AI draft and human edits are both preserved; stored in git-ignored local files, not SQL Server.",
+      "evidence": "backend/app/human_review/store.py"
+    },
+    {
+      "dimension": "inputs",
+      "value": "The comment author's display name and the Basecamp web link (app_url) are now taken from the Basecamp API and shown to the reviewer; they never enter the audit trail or logs.",
+      "evidence": "backend/app/basecamp/submission_retrieval.py"
+    },
+    {
+      "dimension": "actors",
+      "value": "Two reviewer roles were identified for sign-in: Reviewer and Admin (Admin also manages the reviewer list); planned as STORY-014.",
+      "evidence": "docs/stories/STORY-014.md"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Reviewer text may be 2,000 characters per finding and 10,000 for the whole feedback, while the AI suggestion stays capped at 400.",
+      "rationale": "user decision 2026-09-29: in the history extract the longest reviewer reply was 4,513 characters (ST2, median 903); the AI cap bounds token cost",
+      "evidence": "backend/app/human_review/models.py"
+    },
+    {
+      "statement": "Editing a finding accepts it in the reviewer's words; no separate approve click.",
+      "rationale": "fewer clicks; a later reject still overrides it",
+      "evidence": "backend/app/human_review/state.py"
+    },
+    {
+      "statement": "Empty feedback is never prepared; when nothing is approved the reviewer adds a note instead.",
+      "rationale": "nothing blank is ever sent to a student; reuses the REQ-011 guardrail",
+      "evidence": "backend/app/human_review/test_prepare.py"
+    },
+    {
+      "statement": "Reviewer identity is a temporary, unverified X-Reviewer-Id header until sign-in with Basecamp (STORY-014) lands, which must precede real posting.",
+      "rationale": "user decision 2026-09-29; REQ-012 requires Basecamp OAuth for authentication",
+      "evidence": "backend/app/routers/human_review.py"
+    },
+    {
+      "statement": "Images in feedback and AI polish of reviewer text are separate stories (STORY-015, STORY-016), not part of STORY-005.",
+      "rationale": "user decision 2026-09-29; AI polish must return a suggestion the reviewer accepts, never replace approved text",
+      "evidence": "docs/stories/STORY-016.md"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The reviewer id is not verified: anyone who can reach the API can claim any reviewer id (AI ids are still refused).",
+      "evidence": "backend/app/routers/human_review.py"
+    },
+    {
+      "statement": "The reviewer page accepts text only; images in feedback are planned as STORY-015.",
+      "evidence": "docs/stories/STORY-015.md"
+    },
+    {
+      "statement": "Preparing feedback does not move the Review Queue item to 'Feedback Generated'; the in-memory queue has no status update yet.",
+      "evidence": "backend/app/review_queue/store.py"
+    },
+    {
+      "statement": "Student name and Basecamp link are available only for comments retrieved through the Basecamp API.",
+      "evidence": "backend/app/basecamp/submission_comment_source.py"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "backend/app/human_review/test_routes.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/human_review/test_prepare.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/human_review/test_store.py"
+    },
+    {
+      "kind": "script",
+      "ref": "backend/scripts/reviewer_demo.py"
+    }
+  ],
+  "measurementEvents": []
+}
