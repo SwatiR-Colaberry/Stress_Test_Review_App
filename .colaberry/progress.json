@@ -2,14 +2,14 @@
   "schema_version": 2,
   "project": "Stress Test Review Application",
   "totals": {
-    "stories_total": 16,
+    "stories_total": 17,
     "stories_verified": 7,
     "stories_submitted": 0,
     "stories_in_progress": 7,
-    "stories_not_started": 2,
+    "stories_not_started": 3,
     "criteria_total": 51,
     "criteria_passed": 25,
-    "points_awarded": 1164
+    "points_awarded": 1214
   },
   "stories": [
     {
@@ -798,6 +798,48 @@
         },
         {
           "text": "Trust: every image attached, removed or uploaded is logged with reviewer and time, and images are never committed to the repo",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 50,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-016",
+      "release": "r4",
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given my feedback, when I click Polish, then a rewritten suggestion is shown next to my text and my text is unchanged",
+          "passed": false
+        },
+        {
+          "text": "Given a suggestion, when I accept it, then it is saved as my edit, and when I discard it, nothing changes",
+          "passed": false
+        },
+        {
+          "text": "Given text that was already polished, when I click Polish again, then the saved suggestion is shown and Claude is not called again",
+          "passed": false
+        },
+        {
+          "text": "Given Claude is unavailable or the daily token limit is reached, when I click Polish, then I see a clear message and can keep working with my own text",
+          "passed": false
+        },
+        {
+          "text": "Trust: the AI suggestion and my accept or discard are both kept in the review history with who and when, and a suggestion never reaches the student unless I accepted it",
           "passed": false
         }
       ],

@@ -128,6 +128,12 @@ Images in Reviewer Feedback
 
 Fulfilled by: STORY-015
 
+### REQ-022 — Functional · should
+
+AI Polish of Reviewer Feedback
+
+Fulfilled by: STORY-016
+
 ## Review Completion
 
 ### REQ-007 — Functional · must

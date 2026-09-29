@@ -137,13 +137,13 @@ A Gantt view of your releases, and under it every task with its due date. Tasks 
 - **r1** Rule Application and AI Evaluation — 3 stories
 - **r2** Human Review Workflow — 5 stories
 - **r3** Audit and History — 2 stories
-- **r4** Error Handling and Extensibility — 2 stories
+- **r4** Error Handling and Extensibility — 3 stories
 
 ### 7. AI agents
 Source: `plan.agents[]` — one card each, with `name`, `purpose`, `trigger_type`, `trigger`, `inputs`, `outputs`, `autonomy_level`, `approval_gates`, `escalation_rules`, `skills` and `owns` (the story ids it owns, which you join back to the plan and the progress file). `plan.derived.counts.agents_by_autonomy` gives you the roster breakdown without counting them yourself.
 What is NOT there: whether any agent has ever run. There is no run history, no last-run time and no success rate in these files, because none of that exists until you build the agent and it starts running. Show the design, and show "no runs recorded" — never a zero success rate, which reads as an agent that ran and failed.
 Your plan does not carry a scoped agent roster yet, so build this tab from who owns each story:
-- **System** — owns STORY-001, STORY-003, STORY-004, STORY-006, STORY-007, STORY-008, STORY-009, STORY-010, STORY-013, STORY-014, STORY-015
+- **System** — owns STORY-001, STORY-003, STORY-004, STORY-006, STORY-007, STORY-008, STORY-009, STORY-010, STORY-013, STORY-014, STORY-015, STORY-016
 - **system** — owns STORY-002, STORY-011
 - **Human Reviewer** — owns STORY-005
 - **reviewer** — owns STORY-012
@@ -201,6 +201,7 @@ Your full set, so the Command Center can show all of it:
 - **REQ-019** (FUNC, should) — Historical Retrieval with a Vector Database
 - **REQ-020** (FUNC, should) — Sign in with Basecamp as Reviewer or Admin
 - **REQ-021** (FUNC, should) — Images in Reviewer Feedback
+- **REQ-022** (FUNC, should) — AI Polish of Reviewer Feedback
 
 ## Your stories, in build order
 **r0 · Initial Integration and Detection**
@@ -223,6 +224,7 @@ Your full set, so the Command Center can show all of it:
 **r4 · Error Handling and Extensibility**
 - STORY-009 — Implement Error Handling for External Calls
 - STORY-010 — Prepare for Future Stress Test Modules
+- STORY-016 — AI Polish of Reviewer Feedback
 
 ## Done means — these exact lines
 These are the acceptance criteria the platform checks. They go into `.colaberry/progress.json` **word for word** — they are matched by text, so a reworded line does not count.

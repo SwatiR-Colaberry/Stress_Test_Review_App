@@ -1,6 +1,6 @@
 # Stress Test Review Application — Stories
 
-15 stories across 5 releases, walking-skeleton first:
+16 stories across 5 releases, walking-skeleton first:
 the earliest release proves the thinnest end-to-end path including the trust
 spine, and later releases stack features on top of something already working.
 
@@ -57,3 +57,4 @@ system rather than a part of it.
 
 - **[STORY-009](stories/STORY-009.md)** — Implement Error Handling for External Calls _(waits on STORY-007)_
 - **[STORY-010](stories/STORY-010.md)** — Prepare for Future Stress Test Modules _(waits on STORY-007)_
+- **[STORY-016](stories/STORY-016.md)** — AI Polish of Reviewer Feedback
