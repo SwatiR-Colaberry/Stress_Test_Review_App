@@ -106,7 +106,7 @@ On sample data, show a plausible trend toward the target. On real data, show the
 Note what is NOT in your files: the actual value of any of these. Your files know what you promised to move, never how far it has moved — that number comes from the system you are building, once it is running and measuring. Until then every one of these cards reads "not measured yet", and that is correct rather than unfinished.
 
 ### 3. Users and use case
-Who this is for and what they are trying to get done. Take the roles from your own stories — they are written "As a <role>, I want …". Roles in your plan: reviewer, human reviewer, system administrator.
+Who this is for and what they are trying to get done. Take the roles from your own stories — they are written "As a <role>, I want …". Roles in your plan: reviewer, human reviewer, system administrator, reviewer or admin.
 Source: `plan.derived.roles`, already extracted. `plan.stories[].narrative` has the full sentence each role came from, for the drill-down.
 
 ### 4. Guardrails — what must never happen
@@ -135,7 +135,7 @@ Source: `plan.releases[]` for the bars — each carries `starts_on`, `ends_on`, 
 A Gantt view of your releases, and under it every task with its due date. Tasks are clickable and open their own detail. Your releases:
 - **r0** Initial Integration and Detection — 3 stories
 - **r1** Rule Application and AI Evaluation — 3 stories
-- **r2** Human Review Workflow — 3 stories
+- **r2** Human Review Workflow — 4 stories
 - **r3** Audit and History — 2 stories
 - **r4** Error Handling and Extensibility — 2 stories
 
@@ -143,7 +143,7 @@ A Gantt view of your releases, and under it every task with its due date. Tasks 
 Source: `plan.agents[]` — one card each, with `name`, `purpose`, `trigger_type`, `trigger`, `inputs`, `outputs`, `autonomy_level`, `approval_gates`, `escalation_rules`, `skills` and `owns` (the story ids it owns, which you join back to the plan and the progress file). `plan.derived.counts.agents_by_autonomy` gives you the roster breakdown without counting them yourself.
 What is NOT there: whether any agent has ever run. There is no run history, no last-run time and no success rate in these files, because none of that exists until you build the agent and it starts running. Show the design, and show "no runs recorded" — never a zero success rate, which reads as an agent that ran and failed.
 Your plan does not carry a scoped agent roster yet, so build this tab from who owns each story:
-- **System** — owns STORY-001, STORY-003, STORY-004, STORY-006, STORY-007, STORY-008, STORY-009, STORY-010, STORY-013
+- **System** — owns STORY-001, STORY-003, STORY-004, STORY-006, STORY-007, STORY-008, STORY-009, STORY-010, STORY-013, STORY-014
 - **system** — owns STORY-002, STORY-011
 - **Human Reviewer** — owns STORY-005
 - **reviewer** — owns STORY-012
@@ -199,6 +199,7 @@ Your full set, so the Command Center can show all of it:
 - **REQ-017** (NFR, should) — The system must support adding new Stress Test modules (ST1–ST5) as configuration without rebuilding the core application.
 - **REQ-018** (FUNC, must) — The system must provide a web UI for reviewers to manage the Review Queue and perform reviews.
 - **REQ-019** (FUNC, should) — Historical Retrieval with a Vector Database
+- **REQ-020** (FUNC, should) — Sign in with Basecamp as Reviewer or Admin
 
 ## Your stories, in build order
 **r0 · Initial Integration and Detection**
@@ -213,6 +214,7 @@ Your full set, so the Command Center can show all of it:
 - STORY-005 — Human Review of AI Findings
 - STORY-006 — Post Final Feedback to Basecamp
 - STORY-012 — Web UI for Review Queue Management
+- STORY-014 — Sign in with Basecamp as Reviewer or Admin
 **r3 · Audit and History**
 - STORY-007 — Preserve Review History
 - STORY-008 — Handle Ambiguous Identifications

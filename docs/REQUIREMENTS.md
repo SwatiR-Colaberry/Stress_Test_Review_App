@@ -80,14 +80,6 @@ The system must support adding new Stress Test modules (ST1–ST5) as configurat
 
 Fulfilled by: STORY-010
 
-## Historical Retrieval
-
-### REQ-019 — Functional · must
-
-The system must retrieve the top 10 (configurable, 1–15) most relevant historical reviews for a submission, filtered to the same Stress Test and ranked by semantic similarity using a vector database stored outside SQL Server, without changing existing SQL Server tables or procedures.
-
-Fulfilled by: STORY-013
-
 ## Human Review
 
 ### REQ-006 — Functional · must
@@ -117,6 +109,18 @@ Fulfilled by: STORY-002
 The system must detect a '##Critique##' marker in Basecamp comments, normalizing reasonable spacing and case variants.
 
 Fulfilled by: STORY-001
+
+### REQ-019 — Functional · should
+
+Historical Retrieval with a Vector Database
+
+Fulfilled by: STORY-013
+
+### REQ-020 — Functional · should
+
+Sign in with Basecamp as Reviewer or Admin
+
+Fulfilled by: STORY-014
 
 ## Review Completion
 

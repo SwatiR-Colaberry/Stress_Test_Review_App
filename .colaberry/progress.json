@@ -2,14 +2,14 @@
   "schema_version": 2,
   "project": "Stress Test Review Application",
   "totals": {
-    "stories_total": 14,
-    "stories_verified": 6,
+    "stories_total": 15,
+    "stories_verified": 7,
     "stories_submitted": 0,
-    "stories_in_progress": 8,
-    "stories_not_started": 0,
-    "criteria_total": 46,
-    "criteria_passed": 20,
-    "points_awarded": 1057
+    "stories_in_progress": 7,
+    "stories_not_started": 1,
+    "criteria_total": 53,
+    "criteria_passed": 25,
+    "points_awarded": 1114
   },
   "stories": [
     {
@@ -714,22 +714,56 @@
       "notes": "User decisions 2026-09-28: HISTORY_TOP_K setting, default 10 (meets 'top 5-10'; replaces the 2026-09-25 'top 15'); LanceDB embedded (matches the file-based stores of STORY-001/004/011); local fastembed embeddings (free, text stays local); STORY-004 prompt.py/evaluate.py changed additively (no history = identical prompts). No rule-id filter (historical feedback is not tagged by rule). First index: 472 cases from the 2026-09-25 per-Stress-Test extract. Completed reviews are not indexed yet (STORY-007). The reviewer sees the history message on the evaluation result; no UI yet (STORY-012).",
       "updated_at": "2026-09-29T10:00:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 5,
         "criteria_total": 5,
-        "verified_at": null,
+        "verified_at": "2026-09-29T11:14:17.952Z",
         "commit_sha": "ecc292aa02e5cc20cba908443d80a5f0633ef38a",
         "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/ecc292aa02e5cc20cba908443d80a5f0633ef38a",
         "commit_at": "2026-09-25T16:54:01Z",
-        "points_awarded": 50,
-        "outstanding": [
-          "Given historical critique and feedback comments for a Stress Test are indexed in a vector database stored outside SQL Server, when a new submission for that Stress Test is reviewed, then the system returns the top 5–10 most similar cases from that same Stress Test only.",
-          "Given a submission for one Stress Test, when historical cases are retrieved, then no case from a different Stress Test is returned.",
-          "Given the vector database or the embedding service is unavailable, when retrieval runs, then the review continues without historical examples and the error is shown to the reviewer.",
-          "Given no similar historical cases exist, when retrieval runs, then the system returns an empty list and says so, rather than failing.",
-          "Trust: Historical examples never override the current Stress Test rules, and existing SQL Server tables and procedures are never changed."
-        ]
+        "points_awarded": 107,
+        "outstanding": []
       }
+    },
+    {
+      "id": "STORY-014",
+      "release": "r2",
+      "acceptance_total": 7,
+      "criteria": [
+        {
+          "text": "Given a Basecamp user on the reviewer list, when they sign in with Basecamp, then they reach the Review Queue as a Reviewer",
+          "passed": false
+        },
+        {
+          "text": "Given a Basecamp user on the admin list, when they sign in, then they can also add, remove and change the role of reviewers and admins",
+          "passed": false
+        },
+        {
+          "text": "Given a Basecamp user on neither list, when they sign in, then access is refused with a clear message",
+          "passed": false
+        },
+        {
+          "text": "Given no signed-in session, when any review page or API is opened, then the user is sent to sign in and nothing is shown or changed",
+          "passed": false
+        },
+        {
+          "text": "Given a Reviewer, when they try an admin-only action, then it is refused",
+          "passed": false
+        },
+        {
+          "text": "Given a signed-in user, when they sign out or 8 hours pass, then they must sign in again",
+          "passed": false
+        },
+        {
+          "text": "Trust: every sign-in, refusal, sign-out and role change is logged with who and when, and no password or token appears in logs or the repo",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
     }
   ]
 }
