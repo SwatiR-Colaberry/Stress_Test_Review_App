@@ -3,13 +3,13 @@
   "project": "Stress Test Review Application",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 3,
-    "stories_submitted": 1,
-    "stories_in_progress": 9,
-    "stories_not_started": 1,
-    "criteria_total": 43,
-    "criteria_passed": 10,
-    "points_awarded": 836
+    "stories_verified": 6,
+    "stories_submitted": 0,
+    "stories_in_progress": 8,
+    "stories_not_started": 0,
+    "criteria_total": 46,
+    "criteria_passed": 20,
+    "points_awarded": 1057
   },
   "stories": [
     {
@@ -178,12 +178,12 @@
       "updated_at": "2026-09-25T15:17:31Z",
       "verification": {
         "state": "verified",
-        "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_passed": 3,
+        "criteria_total": 3,
         "verified_at": "2026-09-25T15:28:34.517Z",
         "commit_sha": "19a648a88e80e3de6f1fbfacea7ee765aa60abf8",
         "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/19a648a88e80e3de6f1fbfacea7ee765aa60abf8",
-        "commit_at": null,
+        "commit_at": "2026-09-25T15:21:23Z",
         "points_awarded": 112,
         "outstanding": []
       }
@@ -231,19 +231,15 @@
       "notes": "All 3 criteria pass. ST0 v1 is built only from the official ST0 Rules & Validation Specification (transcribed to docs/stress-test-rules/ST0-rules-v1.md) plus three dated user decisions: ST0-002 valid = link opens without an error; ST0-003 severity Required Fix; a submission split across comments is a reviewer note, not a failure. Rule loading is not yet called by any review flow (STORY-004 will call load_rules); the manual-resolution queue itself is STORY-008. ST1-ST5 have no module until their specs are provided (NO_RULE_MODULE).",
       "updated_at": "2026-09-25T00:00:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 50,
-        "outstanding": [
-          "Given a submission for ST0, When the system loads rules, Then only ST0 rules are loaded.",
-          "Given a submission for an unknown Stress Test, When the system loads rules, Then it routes to manual resolution.",
-          "Trust: The system logs rule loading events with rule version."
-        ]
+        "verified_at": "2026-09-25T18:01:45.160Z",
+        "commit_sha": "4e486591449dde22f95f07231277507f4d415d3a",
+        "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/4e486591449dde22f95f07231277507f4d415d3a",
+        "commit_at": "2026-09-25T18:01:35Z",
+        "points_awarded": 107,
+        "outstanding": []
       }
     },
     {
@@ -312,19 +308,15 @@
       "notes": "All 3 criteria pass (pytest 559/559, credential scan clean). Built with the user's token-saving rules: cached rule-module system prompt, plain text with [SELECTED] for the yellow highlight, deterministic pre-checks, structured output, pass list + FAIL/ADVISORY findings, Stage 2 only after a clean Stage 1, effort low, idempotent on (comment_id, rule_version), count_tokens + manual resolution above 20k tokens, per-call usage ledger with a daily token limit, 60 s timeout and at most 2 retries (Retry-After capped at 30 s). Live check on 15 historical ST0 submissions: $0.26 in total, cache hit on every call after the first; agreement hints in the git-ignored report. Found in the comparison: 13 of 553 critique detections in the history are reviewer comments quoting ##Critique## with ##FeedbackGiven##/##Approved##; the evaluator refuses them (NOT_A_SUBMISSION) and the STORY-001 intake now skips them (user-approved). Not yet: reviewer notes (CONTENT_NOT_IN_TEXT, SPLIT_SUBMISSION) are not produced; the thread reader (thread.py) is built but the evaluator does not yet use previous versions/feedback; the history store for final human feedback comes with the reviewer UI (STORY-005). Results/usage are local git-ignored JSONL files (SQL Server stays read-only).",
       "updated_at": "2026-09-28T17:30:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 50,
-        "outstanding": [
-          "Given a valid submission, When Claude evaluates it, Then structured draft findings are returned.",
-          "Given an invalid submission, When Claude evaluates it, Then an error is returned.",
-          "Trust: The system logs evaluation events with submission ID and rule ID."
-        ]
+        "verified_at": "2026-09-28T16:43:21.954Z",
+        "commit_sha": "b97763deb3cd4a605bfd914e1782586bfee80c43",
+        "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/b97763deb3cd4a605bfd914e1782586bfee80c43",
+        "commit_at": "2026-09-28T16:43:10Z",
+        "points_awarded": 107,
+        "outstanding": []
       }
     },
     {
@@ -606,17 +598,15 @@
       "notes": "All 3 criteria pass. Audit trail is an append-only JSON Lines file (data/audit/audit_trail.jsonl, git-ignored) rather than a SQL Server table: existing SQL Server tables and procedures must not change (user rule, 2026-09-25). Every intake outcome, every finalize-check attempt (allowed or blocked) and every Basecamp retrieval (started, completed or failed) writes an event; if the write fails the action is refused (503 over HTTP). Limitation: if the audit write fails right after a review item is created, the item stays and a re-run records it as review_already_queued (no transaction spans queue and audit without a database). Earlier Node-era evidence replaced with the Python files.",
       "updated_at": "2026-09-25T00:00:00Z",
       "verification": {
-        "state": "submitted",
-        "criteria_passed": 2,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
+        "verified_at": "2026-09-25T16:49:53.932Z",
         "commit_sha": "b65be304004b85a7c353ce9960dfb3ee8e6d1ecc",
         "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/b65be304004b85a7c353ce9960dfb3ee8e6d1ecc",
         "commit_at": "2026-09-16T15:35:42Z",
-        "points_awarded": 50,
-        "outstanding": [
-          "Given a submission is processed, when an action is taken, then it is logged in the audit trail."
-        ]
+        "points_awarded": 107,
+        "outstanding": []
       }
     },
     {
@@ -723,7 +713,23 @@
       ],
       "notes": "User decisions 2026-09-28: HISTORY_TOP_K setting, default 10 (meets 'top 5-10'; replaces the 2026-09-25 'top 15'); LanceDB embedded (matches the file-based stores of STORY-001/004/011); local fastembed embeddings (free, text stays local); STORY-004 prompt.py/evaluate.py changed additively (no history = identical prompts). No rule-id filter (historical feedback is not tagged by rule). First index: 472 cases from the 2026-09-25 per-Stress-Test extract. Completed reviews are not indexed yet (STORY-007). The reviewer sees the history message on the evaluation result; no UI yet (STORY-012).",
       "updated_at": "2026-09-29T10:00:00Z",
-      "verification": null
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 5,
+        "verified_at": null,
+        "commit_sha": "ecc292aa02e5cc20cba908443d80a5f0633ef38a",
+        "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/ecc292aa02e5cc20cba908443d80a5f0633ef38a",
+        "commit_at": "2026-09-25T16:54:01Z",
+        "points_awarded": 50,
+        "outstanding": [
+          "Given historical critique and feedback comments for a Stress Test are indexed in a vector database stored outside SQL Server, when a new submission for that Stress Test is reviewed, then the system returns the top 5–10 most similar cases from that same Stress Test only.",
+          "Given a submission for one Stress Test, when historical cases are retrieved, then no case from a different Stress Test is returned.",
+          "Given the vector database or the embedding service is unavailable, when retrieval runs, then the review continues without historical examples and the error is shown to the reviewer.",
+          "Given no similar historical cases exist, when retrieval runs, then the system returns an empty list and says so, rather than failing.",
+          "Trust: Historical examples never override the current Stress Test rules, and existing SQL Server tables and procedures are never changed."
+        ]
+      }
     }
   ]
 }
