@@ -118,6 +118,24 @@ The system must detect a '##Critique##' marker in Basecamp comments, normalizing
 
 Fulfilled by: STORY-001
 
+### REQ-020 — Functional · should
+
+Sign in with Basecamp as Reviewer or Admin
+
+Fulfilled by: STORY-014
+
+### REQ-021 — Functional · should
+
+Images in Reviewer Feedback
+
+Fulfilled by: STORY-015
+
+### REQ-022 — Functional · should
+
+AI Polish of Reviewer Feedback
+
+Fulfilled by: STORY-016
+
 ## Review Completion
 
 ### REQ-007 — Functional · must

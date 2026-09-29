@@ -257,6 +257,36 @@
       "fulfilled_by": [
         "STORY-013"
       ]
+    },
+    {
+      "id": "REQ-020",
+      "kind": "FUNC",
+      "cluster": "Marker Detection",
+      "priority": "should",
+      "statement": "Sign in with Basecamp as Reviewer or Admin",
+      "fulfilled_by": [
+        "STORY-014"
+      ]
+    },
+    {
+      "id": "REQ-021",
+      "kind": "FUNC",
+      "cluster": "Marker Detection",
+      "priority": "should",
+      "statement": "Images in Reviewer Feedback",
+      "fulfilled_by": [
+        "STORY-015"
+      ]
+    },
+    {
+      "id": "REQ-022",
+      "kind": "FUNC",
+      "cluster": "Marker Detection",
+      "priority": "should",
+      "statement": "AI Polish of Reviewer Feedback",
+      "fulfilled_by": [
+        "STORY-016"
+      ]
     }
   ],
   "releases": [
@@ -302,7 +332,9 @@
       "story_ids": [
         "STORY-005",
         "STORY-006",
-        "STORY-012"
+        "STORY-012",
+        "STORY-014",
+        "STORY-015"
       ],
       "starts_on": "2026-10-01",
       "ends_on": "2026-10-01",
@@ -332,7 +364,8 @@
       "week_start": 9,
       "story_ids": [
         "STORY-009",
-        "STORY-010"
+        "STORY-010",
+        "STORY-016"
       ],
       "starts_on": "2026-10-01",
       "ends_on": "2026-10-01",
@@ -676,6 +709,71 @@
       "task_guidance": "Implement exactly what the acceptance lines describe for this story, and nothing that belongs to another one. User decisions (2026-09-28): return the top HISTORY_TOP_K similar cases, default 10, allowed 1–15; vector database is LanceDB, embedded as git-ignored local files (data/vector_index/), never SQL Server; embeddings are computed locally (fastembed, bge-small-en-v1.5), no paid embedding API; filter by Stress Test before ranking; no rule-id filter, because historical reviewer feedback is not tagged by rule; past reviews reach Claude only as labelled examples in the user message, never as rules; completed reviews from this app are added to the same index later (STORY-007). See directives/historical-retrieval.md.",
       "due_on": "2026-10-01",
       "due_baseline_on": "2026-10-01"
+    },
+    {
+      "id": "STORY-014",
+      "title": "Sign in with Basecamp as Reviewer or Admin",
+      "release": "r2",
+      "fulfills": [
+        "REQ-020"
+      ],
+      "narrative": "As a reviewer or admin, I want to sign in with my Basecamp account, so that every review action is tied to who I really am and I only see what my role allows.",
+      "acceptance": [
+        "Given a Basecamp user on the reviewer list, when they sign in with Basecamp, then they reach the Review Queue as a Reviewer",
+        "Given a Basecamp user on the admin list, when they sign in, then they can also add, remove and change the role of reviewers and admins",
+        "Given a Basecamp user on neither list, when they sign in, then access is refused with a clear message",
+        "Given no signed-in session, when any review page or API is opened, then the user is sent to sign in and nothing is shown or changed",
+        "Given a Reviewer, when they try an admin-only action, then it is refused",
+        "Given a signed-in user, when they sign out or 8 hours pass, then they must sign in again",
+        "Trust: every sign-in, refusal, sign-out and role change is logged with who and when, and no password or token appears in logs or the repo"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [],
+      "task_guidance": "Implement exactly what the acceptance lines describe for this story, and nothing that belongs to another one.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-015",
+      "title": "Images in Reviewer Feedback",
+      "release": "r2",
+      "fulfills": [
+        "REQ-021"
+      ],
+      "narrative": "As a reviewer, I want to attach images such as annotated screenshots to my feedback points, so that students see exactly what I mean, as I do in Basecamp today.",
+      "acceptance": [
+        "Given a finding under review, when I attach a PNG, JPG or GIF under 10 MB, then it is saved with that finding and shown in my preview",
+        "Given a file that is not an image or is over 10 MB, when I attach it, then it is refused with a message and nothing is saved",
+        "Given prepared feedback with images, when it is posted to Basecamp, then each image appears in the posted comment next to its point",
+        "Given a posting retry, when the same feedback is posted again, then each image appears in Basecamp only once",
+        "Trust: every image attached, removed or uploaded is logged with reviewer and time, and images are never committed to the repo"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [],
+      "task_guidance": "Implement exactly what the acceptance lines describe for this story, and nothing that belongs to another one.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-016",
+      "title": "AI Polish of Reviewer Feedback",
+      "release": "r4",
+      "fulfills": [
+        "REQ-022"
+      ],
+      "narrative": "As a reviewer, I want Claude to suggest cleaner wording for my feedback, so that I can send clear feedback faster while keeping the final say",
+      "acceptance": [
+        "Given my feedback, when I click Polish, then a rewritten suggestion is shown next to my text and my text is unchanged",
+        "Given a suggestion, when I accept it, then it is saved as my edit, and when I discard it, nothing changes",
+        "Given text that was already polished, when I click Polish again, then the saved suggestion is shown and Claude is not called again",
+        "Given Claude is unavailable or the daily token limit is reached, when I click Polish, then I see a clear message and can keep working with my own text",
+        "Trust: the AI suggestion and my accept or discard are both kept in the review history with who and when, and a suggestion never reaches the student unless I accepted it"
+      ],
+      "owner_agent": "System",
+      "failure_paths": [],
+      "task_guidance": "Implement exactly what the acceptance lines describe for this story, and nothing that belongs to another one.",
+      "due_on": null,
+      "due_baseline_on": null
     }
   ],
   "agents": [],
@@ -768,17 +866,18 @@
     "roles": [
       "reviewer",
       "human reviewer",
-      "system administrator"
+      "system administrator",
+      "reviewer or admin"
     ],
     "counts": {
-      "requirements_total": 19,
+      "requirements_total": 22,
       "requirements_by_kind": {
         "CONSTRAINT": 4,
-        "FUNC": 10,
+        "FUNC": 13,
         "NFR": 1,
         "SAFE": 4
       },
-      "stories_total": 13,
+      "stories_total": 16,
       "releases_total": 5,
       "agents_total": 0,
       "failure_paths_total": 35,

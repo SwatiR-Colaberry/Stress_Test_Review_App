@@ -1,6 +1,6 @@
 # Stress Test Review Application — Stories
 
-13 stories across 5 releases, walking-skeleton first:
+16 stories across 5 releases, walking-skeleton first:
 the earliest release proves the thinnest end-to-end path including the trust
 spine, and later releases stack features on top of something already working.
 
@@ -39,6 +39,8 @@ system rather than a part of it.
 - **[STORY-005](stories/STORY-005.md)** — Human Review of AI Findings _(waits on STORY-004)_
 - **[STORY-006](stories/STORY-006.md)** — Post Final Feedback to Basecamp _(waits on STORY-005)_
 - **[STORY-012](stories/STORY-012.md)** — Web UI for Review Queue Management _(waits on STORY-005)_
+- **[STORY-014](stories/STORY-014.md)** — Sign in with Basecamp as Reviewer or Admin
+- **[STORY-015](stories/STORY-015.md)** — Images in Reviewer Feedback
 
 ## r3 · Audit and History — weeks 7–8
 
@@ -55,3 +57,4 @@ system rather than a part of it.
 
 - **[STORY-009](stories/STORY-009.md)** — Implement Error Handling for External Calls _(waits on STORY-007)_
 - **[STORY-010](stories/STORY-010.md)** — Prepare for Future Stress Test Modules _(waits on STORY-007)_
+- **[STORY-016](stories/STORY-016.md)** — AI Polish of Reviewer Feedback
