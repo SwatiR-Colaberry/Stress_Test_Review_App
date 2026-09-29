@@ -93,11 +93,16 @@ def prepare_feedback(review_id: str, reviewer_id: Optional[str], drafts: DraftSo
 
 
 def _load(review_id: str, drafts: DraftSource) -> ReviewDraft:
+    """Not audited (there is no review to attach an event to), but logged, so a
+    404 never happens silently."""
     draft = drafts.get(review_id)
-    if draft is None:
-        raise ReviewNotFound("REVIEW_NOT_FOUND", f"no review {review_id} in the Review Queue")
-    if draft.evaluation is None:
-        raise ReviewNotFound("NO_AI_DRAFT", f"review {review_id} has no AI evaluation yet")
+    reason = "REVIEW_NOT_FOUND" if draft is None else "NO_AI_DRAFT" if draft.evaluation is None else None
+    if reason:
+        _log("review_not_found", str(uuid.uuid4()), level=logging.WARNING, review_id=review_id[:128],
+             reason_code=reason, error_class=ReviewNotFound.error_class)
+        message = (f"no review {review_id} in the Review Queue" if reason == "REVIEW_NOT_FOUND"
+                   else f"review {review_id} has no AI evaluation yet")
+        raise ReviewNotFound(reason, message)
     return draft
 
 

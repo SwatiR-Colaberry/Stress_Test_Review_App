@@ -235,12 +235,8 @@ async function send(key, action, status) {
 }
 
 async function addFinding() {
-  const failed = unsaved.get("add");
-  const text = $("add-text").value;
-  const rule = $("add-rule").value.trim();
-  // Same text as the failed attempt -> resend it with the same action_id.
-  const action = failed && failed.text === text.trim() ? failed.action
-    : { action_id: newActionId(), kind: "add_finding", text, ...(rule ? { rule_id: rule } : {}) };
+  // Same text as the failed attempt -> resend it with the same action_id (review_logic.js).
+  const action = addFindingAction(unsaved.get("add"), $("add-text").value, $("add-rule").value, newActionId);
   if (await send("add", action, $("add-status"))) {
     $("add-text").value = "";
     $("add-rule").value = "";

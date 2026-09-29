@@ -46,9 +46,9 @@ this and must land before STORY-006 posts anything real.
 | What goes wrong | What happens |
 |---|---|
 | Page cannot load the review (network, 10 s timeout, 404, 503) | Red banner with the reason; Retry when retrying can help |
-| An edit or decision is not saved (network, timeout, 503) | The text stays in the box marked "Not saved"; Retry resends the same request (same `action_id`), which the server applies once |
+| An edit or decision is not saved (network, timeout, 503) | The text stays in the box marked "Not saved"; Retry resends the same request (same `action_id`), which the server applies once. An added finding is retried with the same `action_id` while its text is unchanged (`web/review_logic.js`). |
 | Audit trail fails after the action was saved | 503 "not saved, retry"; the retry writes the missing audit event without saving the action twice |
-| Refused action | 401 no reviewer id · 403 AI/system id · 409 `UNKNOWN_FINDING`, `UNDECIDED_FINDINGS`, `REVIEW_LOCKED`, `ACTION_ID_REUSED`, `EMPTY_FEEDBACK`, `FEEDBACK_TOO_LONG` · 404 `REVIEW_NOT_FOUND`, `NO_AI_DRAFT`. Each refusal is audited. |
+| Refused action | 401 no reviewer id · 403 AI/system id · 409 `UNKNOWN_FINDING`, `UNDECIDED_FINDINGS`, `REVIEW_LOCKED`, `ACTION_ID_REUSED`, `EMPTY_FEEDBACK`, `FEEDBACK_TOO_LONG` · 404 `REVIEW_NOT_FOUND`, `NO_AI_DRAFT`. Every 401/403/409 refusal is audited; a 404 has no review to attach an event to, so it is logged as a warning instead. |
 | Rule module unreadable | Cards show rule codes instead of names; a warning is logged |
 | Corrupt line in a review file | Error naming the file and line; never skipped |
 

@@ -360,6 +360,9 @@
         "directives/human-review.md",
         "docs/stories/STORY-005.md",
         ".gitignore",
+        "backend/app/human_review/web/review_logic.js",
+        "docs/ACCEPTANCE_CHECKLIST.md",
+        "command-center/tabs/data-model.js",
         ".colaberry/enrichment/STORY-005.json",
         "PROGRESS.md"
       ],
@@ -369,11 +372,12 @@
         "backend/app/human_review/test_prepare.py",
         "backend/app/human_review/test_routes.py",
         "backend/app/human_review/test_rule_names.py",
+        "backend/app/human_review/test_web_logic.py",
         "backend/app/basecamp/test_submission_retrieval.py (name/link tests)",
         "backend/app/review_queue/test_intake.py (name/link tests)"
       ],
-      "notes": "User decisions 2026-09-29: reviewer limits 2,000 chars per finding and 10,000 per feedback (ST2 replies run to 4,513); an edit accepts the finding in the reviewer's words; empty feedback is refused (reviewer adds a note instead); student name + Basecamp link captured from the Basecamp API (STORY-001/002 files changed additively, user-approved). Reviewer identity is a TEMPORARY unverified X-Reviewer-Id header, replaced by STORY-014 before STORY-006 posts. Prepared feedback is saved as ready_to_post; posting is STORY-006. Page checked via its API calls on a live demo server and node --check; no automated visual browser check (headless Firefox would not start). Images = STORY-015, AI polish = STORY-016.",
-      "updated_at": "2026-09-29T14:00:00Z",
+      "notes": "User decisions 2026-09-29: reviewer limits 2,000 chars per finding and 10,000 per feedback (ST2 replies run to 4,513); an edit accepts the finding in the reviewer's words; empty feedback is refused (reviewer adds a note instead); student name + Basecamp link captured from the Basecamp API (STORY-001/002 files changed additively, user-approved). Reviewer identity is a TEMPORARY unverified X-Reviewer-Id header, replaced by STORY-014 before STORY-006 posts. Prepared feedback is saved as ready_to_post; posting is STORY-006. Page checked via its API calls on a live demo server and node --check; no automated visual browser check (headless Firefox would not start). Images = STORY-015, AI polish = STORY-016. Close-out review (2026-09-29): fixed a retried 'Add finding' duplicating the finding when its text had surrounding whitespace (test_web_logic.py), and a 404 for an unknown review being written to no log (test_an_unknown_review_is_logged_not_silent). Acceptance demo re-run on a scratch audit path: approve, edit, reject, prepare; 4 timestamped audit events. pytest 734/734.",
+      "updated_at": "2026-09-29T15:00:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

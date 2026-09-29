@@ -3,7 +3,7 @@
   "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
   "storyId": "STORY-005",
   "projectTruthBaseRevision": 1,
-  "observedAt": "2026-09-29T14:30:00Z",
+  "observedAt": "2026-09-29T15:00:00Z",
   "sourceCommitSha": "0cb58b9cc014ffce8ba90cbecdaa828b980c0c53",
   "factProposals": [
     {
@@ -98,6 +98,10 @@
     {
       "kind": "script",
       "ref": "backend/scripts/reviewer_demo.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/human_review/test_web_logic.py"
     }
   ],
   "measurementEvents": []

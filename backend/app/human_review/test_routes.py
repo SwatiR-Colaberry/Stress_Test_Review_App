@@ -1,4 +1,5 @@
 """End-to-end reviewer flow through the FastAPI app (STORY-005 acceptance)."""
+import logging
 from datetime import datetime, timezone
 
 import pytest
@@ -214,3 +215,9 @@ def test_a_review_without_a_name_or_link_still_opens(client, tmp_path):
 def test_the_view_names_each_rule_in_plain_words(client):
     names = client.get("/reviews/r-1/findings").json()["rule_names"]
     assert names["ST0-001"] == "Dataset description is present"
+
+
+def test_an_unknown_review_is_logged_not_silent(client, caplog):
+    caplog.set_level(logging.WARNING, logger="stress_test_review.human_review")
+    client.get("/reviews/nope/findings")
+    assert '"event": "review_not_found"' in caplog.text and "REVIEW_NOT_FOUND" in caplog.text
