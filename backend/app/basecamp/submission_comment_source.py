@@ -29,6 +29,8 @@ class SubmissionCommentSource(CommentSource):
                 "message_id": submission.message_id,
                 "body": comment.content_html,
                 "created_at": comment.created_at,
+                "author_name": comment.author_name,  # STORY-005: shown to the reviewer
+                "app_url": comment.app_url,
             }
             for submission in self._dataset.submissions
             for comment in submission.comments

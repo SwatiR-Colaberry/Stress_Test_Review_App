@@ -27,8 +27,8 @@ the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [ ] Given AI findings, When a reviewer approves them, Then feedback is prepared for Basecamp posting.
-- [ ] Given AI findings, When a reviewer edits them, Then the edits are saved and prepared for posting.
-- [ ] Trust: The system logs all reviewer actions with timestamps.
+- [x] Given AI findings, When a reviewer approves them, Then feedback is prepared for Basecamp posting.
+- [x] Given AI findings, When a reviewer edits them, Then the edits are saved and prepared for posting.
+- [x] Trust: The system logs all reviewer actions with timestamps.
 
 When every box above is ticked, stop and show the demo.

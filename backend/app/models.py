@@ -61,6 +61,16 @@ class MarkerDetectResponse(BaseModel):
 # turn True into 1 or " 77 " into 77 and tie a review to the wrong comment.
 BasecampId = Annotated[int, Field(strict=True, gt=0)]
 
+# A Basecamp web link (the API's app_url), shown to reviewers as "Open in
+# Basecamp". Only https links on basecamp.com pass, so a crafted value
+# (javascript:, another site) can never become a clickable link.
+BASECAMP_URL_PATTERN = r"^https://([a-z0-9-]+\.)*basecamp\.com/[^\s\"'<>]*$"
+BasecampUrl = Annotated[str, Field(max_length=500, pattern=BASECAMP_URL_PATTERN)]
+
+# The comment author's display name from Basecamp (the student). Personal
+# data: shown on the reviewer page only; never in the audit trail or logs.
+PersonName = Annotated[str, Field(min_length=1, max_length=200)]
+
 
 class BasecampComment(BaseModel):
     """One row of Basecamp_MessageBoards_MessageComments (Master Spec §4-5).
@@ -73,6 +83,9 @@ class BasecampComment(BaseModel):
     message_id: BasecampId
     body: str
     created_at: datetime
+    # Optional (STORY-005): not every source has them. Shown to the reviewer.
+    author_name: Optional[PersonName] = None
+    app_url: Optional[BasecampUrl] = None
 
 
 # Master Spec §22. "Completed" means a human finalized the review, never "AI finished".
@@ -89,6 +102,9 @@ class ReviewItem(BaseModel):
     # Set when the student asked for review with a non-standard marker
     # (e.g. ##Please Critique##): the reviewer reminds them to use ##Critique##.
     marker_note: Optional[str] = None
+    # Who wrote the comment and where it is in Basecamp (STORY-005), when known.
+    author_name: Optional[PersonName] = None
+    app_url: Optional[BasecampUrl] = None
 
 
 IntakeOutcome = Literal["review_created", "already_queued", "no_marker", "malformed"]
@@ -124,6 +140,8 @@ class SubmissionLink(BaseModel):
 class SubmissionComment(BaseModel):
     comment_id: BasecampId
     author_id: Optional[int] = None
+    author_name: Optional[PersonName] = None  # STORY-005: shown to the reviewer
+    app_url: Optional[BasecampUrl] = None  # STORY-005: "Open in Basecamp" link
     created_at: datetime
     content_html: str
     attachments: List[SubmissionAttachment] = []
@@ -175,6 +193,14 @@ AuditAction = Literal[
     # Historical retrieval (STORY-013): which past reviews informed a draft.
     # reason_code = found / none_found / the error class when unavailable.
     "history_retrieved",
+    # Human review of AI findings (STORY-005). actor_id is the reviewer;
+    # rule_id is set when the finding is tied to a rule.
+    "reviewer_finding_approved",
+    "reviewer_finding_edited",
+    "reviewer_finding_rejected",
+    "reviewer_finding_added",
+    "reviewer_feedback_prepared",
+    "reviewer_action_blocked",
 ]
 
 

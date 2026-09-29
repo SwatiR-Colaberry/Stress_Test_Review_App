@@ -2,12 +2,12 @@
   "schema_version": 2,
   "project": "Stress Test Review Application",
   "totals": {
-    "stories_total": 14,
+    "stories_total": 17,
     "stories_verified": 6,
     "stories_submitted": 0,
     "stories_in_progress": 8,
-    "stories_not_started": 0,
-    "criteria_total": 46,
+    "stories_not_started": 3,
+    "criteria_total": 63,
     "criteria_passed": 20,
     "points_awarded": 1057
   },
@@ -326,21 +326,54 @@
       "criteria": [
         {
           "text": "Given AI findings, When a reviewer approves them, Then feedback is prepared for Basecamp posting.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given AI findings, When a reviewer edits them, Then the edits are saved and prepared for posting.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs all reviewer actions with timestamps.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "backend/app/human_review/__init__.py",
+        "backend/app/human_review/models.py",
+        "backend/app/human_review/state.py",
+        "backend/app/human_review/store.py",
+        "backend/app/human_review/prepare.py",
+        "backend/app/human_review/drafts.py",
+        "backend/app/human_review/service.py",
+        "backend/app/human_review/dependencies.py",
+        "backend/app/human_review/rule_names.py",
+        "backend/app/human_review/web/index.html",
+        "backend/app/human_review/web/reviewer.js",
+        "backend/app/human_review/web/reviewer.css",
+        "backend/app/routers/human_review.py",
+        "backend/app/main.py",
+        "backend/app/models.py",
+        "backend/app/basecamp/submission_retrieval.py",
+        "backend/app/basecamp/submission_comment_source.py",
+        "backend/app/review_queue/store.py",
+        "backend/scripts/reviewer_demo.py",
+        "directives/human-review.md",
+        "docs/stories/STORY-005.md",
+        ".gitignore",
+        ".colaberry/enrichment/STORY-005.json",
+        "PROGRESS.md"
+      ],
+      "tests_added": [
+        "backend/app/human_review/test_models.py",
+        "backend/app/human_review/test_store.py",
+        "backend/app/human_review/test_prepare.py",
+        "backend/app/human_review/test_routes.py",
+        "backend/app/human_review/test_rule_names.py",
+        "backend/app/basecamp/test_submission_retrieval.py (name/link tests)",
+        "backend/app/review_queue/test_intake.py (name/link tests)"
+      ],
+      "notes": "User decisions 2026-09-29: reviewer limits 2,000 chars per finding and 10,000 per feedback (ST2 replies run to 4,513); an edit accepts the finding in the reviewer's words; empty feedback is refused (reviewer adds a note instead); student name + Basecamp link captured from the Basecamp API (STORY-001/002 files changed additively, user-approved). Reviewer identity is a TEMPORARY unverified X-Reviewer-Id header, replaced by STORY-014 before STORY-006 posts. Prepared feedback is saved as ready_to_post; posting is STORY-006. Page checked via its API calls on a live demo server and node --check; no automated visual browser check (headless Firefox would not start). Images = STORY-015, AI polish = STORY-016.",
+      "updated_at": "2026-09-29T14:00:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,
@@ -730,6 +763,110 @@
           "Trust: Historical examples never override the current Stress Test rules, and existing SQL Server tables and procedures are never changed."
         ]
       }
+    },
+    {
+      "id": "STORY-014",
+      "release": "r2",
+      "acceptance_total": 7,
+      "criteria": [
+        {
+          "text": "Given a Basecamp user on the reviewer list, when they sign in with Basecamp, then they reach the Review Queue as a Reviewer",
+          "passed": false
+        },
+        {
+          "text": "Given a Basecamp user on the admin list, when they sign in, then they can also add, remove and change the role of reviewers and admins",
+          "passed": false
+        },
+        {
+          "text": "Given a Basecamp user on neither list, when they sign in, then access is refused with a clear message",
+          "passed": false
+        },
+        {
+          "text": "Given no signed-in session, when any review page or API is opened, then the user is sent to sign in and nothing is shown or changed",
+          "passed": false
+        },
+        {
+          "text": "Given a Reviewer, when they try an admin-only action, then it is refused",
+          "passed": false
+        },
+        {
+          "text": "Given a signed-in user, when they sign out or 8 hours pass, then they must sign in again",
+          "passed": false
+        },
+        {
+          "text": "Trust: every sign-in, refusal, sign-out and role change is logged with who and when, and no password or token appears in logs or the repo",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
+    },
+    {
+      "id": "STORY-015",
+      "release": "r2",
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given a finding under review, when I attach a PNG, JPG or GIF under 10 MB, then it is saved with that finding and shown in my preview",
+          "passed": false
+        },
+        {
+          "text": "Given a file that is not an image or is over 10 MB, when I attach it, then it is refused with a message and nothing is saved",
+          "passed": false
+        },
+        {
+          "text": "Given prepared feedback with images, when it is posted to Basecamp, then each image appears in the posted comment next to its point",
+          "passed": false
+        },
+        {
+          "text": "Given a posting retry, when the same feedback is posted again, then each image appears in Basecamp only once",
+          "passed": false
+        },
+        {
+          "text": "Trust: every image attached, removed or uploaded is logged with reviewer and time, and images are never committed to the repo",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
+    },
+    {
+      "id": "STORY-016",
+      "release": "r4",
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given my feedback, when I click Polish, then a rewritten suggestion is shown next to my text and my text is unchanged",
+          "passed": false
+        },
+        {
+          "text": "Given a suggestion, when I accept it, then it is saved as my edit, and when I discard it, nothing changes",
+          "passed": false
+        },
+        {
+          "text": "Given text that was already polished, when I click Polish again, then the saved suggestion is shown and Claude is not called again",
+          "passed": false
+        },
+        {
+          "text": "Given Claude is unavailable or the daily token limit is reached, when I click Polish, then I see a clear message and can keep working with my own text",
+          "passed": false
+        },
+        {
+          "text": "Trust: the AI suggestion and my accept or discard are both kept in the review history with who and when, and a suggestion never reaches the student unless I accepted it",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
     }
   ]
 }

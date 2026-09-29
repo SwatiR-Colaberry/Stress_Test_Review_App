@@ -63,6 +63,8 @@ class InMemoryReviewQueueStore(ReviewQueueStore):
                 status="Pending",
                 created_at=self._clock(),
                 marker_note=marker_note,
+                author_name=comment.author_name,
+                app_url=comment.app_url,
             )
             self._items[comment.comment_id] = item
             return item, True

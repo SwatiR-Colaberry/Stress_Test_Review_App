@@ -206,3 +206,23 @@ def test_a_reviewer_comment_quoting_the_critique_marker_creates_no_item(store, a
 def test_a_student_critique_after_feedback_is_still_queued(store, audit):
     result = process_comment(_row("Updated with the source link. ##Critique##", comment_id=1002), store, audit)
     assert result.outcome == "review_created"
+
+
+# STORY-005: the student's name and Basecamp link reach the review item for the
+# reviewer page, but the name (personal data) stays out of the logs and audit trail.
+def test_the_students_name_and_basecamp_link_reach_the_review_item_but_not_the_logs(store, audit, caplog):
+    url = "https://3.basecamp.com/999/buckets/1/messages/500#__recording_1001"
+    row = {**_row("V2 ready. ##Critique##"), "author_name": "Asha Verma", "app_url": url}
+    process_comment(row, store, audit)
+    item = store.get_by_comment_id(1001)
+    assert (item.author_name, item.app_url) == ("Asha Verma", url)
+    assert "Asha Verma" not in caplog.text
+    assert all("Asha Verma" not in event.model_dump_json() for event in audit.read_all())
+
+
+@pytest.mark.parametrize("url", ["javascript:alert(1)", "https://evil.example.com/basecamp.com/x",
+                                 "http://3.basecamp.com/999/x"])
+def test_a_comment_with_an_unsafe_link_is_rejected_as_malformed(store, audit, url):
+    result = process_comment({**_row("##Critique##"), "app_url": url}, store, audit)
+    assert result.outcome == "malformed"
+    assert store.list_items() == []

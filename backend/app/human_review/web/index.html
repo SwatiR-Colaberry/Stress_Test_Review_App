@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Findings</title>
+  <link rel="stylesheet" href="reviewer.css">
+</head>
+<body>
+  <!-- STORY-005: a reviewer approves, edits, rejects or adds findings on one
+       AI draft, then prepares the feedback for Basecamp posting (STORY-006). -->
+  <header class="top">
+    <div>
+      <h1 id="title">Review findings</h1>
+      <div class="sub" id="review-meta">Loading…</div>
+    </div>
+    <label class="who">
+      Reviewer id
+      <input id="reviewer-id" autocomplete="off" maxlength="128" placeholder="e.g. swati">
+      <small>Temporary: replaced by Basecamp sign-in.</small>
+    </label>
+  </header>
+
+  <main>
+    <div id="banner" class="banner" role="alert" hidden>
+      <span id="banner-text"></span>
+      <button id="banner-retry" type="button" hidden>Retry</button>
+    </div>
+
+    <section id="findings" aria-label="Findings"></section>
+
+    <section id="add" class="card add" hidden>
+      <h2>Add a finding</h2>
+      <textarea id="add-text" rows="3" maxlength="2000" placeholder="A point the AI did not raise, or a note to the student"></textarea>
+      <div class="row">
+        <input id="add-rule" maxlength="8" placeholder="Rule id (optional), e.g. ST0-003">
+        <span class="count" id="add-count">0 / 2000</span>
+        <button id="add-button" type="button">Add finding</button>
+      </div>
+      <p class="status" id="add-status"></p>
+    </section>
+
+    <section id="prepare" class="card prepare" hidden>
+      <h2>Final feedback</h2>
+      <p id="prepare-hint" class="sub"></p>
+      <button id="prepare-button" type="button" class="primary">Prepare feedback for Basecamp</button>
+      <p class="status" id="prepare-status"></p>
+      <pre id="prepared-text" class="prepared" hidden></pre>
+    </section>
+  </main>
+
+  <script src="reviewer.js"></script>
+</body>
+</html>

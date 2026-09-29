@@ -28,6 +28,7 @@ Read-only: running it twice changes nothing in Basecamp.
 """
 import json
 import logging
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -38,7 +39,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from app.audit.trail import AuditTrail, AuditWriteError
 from app.basecamp.api_client import BasecampClient, BasecampError, BasecampResponseError
 from app.basecamp.content_extractor import extract_attachments_and_links
-from app.models import MAX_ID_LENGTH, AuditEvent, BasecampId, Submission, SubmissionComment, SubmissionDataset
+from app.models import BASECAMP_URL_PATTERN, MAX_ID_LENGTH, AuditEvent, BasecampId, Submission, SubmissionComment, SubmissionDataset
 
 logger = logging.getLogger("stress_test_review.submission_retrieval")
 
@@ -132,12 +133,29 @@ class _RawRecording(BaseModel):
     subject: Optional[str] = None
     title: Optional[str] = None
     creator: Optional[Dict[str, Any]] = None
+    app_url: Optional[str] = None  # the recording's web link in Basecamp
     comments_count: Optional[int] = None  # messages only; 0 lets us skip the comments call
 
     @property
     def author_id(self) -> Optional[int]:
         value = (self.creator or {}).get("id")
         return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+    # STORY-005: the reviewer page shows the student's name and a link back to
+    # Basecamp. Both are optional extras: an odd value is dropped (None), never
+    # a reason to reject the submission.
+    @property
+    def author_name(self) -> Optional[str]:
+        value = (self.creator or {}).get("name")
+        if not isinstance(value, str) or not value.strip():
+            return None
+        return value.strip()[:200]
+
+    @property
+    def safe_app_url(self) -> Optional[str]:
+        value = self.app_url
+        ok = isinstance(value, str) and len(value) <= 500 and re.match(BASECAMP_URL_PATTERN, value)
+        return value if ok else None
 
 
 def _parse(model: type, raw: Any, kind: str) -> Any:
@@ -151,7 +169,8 @@ def _parse(model: type, raw: Any, kind: str) -> Any:
 
 def _to_comment(raw: _RawRecording) -> SubmissionComment:
     attachments, links = extract_attachments_and_links(raw.content)
-    return SubmissionComment(comment_id=raw.id, author_id=raw.author_id, created_at=raw.created_at,
+    return SubmissionComment(comment_id=raw.id, author_id=raw.author_id, author_name=raw.author_name,
+                             app_url=raw.safe_app_url, created_at=raw.created_at,
                              content_html=raw.content or "", attachments=attachments, links=links)
 
 

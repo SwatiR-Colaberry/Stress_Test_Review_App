@@ -289,3 +289,34 @@ def test_an_oversized_user_id_is_rejected_before_any_call():
     with pytest.raises(ValueError):
         retrieve_project_submissions(client_for(handler), PROJECT, "u" * 129, audit=InMemoryAuditTrail())
     assert handler.calls == []
+
+
+# --- STORY-005: the student's name and Basecamp link are kept for the reviewer ---
+
+def _comment_routes(comment):
+    routes = full_project_routes()
+    routes[f"{P}/buckets/{PROJECT}/recordings/301/comments.json"] = httpx.Response(200, json=[comment])
+    return routes
+
+
+def _retrieved_comment(comment):
+    dataset = retrieve_project_submissions(client_for(fake_basecamp(_comment_routes(comment))), PROJECT, REVIEWER,
+                                           audit=InMemoryAuditTrail())
+    return dataset.submissions[0].comments[0]
+
+
+def test_the_comment_authors_name_and_basecamp_link_are_kept():
+    url = "https://3.basecamp.com/999999/buckets/100/messages/301#__recording_401"
+    comment = _retrieved_comment({**COMMENT, "creator": {"id": 7, "name": " Asha Verma "}, "app_url": url})
+    assert (comment.author_name, comment.app_url) == ("Asha Verma", url)
+
+
+@pytest.mark.parametrize("creator, app_url", [
+    ({"id": 7}, None),                          # no name, no link
+    ({"id": 7, "name": "   "}, "javascript:alert(1)"),  # blank name, unsafe link
+    ({"id": 7, "name": 42}, "https://evil.example.com/x"),  # not a string, another site
+])
+def test_a_missing_or_odd_name_or_link_is_dropped_not_fatal(creator, app_url):
+    comment = _retrieved_comment({**COMMENT, "creator": creator, "app_url": app_url})
+    assert (comment.author_name, comment.app_url) == (None, None)
+    assert comment.comment_id == 401  # the submission itself is still retrieved

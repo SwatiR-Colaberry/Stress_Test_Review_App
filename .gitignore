@@ -20,3 +20,6 @@ data/evaluations/
 
 # Vector index (STORY-013): embeds student submissions and reviewer feedback. Never commit.
 data/vector_index/
+
+# Reviewer action log (STORY-005): edits and added findings quote student work. Never commit.
+data/reviews/
