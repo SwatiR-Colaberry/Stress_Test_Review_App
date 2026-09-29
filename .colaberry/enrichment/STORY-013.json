@@ -3,7 +3,7 @@
   "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
   "storyId": "STORY-013",
   "projectTruthBaseRevision": 1,
-  "observedAt": "2026-09-29T10:00:00Z",
+  "observedAt": "2026-09-29T12:00:00Z",
   "sourceCommitSha": null,
   "factProposals": [
     {
@@ -57,6 +57,11 @@
       "statement": "An index that was never built is reported as unavailable, not as 'no similar cases'.",
       "rationale": "a setup mistake must not look like an empty history to the reviewer",
       "evidence": "backend/app/history/lancedb_index.py"
+    },
+    {
+      "statement": "REQ-019's statement, cluster and priority, and STORY-013's blocked-by, failure paths and build decisions, are maintained by hand in .colaberry/plan.json.",
+      "rationale": "user decision 2026-09-29: keep the changes in the plan so later stories read them; the platform stops overwriting a hand-edited plan.json, so later portal changes must be copied in by hand",
+      "evidence": ".colaberry/plan.json"
     }
   ],
   "limitations": [

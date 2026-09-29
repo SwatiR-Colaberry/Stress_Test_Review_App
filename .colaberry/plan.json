@@ -251,9 +251,9 @@
     {
       "id": "REQ-019",
       "kind": "FUNC",
-      "cluster": "Marker Detection",
-      "priority": "should",
-      "statement": "Historical Retrieval with a Vector Database",
+      "cluster": "Historical Retrieval",
+      "priority": "must",
+      "statement": "The system must retrieve the top 10 (configurable, 1–15) most relevant historical reviews for a submission, filtered to the same Stress Test and ranked by semantic similarity using a vector database stored outside SQL Server, without changing existing SQL Server tables or procedures.",
       "fulfilled_by": [
         "STORY-013"
       ]
@@ -656,6 +656,9 @@
       "fulfills": [
         "REQ-019"
       ],
+      "blocked_by": [
+        "STORY-003"
+      ],
       "narrative": "As a reviewer, I want the AI draft to draw on similar past reviews from the same Stress Test, so that feedback stays consistent with how we reviewed before.",
       "acceptance": [
         "Given historical critique and feedback comments for a Stress Test are indexed in a vector database stored outside SQL Server, when a new submission for that Stress Test is reviewed, then the system returns the top 5–10 most similar cases from that same Stress Test only.",
@@ -665,8 +668,12 @@
         "Trust: Historical examples never override the current Stress Test rules, and existing SQL Server tables and procedures are never changed."
       ],
       "owner_agent": "System",
-      "failure_paths": [],
-      "task_guidance": "Implement exactly what the acceptance lines describe for this story, and nothing that belongs to another one.",
+      "failure_paths": [
+        "Vector database unreachable",
+        "Embedding generation fails",
+        "No similar historical cases found"
+      ],
+      "task_guidance": "Implement exactly what the acceptance lines describe for this story, and nothing that belongs to another one. User decisions (2026-09-28): return the top HISTORY_TOP_K similar cases, default 10, allowed 1–15; vector database is LanceDB, embedded as git-ignored local files (data/vector_index/), never SQL Server; embeddings are computed locally (fastembed, bge-small-en-v1.5), no paid embedding API; filter by Stress Test before ranking; no rule-id filter, because historical reviewer feedback is not tagged by rule; past reviews reach Claude only as labelled examples in the user message, never as rules; completed reviews from this app are added to the same index later (STORY-007). See directives/historical-retrieval.md.",
       "due_on": "2026-10-01",
       "due_baseline_on": "2026-10-01"
     }

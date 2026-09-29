@@ -4,13 +4,13 @@ As a reviewer, I want the AI draft to draw on similar past reviews from the same
 
 **Release:** r1 · Rule Application and AI Evaluation (weeks 3–4)
 **Owner:** System
-**Blocked by:** STORY-003 (Load ST0 Rule Module) — retrieval filters by Stress Test and rule id, so the rule module must exist first. *(Added in the repo 2026-09-25; the portal form had no blocked-by field.)*
+**Blocked by:** STORY-003 (Load ST0 Rule Module) — retrieval filters by Stress Test, which the rule module identifies, so it must exist first. *(Added in the repo 2026-09-25; in `plan.json` since 2026-09-29.)*
 
 ## The requirement this satisfies
 
 - **REQ-019** (Functional, should) — Historical Retrieval with a Vector Database
 
-> **Intended wording (not yet in the portal, 2026-09-25):** REQ-019 was auto-created from the story title, with cluster "Marker Detection" and priority "should". The intended requirement is: *"The system must retrieve the top 15 relevant historical reviews for a submission, filtered to the same Stress Test and ranked by semantic similarity using a vector database stored outside SQL Server, without changing existing SQL Server tables or procedures."* — cluster Historical Retrieval, priority must. **Superseded 2026-09-28:** the user chose a setting, `HISTORY_TOP_K`, **default 10**, allowed 1–15, which meets the acceptance line as written (with 15 indexed per Stress Test, a fixed 15 would have returned every case). If the portal wording changes, say "top 10 (configurable)". Correct it in the portal; `plan.json` is not edited by hand so the plan keeps syncing.
+> **REQ-019 updated in `.colaberry/plan.json` (2026-09-29, user decision):** statement *"The system must retrieve the top 10 (configurable, 1–15) most relevant historical reviews for a submission, filtered to the same Stress Test and ranked by semantic similarity using a vector database stored outside SQL Server, without changing existing SQL Server tables or procedures."*, cluster Historical Retrieval, priority must. It was auto-created from the story title (cluster "Marker Detection", priority "should"). The plan also gained STORY-013's blocked-by, failure paths and build decisions. `plan.json` is now edited by hand, so the platform no longer overwrites it: later plan changes made in the portal must be copied into it by hand.
 
 ## How to build it
 
@@ -32,7 +32,7 @@ Guidance (Master Spec §14–15, Figure 4, and user decisions of 2026-09-25):
 
 ## Acceptance — your stop condition
 
-> **Portal note (updated 2026-09-28):** the first line below says "top 5–10". As built, the default is 10 (configurable 1–15), so the line passes as written. The earlier "top 15" portal change is no longer needed.
+> **Acceptance line 1 (2026-09-29):** it says "top 5–10". As built, the default is 10 (configurable 1–15), so it passes as written. It is deliberately left unchanged in `plan.json`, because rewording it would reset its ticked state in `progress.json`.
 
 Tick each box as it genuinely passes. This file is yours — the platform reads
 the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
