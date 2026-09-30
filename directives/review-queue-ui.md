@@ -88,7 +88,7 @@ The Completed review's post is simulated; nothing is sent to Basecamp.
 - Posting button (after STORY-014), real sign-in (STORY-014).
 - Images in feedback (STORY-015). Highlighting the evidence in the student's submission and
   showing the attached image a finding is about: follow-up story approved 2026-09-30, to be
-  added in the portal first (see PROGRESS.md). Marking a spot inside an image is not part of it.
+  added in the portal first (see PROGRESS.md). Marking a spot inside an image is not needed (user decision 2026-09-30).
 - The queue is in memory (STORY-001): after a restart it is empty until intake runs again.
 - No automated browser (layout) test: checked by eye by the project owner, 2026-09-30.
 
