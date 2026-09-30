@@ -12,7 +12,12 @@ a valid marker (logged, no item), a reviewer's comment that also carries
 critique detections in the 2026-09-25 history extract): no item, audited as
 comment_no_marker with reason REVIEWER_FEEDBACK (STORY-004 follow-up,
 user-approved 2026-09-28), duplicate processing (existing item
-returned, no second item). run_intake adds the source-unreachable path:
+returned, no second item), and a ##Critique## that a reviewer already answered
+(##FeedbackGiven## / ##Approved##) later in the same thread: no item, audited
+as comment_no_marker with reason ALREADY_ANSWERED (user decision 2026-09-30;
+matters when intake runs over old threads). Only run_intake sees the whole
+thread, so only it applies that check; a comment already queued stays queued.
+run_intake adds the source-unreachable path:
 fetching is retried with a cap (see comment_source.fetch_with_retry) and, if
 it still fails, CommentSourceUnavailable propagates and the queue is untouched.
 
@@ -28,7 +33,7 @@ import json
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from pydantic import ValidationError
 
@@ -63,7 +68,11 @@ def process_comment(
     store: ReviewQueueStore,
     audit: AuditTrail,
     correlation_id: Optional[str] = None,
+    *,
+    already_answered: bool = False,
 ) -> IntakeResult:
+    """already_answered: a reviewer answered this comment later in its thread
+    (worked out by run_intake). Such a comment gets no new review item."""
     correlation_id = correlation_id or str(uuid.uuid4())
     try:
         comment = BasecampComment.model_validate(raw)
@@ -108,6 +117,19 @@ def process_comment(
         _record(audit, result, correlation_id, message_id=comment.message_id)
         return result
 
+    if already_answered and store.get_by_comment_id(comment.comment_id) is None:
+        _log(
+            logging.INFO,
+            "critique_already_answered",
+            correlation_id,
+            comment_id=comment.comment_id,
+            message_id=comment.message_id,
+            outcome="success",
+        )
+        result = IntakeResult(outcome="no_marker", comment_id=comment.comment_id)
+        _record(audit, result, correlation_id, message_id=comment.message_id, reason_code="ALREADY_ANSWERED")
+        return result
+
     item, created = store.create_pending(
         comment, marker_note=NONSTANDARD_MARKER_NOTE if marker == "nonstandard" else None
     )
@@ -142,7 +164,36 @@ def run_intake(
     because process_comment is idempotent per comment_id."""
     correlation_id = correlation_id or str(uuid.uuid4())
     rows = fetch_with_retry(source)
-    return [process_comment(row, store, audit, correlation_id) for row in rows]
+    answered = _answered_comment_ids(rows)
+    return [process_comment(row, store, audit, correlation_id,
+                            already_answered=_readable_comment_id(row) in answered)
+            for row in rows]
+
+
+def _answered_comment_ids(rows: List[Any]) -> Set[int]:
+    """Comment ids of ##Critique## comments followed, strictly later in the same
+    thread (message_id), by a reviewer comment with ##FeedbackGiven## or
+    ##Approved##. Malformed rows are ignored here; process_comment reports them."""
+    comments: List[BasecampComment] = []
+    for raw in rows:
+        try:
+            comments.append(BasecampComment.model_validate(raw))
+        except ValidationError:
+            continue
+    last_answer: Dict[int, datetime] = {}
+    for c in comments:
+        if {"FeedbackGiven", "Approved"} & set(detect_review_markers(c.body)):
+            at = _as_utc(c.created_at)
+            if c.message_id not in last_answer or at > last_answer[c.message_id]:
+                last_answer[c.message_id] = at
+    return {c.comment_id for c in comments
+            if classify_critique_marker(c.body) is not None
+            and c.message_id in last_answer and last_answer[c.message_id] > _as_utc(c.created_at)}
+
+
+def _as_utc(value: datetime) -> datetime:
+    """Comparable timestamps: one without a time zone is read as UTC (Basecamp's)."""
+    return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
 
 
 def _record(
