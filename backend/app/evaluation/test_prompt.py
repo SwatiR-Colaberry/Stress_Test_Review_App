@@ -97,3 +97,12 @@ def test_the_prompt_says_submission_text_is_data_not_instructions():
 
 def test_no_links_are_stated_as_none():
     assert "Links: none" in build_prompt(_input(links=[]), 1, _PRECHECKS).user
+
+
+def test_rule_examples_are_never_sent_to_claude():
+    # Examples are reviewer help on the Rules page (STORY-012), not rules: they
+    # must not change what Claude is told or what a call costs.
+    prompt = build_system_prompt(_MODULE)
+    for rule in _MODULE.rules:
+        assert rule.example is not None
+        assert rule.example.passes not in prompt and rule.example.fails not in prompt

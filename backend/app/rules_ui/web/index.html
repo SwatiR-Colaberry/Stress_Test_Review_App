@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stress Test Rules</title>
+  <link rel="stylesheet" href="/reviewer/reviewer.css">
+  <link rel="stylesheet" href="rules.css">
+</head>
+<body>
+  <!-- STORY-012: what each Stress Test rule checks, the feedback a student
+       gets when it fails, and a fictional passing / failing example. Built
+       from the rule files, so new Stress Tests (ST1-ST5) appear here once
+       they are added as configuration. Every load is audited. -->
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="/queue/"><span class="brand-mark">ST</span>Stress Test Review</a>
+      <nav class="nav" aria-label="Pages">
+        <a href="/queue/">Review Queue</a>
+        <a href="/rules/" aria-current="page">Rules</a>
+      </nav>
+      <label class="who">
+        Reviewer id
+        <input id="reviewer-id" autocomplete="off" maxlength="128" placeholder="e.g. swati">
+        <small>Temporary: replaced by Basecamp sign-in.</small>
+      </label>
+    </div>
+  </header>
+
+  <div class="top">
+    <div>
+      <h1>Stress Test rules</h1>
+      <div class="sub">What each rule checks, what the student is told when it fails, and an example of each.</div>
+    </div>
+    <div class="row tools">
+      <input id="search" type="search" placeholder="Search rules, e.g. screenshot" aria-label="Search rules">
+    </div>
+  </div>
+
+  <main>
+    <div id="banner" class="banner" role="alert" hidden>
+      <span id="banner-text"></span>
+      <button id="banner-retry" type="button" hidden>Retry</button>
+    </div>
+    <nav id="tabs" class="tabs" aria-label="Stress Tests"></nav>
+    <div id="module"></div>
+  </main>
+
+  <script src="/reviewer/review_logic.js"></script>
+  <script src="rules_logic.js"></script>
+  <script src="rules.js"></script>
+</body>
+</html>

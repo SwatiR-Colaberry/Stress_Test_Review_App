@@ -213,6 +213,11 @@ AuditAction = Literal[
     "feedback_post_attempted",
     "feedback_posted",
     "feedback_post_failed",
+    # Review Queue web UI and Rules page (STORY-012). actor_id is the reviewer;
+    # review_id is set on review_detail_viewed; reason_code says why a view failed.
+    "queue_viewed",
+    "review_detail_viewed",
+    "rules_viewed",
 ]
 
 

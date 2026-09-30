@@ -24,6 +24,14 @@ class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+class RuleExample(_Strict):
+    """A short, fictional illustration of a rule for reviewers (Rules page,
+    STORY-012). Display only: never sent to Claude (evaluation/prompt.py picks
+    its fields by name), so adding or changing one does not change evaluations."""
+    passes: str = Field(min_length=1, max_length=600)
+    fails: str = Field(min_length=1, max_length=600)
+
+
 class Rule(_Strict):
     id: str = Field(pattern=r"^ST[0-9]-[0-9]{3}$")
     check: str = Field(min_length=1)
@@ -32,6 +40,7 @@ class Rule(_Strict):
     # How to apply the rule, where the spec's wording needs a decision.
     # Each note names its source (spec section or user decision).
     evaluation_notes: List[str] = []
+    example: Optional[RuleExample] = None
 
 
 class Stage(_Strict):

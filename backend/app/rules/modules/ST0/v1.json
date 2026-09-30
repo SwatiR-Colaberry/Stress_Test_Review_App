@@ -22,7 +22,11 @@
       "default_severity": "Required Fix",
       "evaluation_notes": [
         "Describes what the data represents and the main information captured (spec §4)."
-      ]
+      ],
+      "example": {
+        "passes": "\"Dataset description: weekly sales for 45 retail stores from 2010 to 2012. Each row is one store in one week, with weekly sales, a holiday flag, temperature, fuel price and unemployment rate.\"",
+        "fails": "\"Dataset: sales.csv (attached).\" The file is named, but nothing says what the data represents or what information it holds."
+      }
     },
     {
       "id": "ST0-002",
@@ -31,7 +35,11 @@
       "default_severity": "Required Fix",
       "evaluation_notes": [
         "Valid means the link opens without an error (user decision, 2026-09-25)."
-      ]
+      ],
+      "example": {
+        "passes": "\"Source: https://www.kaggle.com/datasets/example/retail-weekly-sales\". A public page that opens without signing in.",
+        "fails": "\"I downloaded the data from Kaggle.\" with no link, or a Google Drive link that asks for access permission."
+      }
     },
     {
       "id": "ST0-003",
@@ -41,7 +49,11 @@
       "evaluation_notes": [
         "Explains how the data was collected, compiled, sourced or generated, separately from the dataset description (spec §4).",
         "Severity is Required Fix, not the Master Spec §10 'Needs Attention': the ST0 spec makes this rule blocking in Stage 1 (user decision, 2026-09-25)."
-      ]
+      ],
+      "example": {
+        "passes": "A separate \"Data collection\" paragraph: \"The stores recorded till totals each week; the publisher added temperature and fuel prices from public government data.\"",
+        "fails": "Only the dataset description is given (\"weekly sales for 45 stores\"), with no word on how the data was collected, compiled or generated."
+      }
     },
     {
       "id": "ST0-004",
@@ -50,7 +62,11 @@
       "default_severity": "Required Fix",
       "evaluation_notes": [
         "Where the project format requires a dataset preview: headers + at least 3 rows (spec §11)."
-      ]
+      ],
+      "example": {
+        "passes": "A screenshot of the spreadsheet showing the header row (Store, Date, Weekly_Sales, Holiday_Flag, …) and at least 3 rows of data under it.",
+        "fails": "A screenshot of a chart, of the file icon, or of the header row alone with no data rows."
+      }
     },
     {
       "id": "ST0-005",
@@ -59,13 +75,21 @@
       "default_severity": "Required Fix",
       "evaluation_notes": [
         "Do not require the student to upload the dataset file in chat; check the final submission for the uploaded dataset file(s) (spec §11)."
-      ]
+      ],
+      "example": {
+        "passes": "The final submission has the dataset file attached, e.g. retail_weekly_sales.csv.",
+        "fails": "The final submission only links to the data, or says \"file too big to upload\", and no dataset file is attached."
+      }
     },
     {
       "id": "ST0-006",
       "check": "Problem count is 8–10",
       "failure_feedback": "If fewer than 8, add enough problems to reach 8–10. If more than 10, reduce the list to 8–10.",
-      "default_severity": "Required Fix"
+      "default_severity": "Required Fix",
+      "example": {
+        "passes": "Problems #1 to #9 are listed: 9 problems, inside the 8–10 range.",
+        "fails": "Only 7 problems are listed (too few), or 12 are listed (too many)."
+      }
     },
     {
       "id": "ST0-007",
@@ -74,7 +98,11 @@
       "default_severity": "Required Fix",
       "evaluation_notes": [
         "Identify problem sections by meaning and required content, not exact heading text; topic headers and descriptive text before a problem are allowed (spec §5)."
-      ]
+      ],
+      "example": {
+        "passes": "Every problem has all 8 fields: Problem, Solution, Model Type/s, Algorithm, Independent Variable/s, Dependent Variable, Target Audience and Future Capability/ies. Headings may be worded a little differently.",
+        "fails": "Problem #4 has no Dependent Variable and no Target Audience. The feedback names the problem number and both missing fields."
+      }
     },
     {
       "id": "ST0-008",
@@ -84,7 +112,11 @@
       "evaluation_notes": [
         "For example 'Selected Problem: Problem #X' or an equivalent clear statement; the selected problem should be unambiguous (spec §6).",
         "For now the human reviewer confirms which problem is selected (user decision, 2026-09-25). Hint: students usually highlight the selected problem in yellow, which Basecamp stores in the comment HTML as background-color: rgb(250, 247, 133)."
-      ]
+      ],
+      "example": {
+        "passes": "\"Selected Problem: Problem #3 – forecast weekly sales per store\", or Problem #3 alone highlighted in yellow.",
+        "fails": "Two problems are highlighted, or the student writes \"I might pick #2 or #5\", so the selected problem is not clear."
+      }
     }
   ],
   "stages": [

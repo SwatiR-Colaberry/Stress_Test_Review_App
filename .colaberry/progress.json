@@ -692,21 +692,66 @@
       "criteria": [
         {
           "text": "Given a pending review in the queue, when accessed via the UI, then it displays all necessary details for review.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a completed review, when accessed via the UI, then it shows the review status and history.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs all UI interactions with timestamps and user IDs.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        ".colaberry/enrichment/STORY-012.json",
+        "backend/app/human_review/web/index.html",
+        "backend/app/human_review/web/review_logic.js",
+        "backend/app/human_review/web/reviewer.css",
+        "backend/app/human_review/web/reviewer.js",
+        "backend/app/main.py",
+        "backend/app/models.py",
+        "backend/app/queue_ui/__init__.py",
+        "backend/app/queue_ui/models.py",
+        "backend/app/queue_ui/service.py",
+        "backend/app/queue_ui/viewing.py",
+        "backend/app/queue_ui/web/index.html",
+        "backend/app/queue_ui/web/queue.css",
+        "backend/app/queue_ui/web/queue.js",
+        "backend/app/queue_ui/web/queue_logic.js",
+        "backend/app/routers/human_review.py",
+        "backend/app/routers/queue_ui.py",
+        "backend/app/routers/rules_ui.py",
+        "backend/app/rules/module.py",
+        "backend/app/rules/modules/ST0/v1.json",
+        "backend/app/rules_ui/__init__.py",
+        "backend/app/rules_ui/models.py",
+        "backend/app/rules_ui/service.py",
+        "backend/app/rules_ui/web/index.html",
+        "backend/app/rules_ui/web/rules.css",
+        "backend/app/rules_ui/web/rules.js",
+        "backend/app/rules_ui/web/rules_logic.js",
+        "backend/app/web_static.py",
+        "backend/scripts/queue_ui_demo.py",
+        "command-center/tabs/data-model.js",
+        "directives/review-queue-ui.md",
+        "docs/ACCEPTANCE_CHECKLIST.md",
+        "docs/stories/STORY-012.md"
+      ],
+      "tests_added": [
+        "backend/app/queue_ui/test_service.py",
+        "backend/app/queue_ui/test_routes.py",
+        "backend/app/queue_ui/test_web_logic.py",
+        "backend/app/rules_ui/test_service.py",
+        "backend/app/rules_ui/test_web_logic.py",
+        "backend/scripts/test_queue_ui_demo.py",
+        "backend/app/rules/test_module.py (4 example tests)",
+        "backend/app/evaluation/test_prompt.py::test_rule_examples_are_never_sent_to_claude",
+        "backend/app/human_review/test_web_logic.py::test_stress_test_codes_read_as_words_in_headings",
+        "backend/app/test_main.py::test_reviewer_pages_and_their_shared_files_are_always_revalidated"
+      ],
+      "notes": "AC1 test_a_pending_review_in_the_queue_shows_all_details_needed_for_review; AC2 test_a_completed_review_shows_status_and_history; AC3 test_every_ui_view_is_audited_with_timestamp_and_user_id (+ reviewer page and Rules page loads). Pages /queue/, /rules/, updated /reviewer/. Status worked out from records (user decision A). No Post button until STORY-014. pytest 896/896; demo backend/scripts/queue_ui_demo.py. User-approved changes to STORY-005 files (audited page load, back link, id handling, shared styles) and STORY-003 rule files (optional fictional example). Not automated: browser layout (checked by eye).",
+      "updated_at": "2026-09-30T18:00:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

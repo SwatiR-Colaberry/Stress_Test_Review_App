@@ -65,7 +65,7 @@ def _post(client, action_id, kind, headers=REVIEWER, **fields):
 
 
 def test_a_reviewer_sees_the_ai_findings_pending(client):
-    view = client.get("/reviews/r-1/findings").json()
+    view = client.get("/reviews/r-1/findings", headers=REVIEWER).json()
     assert [(f["finding_id"], f["decision"]) for f in view["findings"]] == [("ST0-001", "pending"), ("ST0-002", "pending")]
     assert view["prepared"] is None and view["rule_version"] == "v1"
 
@@ -77,13 +77,13 @@ def test_approving_the_findings_prepares_feedback_for_posting(client):
     assert response.status_code == 200
     assert response.json()["status"] == "ready_to_post"
     assert response.json()["feedback_text"] == "1. AI suggestion.\n\n2. AI suggestion."
-    assert client.get("/reviews/r-1/findings").json()["prepared"]["reviewer_id"] == "reviewer-7"
+    assert client.get("/reviews/r-1/findings", headers=REVIEWER).json()["prepared"]["reviewer_id"] == "reviewer-7"
 
 
 def test_edits_are_saved_and_prepared_for_posting(client):
     saved = _post(client, "a1", "edit_finding", finding_id="ST0-001", text="Please link the Kaggle dataset.")
     assert saved.status_code == 200
-    reread = client.get("/reviews/r-1/findings").json()["findings"][0]
+    reread = client.get("/reviews/r-1/findings", headers=REVIEWER).json()["findings"][0]
     assert reread["feedback_text"] == "Please link the Kaggle dataset." and reread["edited"] is True
     assert reread["ai_draft"]["suggested_feedback"] == "AI suggestion."  # the AI draft is kept
     _post(client, "a2", "reject_finding", finding_id="ST0-002")
@@ -156,7 +156,7 @@ def test_ai_cannot_prepare_feedback(client):
     _post(client, "a2", "approve_finding", finding_id="ST0-002")
     response = client.post("/reviews/r-1/prepare", headers={"X-Reviewer-Id": "claude"})
     assert response.status_code == 403
-    assert client.get("/reviews/r-1/findings").json()["prepared"] is None
+    assert client.get("/reviews/r-1/findings", headers=REVIEWER).json()["prepared"] is None
 
 
 def test_preparing_with_undecided_findings_is_refused(client):
@@ -167,7 +167,7 @@ def test_preparing_with_undecided_findings_is_refused(client):
 
 
 def test_an_unknown_review_is_404(client):
-    response = client.get("/reviews/nope/findings")
+    response = client.get("/reviews/nope/findings", headers=REVIEWER)
     assert response.status_code == 404
     assert response.json()["detail"]["reason_code"] == "REVIEW_NOT_FOUND"
 
@@ -176,7 +176,7 @@ def test_a_review_without_an_ai_evaluation_is_404(client, tmp_path):
     queue = InMemoryReviewQueueStore(new_id=lambda: "r-2")
     queue.create_pending(BasecampComment(comment_id=3003, message_id=501, body="##Critique##", created_at=_NOW))
     app.dependency_overrides[get_draft_source] = lambda: DraftSource(queue, tmp_path / "evaluations")
-    assert client.get("/reviews/r-2/findings").json()["detail"]["reason_code"] == "NO_AI_DRAFT"
+    assert client.get("/reviews/r-2/findings", headers=REVIEWER).json()["detail"]["reason_code"] == "NO_AI_DRAFT"
 
 
 def test_a_malformed_action_is_rejected_before_it_reaches_the_store(client, audit):
@@ -187,7 +187,7 @@ def test_a_malformed_action_is_rejected_before_it_reaches_the_store(client, audi
 
 def test_the_newest_rule_version_is_the_draft(client, tmp_path):
     ResultStore(tmp_path / "evaluations").put(_evaluation(rule_version="v2", findings=DRAFT[:1]))
-    assert client.get("/reviews/r-1/findings").json()["rule_version"] == "v2"
+    assert client.get("/reviews/r-1/findings", headers=REVIEWER).json()["rule_version"] == "v2"
 
 
 def test_the_reviewer_page_and_its_script_are_served(client):
@@ -198,7 +198,7 @@ def test_the_reviewer_page_and_its_script_are_served(client):
 
 
 def test_the_reviewer_sees_the_students_name_and_basecamp_link(client, audit):
-    view = client.get("/reviews/r-1/findings").json()
+    view = client.get("/reviews/r-1/findings", headers=REVIEWER).json()
     assert (view["student_name"], view["basecamp_url"]) == ("Asha Verma", BASECAMP_URL)
     _post(client, "a1", "approve_finding", finding_id="ST0-001")
     assert all("Asha Verma" not in e.model_dump_json() for e in audit.read_all())  # never in the audit trail
@@ -208,16 +208,16 @@ def test_a_review_without_a_name_or_link_still_opens(client, tmp_path):
     queue = InMemoryReviewQueueStore(new_id=lambda: "r-3")
     queue.create_pending(BasecampComment(comment_id=2002, message_id=500, body="##Critique##", created_at=_NOW))
     app.dependency_overrides[get_draft_source] = lambda: DraftSource(queue, tmp_path / "evaluations")
-    view = client.get("/reviews/r-3/findings").json()
+    view = client.get("/reviews/r-3/findings", headers=REVIEWER).json()
     assert (view["student_name"], view["basecamp_url"]) == (None, None)
 
 
 def test_the_view_names_each_rule_in_plain_words(client):
-    names = client.get("/reviews/r-1/findings").json()["rule_names"]
+    names = client.get("/reviews/r-1/findings", headers=REVIEWER).json()["rule_names"]
     assert names["ST0-001"] == "Dataset description is present"
 
 
 def test_an_unknown_review_is_logged_not_silent(client, caplog):
     caplog.set_level(logging.WARNING, logger="stress_test_review.human_review")
-    client.get("/reviews/nope/findings")
+    client.get("/reviews/nope/findings", headers=REVIEWER)
     assert '"event": "review_not_found"' in caplog.text and "REVIEW_NOT_FOUND" in caplog.text

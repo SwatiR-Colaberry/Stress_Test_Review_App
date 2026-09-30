@@ -80,3 +80,18 @@ def test_detect_marker_triggers():
 def test_detect_marker_rejects_near_miss():
     response = client.post("/basecamp/critique-marker/detect", json={"comment_body": "##Review##"})
     assert response.json() == {"is_critique_marker": False, "normalized_marker": None}
+
+
+def test_reviewer_pages_and_their_shared_files_are_always_revalidated():
+    # A cached old reviewer.css / review_logic.js broke the new queue page
+    # (2026-09-30); no-cache makes the browser check before reusing a copy.
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    client = TestClient(app)
+    for path in ("/queue/", "/queue/queue.js", "/reviewer/reviewer.css", "/reviewer/review_logic.js",
+                 "/rules/", "/rules/rules.js"):
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert response.headers["cache-control"] == "no-cache", path

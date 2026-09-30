@@ -11,6 +11,7 @@
 "use strict";
 
 const TIMEOUT_MS = 10000;
+const NEXT_STEP = "Feedback is ready to post. Posting to Basecamp is switched on after Basecamp sign-in (STORY-014); until then it waits here, shown as Feedback Generated in the queue.";
 const MAX_FINDING_CHARS = 2000;
 const REASONS = {
   MISSING_REVIEWER_IDENTITY: "Enter your reviewer id at the top first.",
@@ -139,10 +140,10 @@ function render(next) {
   renderPrepare(locked);
 }
 
-// Top line: "ST0 · Student name · Open in Basecamp". The link is only made
+// Top line: "Stress Test 0 · Student name · Open in Basecamp". The link is only made
 // for an https basecamp.com address (the server checks this too).
 function renderTitle() {
-  const parts = [el("strong", { text: view.stress_test_id }), view.student_name || "Student name not available"];
+  const parts = [el("strong", { text: stressTestName(view.stress_test_id) }), view.student_name || "Student name not available"];
   if (view.basecamp_url && /^https:\/\/([a-z0-9-]+\.)*basecamp\.com\//.test(view.basecamp_url)) {
     parts.push(el("a", { href: view.basecamp_url, target: "_blank", rel: "noopener noreferrer", text: "Open in Basecamp ↗" }));
   }
@@ -178,7 +179,10 @@ function findingCard(f, locked) {
     el("div", { class: "head" },
       el("strong", { text: title }),
       el("span", { class: "tag", text: ai ? ai.severity : "Added by reviewer" }),
-      el("span", { class: `tag ${f.decision}`, text: DECISIONS[f.decision] + (f.edited ? " · edited" : "") })),
+      el("span", { class: `tag ${f.decision}`, text: DECISIONS[f.decision] + (f.edited ? " · edited" : "") }),
+      // New tab, so a half-typed edit here is never lost (Rules page, STORY-012).
+      f.rule_id ? el("a", { class: "rule-help", href: `/rules/#${encodeURIComponent(f.rule_id)}`, target: "_blank",
+                            rel: "noopener", text: "What does this rule mean?" }) : null),
     box,
     el("div", { class: "row" }, count, ...buttons),
     status,
@@ -208,7 +212,7 @@ function renderPrepare(locked) {
   $("prepare-button").hidden = locked;
   $("prepare-button").disabled = pending > 0;
   $("prepare-hint").textContent = locked
-    ? `Prepared by ${view.prepared.reviewer_id} at ${new Date(view.prepared.prepared_at).toLocaleString()}. Ready to post to Basecamp.`
+    ? `Prepared by ${view.prepared.reviewer_id} at ${new Date(view.prepared.prepared_at).toLocaleString()}. ` + NEXT_STEP
     : pending ? `${pending} finding${pending > 1 ? "s" : ""} still need${pending > 1 ? "" : "s"} a decision.`
               : "Every finding has a decision. Approved findings become the feedback; rejected ones are left out.";
   $("prepared-text").hidden = !locked;
@@ -260,14 +264,22 @@ async function prepare() {
     return;
   }
   status.className = "status ok";
-  status.textContent = "Prepared. It will be posted to Basecamp by the posting step.";
+  status.replaceChildren("Prepared. ", el("a", { href: "/queue/", text: "Back to the Review Queue" }));
   await load();
 }
 
 // ---- start -----------------------------------------------------------------
 
 $("reviewer-id").value = storage("get");
-$("reviewer-id").addEventListener("change", (e) => storage("set", e.target.value.trim()));
+// Saved on every keystroke, so it is kept even if the reviewer never leaves the box.
+// Loading the review needs the id (it is audited, STORY-012), so reload on change.
+$("reviewer-id").addEventListener("input", (e) => storage("set", e.target.value.trim()));
+$("reviewer-id").addEventListener("change", load);
+// Back/Forward can show a stored copy of this page without rerunning it: pick up an id set meanwhile.
+window.addEventListener("pageshow", (e) => {
+  const stored = storage("get");
+  if (e.persisted && stored && stored !== $("reviewer-id").value.trim()) { $("reviewer-id").value = stored; load(); }
+});
 $("add-text").addEventListener("input", (e) => {
   $("add-count").textContent = `${e.target.value.length} / ${MAX_FINDING_CHARS}`;
   $("add-button").textContent = "Add finding";

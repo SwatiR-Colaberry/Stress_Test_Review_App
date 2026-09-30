@@ -41,3 +41,10 @@ def test_changed_text_after_a_failure_is_a_new_add():
 def test_an_optional_rule_id_is_sent_only_when_given():
     assert "rule_id" not in _add_action(None, "Note.", "  ")
     assert _add_action(None, "Note.", " ST0-003 ")["rule_id"] == "ST0-003"
+
+
+def test_stress_test_codes_read_as_words_in_headings():
+    script = (f"const {{ stressTestName }} = require({json.dumps(str(LOGIC))});"
+              "process.stdout.write(JSON.stringify(['ST0', 'ST5', 'ST12', 'Other', '', null].map(stressTestName)));")
+    out = subprocess.run([NODE, "-e", script], capture_output=True, text=True, timeout=10, check=True)
+    assert json.loads(out.stdout) == ["Stress Test 0", "Stress Test 5", "Stress Test 12", "Other", "", ""]

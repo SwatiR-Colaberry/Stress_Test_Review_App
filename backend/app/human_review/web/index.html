@@ -6,20 +6,30 @@
   <title>Review Findings</title>
   <link rel="stylesheet" href="reviewer.css">
 </head>
-<body>
+<body class="narrow">
   <!-- STORY-005: a reviewer approves, edits, rejects or adds findings on one
        AI draft, then prepares the feedback for Basecamp posting (STORY-006). -->
-  <header class="top">
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="/queue/"><span class="brand-mark">ST</span>Stress Test Review</a>
+      <nav class="nav" aria-label="Pages">
+        <a href="/queue/">Review Queue</a>
+        <a href="/rules/">Rules</a>
+      </nav>
+      <label class="who">
+        Reviewer id
+        <input id="reviewer-id" autocomplete="off" maxlength="128" placeholder="e.g. swati">
+        <small>Temporary: replaced by Basecamp sign-in.</small>
+      </label>
+    </div>
+  </header>
+  <div class="top">
     <div>
+      <a class="back" href="/queue/">← Review Queue</a>
       <h1 id="title">Review findings</h1>
       <div class="sub" id="review-meta">Loading…</div>
     </div>
-    <label class="who">
-      Reviewer id
-      <input id="reviewer-id" autocomplete="off" maxlength="128" placeholder="e.g. swati">
-      <small>Temporary: replaced by Basecamp sign-in.</small>
-    </label>
-  </header>
+  </div>
 
   <main>
     <div id="banner" class="banner" role="alert" hidden>

@@ -31,7 +31,7 @@ const ENTITIES = [
       ["id", "uuid", "primary key"],
       ["submission_id", "uuid", "fk → Submission"],
       ["rule_module", "string", "Stress Test + rule version applied, e.g. ST0/v1 (→ RuleModule)"],
-      ["status", "enum", "Pending | Completed — Completed is set only by the STORY-006 posting service, after Basecamp confirmed the feedback comment (built)"],
+      ["status", "enum", "Pending | Completed — Completed is set only by the STORY-006 posting service, after Basecamp confirmed the feedback comment (built). The Review Queue page (STORY-012) shows a status worked out from the records: Pending → In Review (a reviewer action) → Feedback Generated (PreparedFeedback) → Completed (a posted PostingRecord)"],
       ["created_at", "timestamp", ""],
       ["completed_at", "timestamp", "nullable"],
       ["marker_note", "text", "nullable — set when the student wrote ##Please Critique##: remind them to use ##Critique## (built)"],
@@ -48,7 +48,7 @@ const ENTITIES = [
     fields: [
       ["stress_test_id", "string", "ST0, ST1, … ST5"],
       ["version", "string", "v1, v2, … (active one named in registry.json)"],
-      ["rules", "json", "rule id, check, failure feedback, severity, evaluation notes"],
+      ["rules", "json", "rule id, check, failure feedback, severity, evaluation notes, optional example {passes, fails} (fictional, for the Rules page only; never sent to Claude — built, STORY-012)"],
       ["stages", "json", "ordered; structural and artifact block, advisory never blocks"],
       ["reviewer_notes", "json", "things to tell the reviewer that are not rule failures, e.g. SPLIT_SUBMISSION, CONTENT_NOT_IN_TEXT"],
     ],
@@ -139,7 +139,7 @@ const ENTITIES = [
     fields: [
       ["event_id", "uuid", "primary key"],
       ["recorded_at", "timestamp", ""],
-      ["action", "enum", "review_created | review_already_queued | comment_no_marker | comment_rejected_malformed | finalize_allowed | finalize_blocked | retrieval_started | retrieval_completed | retrieval_failed | rules_loaded | rules_manual_resolution | evaluation_started | evaluation_finding | evaluation_completed | evaluation_failed | evaluation_already_done | evaluation_manual_resolution | history_retrieved | reviewer_finding_approved | reviewer_finding_edited | reviewer_finding_rejected | reviewer_finding_added | reviewer_feedback_prepared | reviewer_action_blocked | feedback_post_refused | feedback_post_attempted | feedback_posted | feedback_post_failed"],
+      ["action", "enum", "review_created | review_already_queued | comment_no_marker | comment_rejected_malformed | finalize_allowed | finalize_blocked | retrieval_started | retrieval_completed | retrieval_failed | rules_loaded | rules_manual_resolution | evaluation_started | evaluation_finding | evaluation_completed | evaluation_failed | evaluation_already_done | evaluation_manual_resolution | history_retrieved | reviewer_finding_approved | reviewer_finding_edited | reviewer_finding_rejected | reviewer_finding_added | reviewer_feedback_prepared | reviewer_action_blocked | feedback_post_refused | feedback_post_attempted | feedback_posted | feedback_post_failed | queue_viewed | review_detail_viewed | rules_viewed (STORY-012: every reviewer page load, with reviewer and time)"],
       ["actor_id", "string", "\"system\" for intake; reviewer id for finalize; requesting user for retrieval; \"unidentified\" if none named"],
       ["outcome", "enum", "success | blocked | failure"],
       ["correlation_id", "string", "X-Correlation-ID or generated"],

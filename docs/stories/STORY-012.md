@@ -27,8 +27,8 @@ the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [ ] Given a pending review in the queue, when accessed via the UI, then it displays all necessary details for review.
-- [ ] Given a completed review, when accessed via the UI, then it shows the review status and history.
-- [ ] Trust: The system logs all UI interactions with timestamps and user IDs.
+- [x] Given a pending review in the queue, when accessed via the UI, then it displays all necessary details for review.
+- [x] Given a completed review, when accessed via the UI, then it shows the review status and history.
+- [x] Trust: The system logs all UI interactions with timestamps and user IDs.
 
 When every box above is ticked, stop and show the demo.

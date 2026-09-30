@@ -7,6 +7,9 @@ reviewer; it is not verified, so anyone who can reach the API can claim any
 reviewer id. AI/system and blank ids are refused. Replaced by Basecamp
 sign-in (REQ-012; login story agreed 2026-09-29) before anything is posted.
 
+Every page load is audited (review_detail_viewed, STORY-012) and needs the
+reviewer id like the actions do.
+
 Status codes: 404 unknown review or no AI draft yet; 401 no reviewer id;
 403 AI/system id; 409 refused action (reason_code: UNKNOWN_FINDING,
 UNDECIDED_FINDINGS, REVIEW_LOCKED, ACTION_ID_REUSED, EMPTY_FEEDBACK,
@@ -28,6 +31,7 @@ from app.human_review.models import PreparedFeedback, ReviewerAction, ReviewView
 from app.human_review.state import InvalidReviewerAction
 from app.human_review.store import ReviewActionStore, ReviewStoreError
 from app.models import MAX_ID_LENGTH
+from app.queue_ui import viewing
 
 router = APIRouter(prefix="/reviews", tags=["human review"])
 
@@ -40,8 +44,14 @@ CorrelationHeader = Header(default=None, max_length=64)
 
 @router.get("/{review_id}/findings", response_model=ReviewView)
 def get_findings(review_id: str, drafts: DraftSource = Depends(get_draft_source),
-                 store: ReviewActionStore = Depends(get_review_action_store)) -> ReviewView:
-    return _run(lambda: service.view_review(review_id, drafts, store))
+                 store: ReviewActionStore = Depends(get_review_action_store),
+                 audit: AuditTrail = Depends(get_audit_trail),
+                 x_reviewer_id: Optional[str] = ReviewerHeader,
+                 x_correlation_id: Optional[str] = CorrelationHeader) -> ReviewView:
+    # STORY-012: opening the page is a UI interaction, audited as review_detail_viewed.
+    return _run(lambda: viewing.view_review(review_id[:MAX_ID_LENGTH], x_reviewer_id,
+                                            x_correlation_id or str(uuid.uuid4()), audit,
+                                            lambda: service.view_review(review_id, drafts, store)))
 
 
 @router.post("/{review_id}/actions", response_model=ReviewView)
@@ -67,6 +77,8 @@ def post_prepare(review_id: str, drafts: DraftSource = Depends(get_draft_source)
 def _run(call):
     try:
         return call()
+    except viewing.ViewerRefused as exc:
+        raise HTTPException(_STATUS[exc.reason_code], {"reason_code": exc.reason_code, "message": str(exc)}) from exc
     except service.ReviewNotFound as exc:
         raise HTTPException(404, {"reason_code": exc.reason_code, "message": str(exc)}) from exc
     except InvalidReviewerAction as exc:

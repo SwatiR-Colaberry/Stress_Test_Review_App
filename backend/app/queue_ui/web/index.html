@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Queue</title>
+  <link rel="stylesheet" href="/reviewer/reviewer.css">
+  <link rel="stylesheet" href="queue.css">
+</head>
+<body>
+  <!-- STORY-012: the Review Queue for reviewers. Lists every review with its
+       student and status; opening one shows its details and full history.
+       Every load is audited on the server with the reviewer id and time. -->
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="/queue/"><span class="brand-mark">ST</span>Stress Test Review</a>
+      <nav class="nav" aria-label="Pages">
+        <a href="/queue/" aria-current="page">Review Queue</a>
+        <a href="/rules/">Rules</a>
+      </nav>
+      <label class="who">
+        Reviewer id
+        <input id="reviewer-id" autocomplete="off" maxlength="128" placeholder="e.g. swati">
+        <small>Temporary: replaced by Basecamp sign-in.</small>
+      </label>
+    </div>
+  </header>
+
+  <div class="top">
+    <div>
+      <h1>Review Queue</h1>
+      <div class="sub" id="queue-meta">Loading…</div>
+    </div>
+    <div class="row tools">
+      <input id="search" type="search" placeholder="Search student or review id" aria-label="Search student or review id">
+      <button id="refresh" type="button">Refresh</button>
+    </div>
+  </div>
+
+  <main>
+    <div id="banner" class="banner" role="alert" hidden>
+      <span id="banner-text"></span>
+      <button id="banner-retry" type="button" hidden>Retry</button>
+    </div>
+
+    <nav id="tiles" class="tiles" aria-label="Filter by status"></nav>
+
+    <div class="split">
+      <section class="card list-card" aria-label="Reviews">
+        <ul id="rows" class="rows"></ul>
+        <p id="empty" class="empty" hidden>No reviews here.</p>
+      </section>
+
+      <section id="detail" class="card detail" aria-live="polite">
+        <p class="sub">Choose a review on the left to see its details and history.</p>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>What each status means</h2>
+      <ol id="status-legend" class="legend"></ol>
+      <p class="sub">A review moves down this list in order. It never skips a human step: nothing reaches the student without a reviewer.</p>
+    </section>
+  </main>
+
+  <script src="/reviewer/review_logic.js"></script>
+  <script src="queue_logic.js"></script>
+  <script src="queue.js"></script>
+</body>
+</html>

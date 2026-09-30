@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-012",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-30T18:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "outputs",
+      "value": "Reviewers work from three web pages served by the FastAPI app: the Review Queue (/queue/), the per-review findings page (/reviewer/) and a Rules page (/rules/) listing every active Stress Test rule with a fictional passing and failing example.",
+      "evidence": "directives/review-queue-ui.md"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "A review moves Pending -> In Review (first reviewer decision) -> Feedback Generated (final feedback prepared and locked) -> Completed (Basecamp confirmed the post). The page works this out from the reviewer action log, the prepared feedback and the posting records.",
+      "evidence": "backend/app/queue_ui/service.py"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Every reviewer page load is written to the audit trail with the reviewer id and a UTC timestamp (queue_viewed, review_detail_viewed, rules_viewed), including refused and failed loads; a page is not shown if its audit record cannot be written.",
+      "evidence": "backend/app/queue_ui/viewing.py"
+    },
+    {
+      "dimension": "actors",
+      "value": "Reviewers need to see what each Stress Test rule means with an example; the rule files now carry an optional example that is shown to reviewers and never sent to Claude.",
+      "evidence": "backend/app/rules/module.py"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Show a status worked out from existing records instead of adding status updates to the Review Queue store.",
+      "rationale": "user decision 2026-09-30: keeps STORY-001's queue store unchanged; the stored item stays Pending until a post succeeds",
+      "evidence": "backend/app/queue_ui/models.py"
+    },
+    {
+      "statement": "No 'Post to Basecamp' button until Basecamp sign-in exists; the page says the feedback waits as Feedback Generated.",
+      "rationale": "user decision 2026-09-30: real posting is off until STORY-014, so a button would always be refused",
+      "evidence": "backend/app/human_review/web/reviewer.js"
+    },
+    {
+      "statement": "Headings say 'Stress Test 0' rather than the code 'ST0'; rule ids such as ST0-002 stay as codes.",
+      "rationale": "user request 2026-09-30",
+      "evidence": "backend/app/human_review/web/review_logic.js"
+    },
+    {
+      "statement": "Rule examples are fictional and display-only: the evaluation prompt never includes them.",
+      "rationale": "the repo is public (no student work), and examples must not change evaluations or their cost",
+      "evidence": "backend/app/evaluation/test_prompt.py"
+    },
+    {
+      "statement": "Reviewer pages are served with Cache-Control: no-cache.",
+      "rationale": "a browser reused an old shared stylesheet and script with a new page, leaving the header unstyled and the queue empty",
+      "evidence": "backend/app/web_static.py"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The Review Queue is held in memory, so after a server restart the queue page is empty until intake runs again (reviewer decisions on disk are kept).",
+      "evidence": "backend/app/queue_ui/service.py"
+    },
+    {
+      "statement": "Reviewer identity on every page is still the unverified X-Reviewer-Id header until Basecamp sign-in (STORY-014).",
+      "evidence": "backend/app/routers/queue_ui.py"
+    },
+    {
+      "statement": "If a comment is re-evaluated under newer rules after a reviewer acted, that review's detail is refused (REVIEW_STATE_MISMATCH) rather than guessed.",
+      "evidence": "backend/app/queue_ui/service.py"
+    },
+    {
+      "statement": "Page layout has no automated browser test; it was checked by eye by the project owner.",
+      "evidence": "directives/review-queue-ui.md"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "backend/app/queue_ui/test_routes.py::test_a_pending_review_in_the_queue_shows_all_details_needed_for_review"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/queue_ui/test_routes.py::test_a_completed_review_shows_status_and_history"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/queue_ui/test_routes.py::test_every_ui_view_is_audited_with_timestamp_and_user_id"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/rules_ui/test_service.py::test_opening_the_rules_page_is_audited_with_user_and_time"
+    },
+    {
+      "kind": "script",
+      "ref": "backend/scripts/queue_ui_demo.py"
+    }
+  ],
+  "measurementEvents": []
+}

@@ -120,3 +120,23 @@ def test_every_blocking_rule_is_a_required_fix():
     module = _st0()
     blocking = {rule_id for stage in module.stages if stage.blocking for rule_id in stage.rule_ids}
     assert {rule.id for rule in module.rules if rule.default_severity == "Required Fix"} == blocking
+
+
+# --- Rule examples (Rules page, STORY-012) -------------------------------------
+
+def test_every_st0_rule_has_a_passing_and_a_failing_example():
+    assert all(rule.example and rule.example.passes and rule.example.fails for rule in _st0().rules)
+
+
+def test_an_example_is_optional():
+    raw = _raw()
+    del raw["rules"][0]["example"]
+    assert RuleModule.model_validate(raw).rules[0].example is None
+
+
+def test_an_example_with_a_misspelt_field_is_rejected():
+    _broken(lambda raw: raw["rules"][0].update(example={"passes": "ok", "fail": "typo"}))
+
+
+def test_an_example_over_600_characters_is_rejected():
+    _broken(lambda raw: raw["rules"][0]["example"].update(fails="x" * 601))
