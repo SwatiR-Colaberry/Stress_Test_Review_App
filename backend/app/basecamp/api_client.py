@@ -1,4 +1,4 @@
-"""Read-only HTTP client for the Basecamp 3/4 API (REQ-004, REQ-012).
+"""HTTP client for the Basecamp 3/4 API (REQ-004, REQ-012; posting: REQ-007).
 
 Authenticates with the OAuth 2.0 bearer token from BasecampConfig. Every call
 has an explicit timeout and a capped number of attempts.
@@ -13,6 +13,13 @@ Failure handling:
   once. Never retried: the same token will fail again.
 - Any other non-2xx, or a body that is not JSON: BasecampResponseError, not
   retried (a contract problem, not an outage).
+POST (post_json) follows the same rules with one difference: it is retried
+only when the request never reached Basecamp (connection refused, connect
+timeout, no free connection) or on 429. A read timeout, a dropped connection
+or a 5xx is raised at once as BasecampUnavailable, because Basecamp may have
+created the comment already; the caller must check before posting again
+(STORY-006 does this with a review reference in the comment).
+
 Not handled here: refreshing an expired token (needs a registered Basecamp app;
 see config.py). The caller surfaces the error; nothing is written on failure.
 
@@ -28,7 +35,7 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 from urllib.parse import urlparse
 
 import httpx
@@ -36,6 +43,9 @@ import httpx
 from app.basecamp.config import API_ROOT, BasecampConfig
 
 logger = logging.getLogger("stress_test_review.basecamp_api")
+
+# Transport errors raised before the request left this machine: safe to retry a POST.
+_NOT_SENT_ERRORS = (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout)
 
 
 class BasecampError(Exception):
@@ -101,6 +111,14 @@ class BasecampClient:
         """GET one resource, e.g. "/projects/123.json". Returns the parsed JSON."""
         return _parse_json(self._request(self._url(path)))
 
+    def post_json(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """POST a JSON body, e.g. a comment. Returns the created resource (a JSON object)."""
+        response = self._request(self._url(path), method="POST", payload=payload)
+        created = _parse_json(response)
+        if not isinstance(created, dict):
+            raise BasecampResponseError("Expected a JSON object", response.status_code)
+        return created
+
     def get_all(self, path: str) -> List[Any]:
         """GET a paginated list, following Link rel="next". Returns all items."""
         items: List[Any] = []
@@ -130,15 +148,20 @@ class BasecampClient:
             raise BasecampResponseError("Pagination link points outside the Basecamp API (host or https)")
         return next_link
 
-    def _request(self, url: str) -> httpx.Response:
+    def _request(self, url: str, method: str = "GET", payload: Optional[Dict[str, Any]] = None) -> httpx.Response:
         path = urlparse(url).path
+        is_read = method == "GET"
         for attempt in range(1, self._max_attempts + 1):
             started = time.monotonic()
             last_attempt = attempt == self._max_attempts
             try:
-                response = self._http.get(url)
+                response = self._http.request(method, url, json=payload)
             except (httpx.TimeoutException, httpx.TransportError) as exc:
-                self._log_failure(path, attempt, started, None, "UpstreamUnavailable", type(exc).__name__)
+                self._log_failure(method, path, attempt, started, None, "UpstreamUnavailable", type(exc).__name__)
+                if not is_read and not isinstance(exc, _NOT_SENT_ERRORS):
+                    raise BasecampUnavailable(
+                        f"No answer from Basecamp to {method} ({type(exc).__name__}); it may have been applied"
+                    ) from None
                 if last_attempt:
                     raise BasecampUnavailable(
                         f"Basecamp unreachable after {attempt} attempts ({type(exc).__name__})"
@@ -148,27 +171,27 @@ class BasecampClient:
 
             status = response.status_code
             if 200 <= status < 300:
-                _log(logging.INFO, "basecamp_request_succeeded", method="GET", path=path, attempt=attempt,
+                _log(logging.INFO, "basecamp_request_succeeded", method=method, path=path, attempt=attempt,
                      status=status, duration_ms=_elapsed_ms(started), outcome="success")
                 return response
             if status in (401, 403):
-                self._log_failure(path, attempt, started, status, "AuthError")
+                self._log_failure(method, path, attempt, started, status, "AuthError")
                 raise BasecampAuthError(
                     "Basecamp rejected the OAuth token (invalid, expired or lacking access)", status
                 )
             if status == 429:
-                self._log_failure(path, attempt, started, status, "RateLimitError")
+                self._log_failure(method, path, attempt, started, status, "RateLimitError")
                 if last_attempt:
                     raise BasecampRateLimited(f"Basecamp rate limit still exceeded after {attempt} attempts", status)
                 self._sleep(self._retry_after(response, attempt))
                 continue
             if status >= 500:
-                self._log_failure(path, attempt, started, status, "UpstreamUnavailable")
-                if last_attempt:
+                self._log_failure(method, path, attempt, started, status, "UpstreamUnavailable")
+                if last_attempt or not is_read:
                     raise BasecampUnavailable(f"Basecamp returned {status} after {attempt} attempts", status)
                 self._sleep(self._backoff(attempt))
                 continue
-            self._log_failure(path, attempt, started, status, "ContractViolation")
+            self._log_failure(method, path, attempt, started, status, "ContractViolation")
             raise BasecampResponseError(f"Basecamp returned unexpected status {status}", status)
         raise AssertionError("unreachable")  # loop always returns or raises
 
@@ -181,9 +204,9 @@ class BasecampClient:
             return min(float(raw), self._max_retry_after_s)
         return self._backoff(attempt)
 
-    def _log_failure(self, path: str, attempt: int, started: float, status: Optional[int],
+    def _log_failure(self, method: str, path: str, attempt: int, started: float, status: Optional[int],
                      error_class: str, cause: Optional[str] = None) -> None:
-        _log(logging.WARNING, "basecamp_request_failed", method="GET", path=path, attempt=attempt,
+        _log(logging.WARNING, "basecamp_request_failed", method=method, path=path, attempt=attempt,
              max_attempts=self._max_attempts, status=status, duration_ms=_elapsed_ms(started),
              outcome="failure", error_class=error_class, cause=cause)
 

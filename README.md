@@ -9,6 +9,7 @@ MVP scope is the Review Queue + ST0 (structural validation) module; ST1–ST5 fo
 - [docs/01-Master-Project-Specification.md](docs/01-Master-Project-Specification.md) — architecture, workflow, database, UI, integrations, security, acceptance criteria. Start here.
 - [docs/references/](docs/references/) — original source documents (e.g. the `.docx` the Markdown spec was generated from).
 - [docs/stress-test-rules/](docs/stress-test-rules/) — per-module rule specs (ST0 first; ST1–ST5 added as they're implemented).
+- [directives/basecamp-connection-setup.md](directives/basecamp-connection-setup.md) — connecting to Basecamp: registering the app, the `.env` settings, verifying, and handing over when the person who set it up changes.
 
 ## Status
 

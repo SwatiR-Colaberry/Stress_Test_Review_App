@@ -34,9 +34,11 @@ from pydantic import BaseModel, ConfigDict, SecretStr
 
 LAUNCHPAD = "https://launchpad.37signals.com"
 # Launchpad product codes for the current Basecamp API (3.basecampapi.com).
-# Basecamp 4 accounts have been reported as "bc3"; "bc4" is accepted in case.
+# Basecamp 4 and 5 accounts have been reported as "bc3"; "bc4" and "bc5" are
+# accepted in case Launchpad reports the version (Launchpad's app registration
+# lists "Basecamp 5" as the current product, seen 2026-09-30).
 # Basecamp 2 ("bcx") and Classic use a different, older API and are excluded.
-_BASECAMP_PRODUCTS = ("bc3", "bc4")
+_BASECAMP_PRODUCTS = ("bc3", "bc4", "bc5")
 
 
 class OAuthError(Exception):

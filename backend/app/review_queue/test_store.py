@@ -45,3 +45,20 @@ def test_an_empty_store_lists_nothing():
     store = _store()
     assert store.list_items() == []
     assert store.get_by_comment_id(1001) is None
+
+
+def test_mark_completed_sets_the_status_once_and_finds_by_review_id():
+    from datetime import datetime, timezone
+    from app.models import BasecampComment
+    from app.review_queue.store import InMemoryReviewQueueStore
+
+    store = InMemoryReviewQueueStore(new_id=lambda: "review-1")
+    store.create_pending(BasecampComment(comment_id=9, message_id=5, body="##Critique##",
+                                         created_at=datetime(2026, 9, 30, tzinfo=timezone.utc)))
+    assert store.get_by_review_id("review-1").status == "Pending"
+    first = store.mark_completed("review-1")
+    second = store.mark_completed("review-1")
+    assert first.status == second.status == "Completed"
+    assert store.get_by_comment_id(9).status == "Completed"
+    assert store.mark_completed("missing") is None
+    assert store.get_by_review_id("missing") is None

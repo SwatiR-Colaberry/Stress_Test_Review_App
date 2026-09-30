@@ -172,3 +172,89 @@ def test_logs_never_contain_the_token_or_query_string(caplog):
     assert FAKE_TOKEN not in caplog.text
     assert "secret=q" not in caplog.text
     assert '"error_class": "AuthError"' in caplog.text
+
+
+# --- POST (STORY-006): retried only when the request never reached Basecamp ---
+
+COMMENTS = "/buckets/1/recordings/2/comments.json"
+
+
+def test_post_sends_json_body_and_returns_the_created_comment():
+    handler = scripted(httpx.Response(201, json={"id": 77}))
+    created = make_client(handler).post_json(COMMENTS, {"content": "<div>Feedback</div>"})
+    assert created == {"id": 77}
+    request = handler.seen[0]
+    assert request.method == "POST"
+    assert str(request.url) == f"{BASE}{COMMENTS}"
+    assert request.headers["Authorization"] == f"Bearer {FAKE_TOKEN}"
+    assert request.read() == b'{"content":"<div>Feedback</div>"}'
+
+
+def test_post_connection_error_is_retried_because_nothing_was_sent():
+    sleeps = []
+    handler = scripted(httpx.ConnectError("refused"), httpx.Response(201, json={"id": 77}))
+    assert make_client(handler, sleeps).post_json(COMMENTS, {"content": "x"}) == {"id": 77}
+    assert len(handler.seen) == 2
+    assert sleeps == [1.0]
+
+
+def test_post_connection_error_on_every_attempt_raises_unavailable_after_three_attempts():
+    handler = scripted(*[httpx.ConnectError("refused")] * 3)
+    with pytest.raises(BasecampUnavailable):
+        make_client(handler).post_json(COMMENTS, {"content": "x"})
+    assert len(handler.seen) == 3
+
+
+@pytest.mark.parametrize("error", [httpx.ReadTimeout("slow"), httpx.RemoteProtocolError("dropped")])
+def test_post_with_no_answer_is_not_retried_because_it_may_have_been_posted(error):
+    handler = scripted(error, httpx.Response(201, json={"id": 77}))
+    with pytest.raises(BasecampUnavailable, match="may have been applied"):
+        make_client(handler).post_json(COMMENTS, {"content": "x"})
+    assert len(handler.seen) == 1
+
+
+def test_post_5xx_is_not_retried():
+    handler = scripted(httpx.Response(502), httpx.Response(201, json={"id": 77}))
+    with pytest.raises(BasecampUnavailable) as caught:
+        make_client(handler).post_json(COMMENTS, {"content": "x"})
+    assert caught.value.status_code == 502
+    assert len(handler.seen) == 1
+
+
+def test_post_429_waits_and_retries_because_basecamp_refused_it():
+    sleeps = []
+    handler = scripted(httpx.Response(429, headers={"Retry-After": "3"}), httpx.Response(201, json={"id": 77}))
+    assert make_client(handler, sleeps).post_json(COMMENTS, {"content": "x"}) == {"id": 77}
+    assert sleeps == [3.0]
+
+
+@pytest.mark.parametrize("status", [401, 403])
+def test_post_invalid_token_is_never_retried(status):
+    handler = scripted(httpx.Response(status), httpx.Response(201, json={"id": 77}))
+    with pytest.raises(BasecampAuthError):
+        make_client(handler).post_json(COMMENTS, {"content": "x"})
+    assert len(handler.seen) == 1
+
+
+def test_post_rejected_body_is_a_contract_error_not_retried():
+    handler = scripted(httpx.Response(422, json={"error": "content missing"}))
+    with pytest.raises(BasecampResponseError) as caught:
+        make_client(handler).post_json(COMMENTS, {"content": ""})
+    assert caught.value.status_code == 422
+    assert len(handler.seen) == 1
+
+
+@pytest.mark.parametrize("body", [b"[]", b"not json"])
+def test_post_success_that_is_not_a_json_object_is_a_contract_error(body):
+    handler = scripted(httpx.Response(201, content=body))
+    with pytest.raises(BasecampResponseError):
+        make_client(handler).post_json(COMMENTS, {"content": "x"})
+
+
+def test_post_logs_method_and_never_the_body_or_token(caplog):
+    caplog.set_level(logging.INFO, logger="stress_test_review.basecamp_api")
+    handler = scripted(httpx.ConnectError("refused"), httpx.Response(201, json={"id": 77}))
+    make_client(handler).post_json(COMMENTS, {"content": "Private feedback text"})
+    assert '"method": "POST"' in caplog.text
+    assert "Private feedback text" not in caplog.text
+    assert FAKE_TOKEN not in caplog.text

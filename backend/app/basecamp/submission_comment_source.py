@@ -31,6 +31,7 @@ class SubmissionCommentSource(CommentSource):
                 "created_at": comment.created_at,
                 "author_name": comment.author_name,  # STORY-005: shown to the reviewer
                 "app_url": comment.app_url,
+                "project_id": self._dataset.project_id,  # STORY-006: where feedback is posted
             }
             for submission in self._dataset.submissions
             for comment in submission.comments

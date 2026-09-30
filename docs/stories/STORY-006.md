@@ -27,8 +27,8 @@ the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [ ] Given approved feedback, When the system posts it to Basecamp, Then the review is marked 'Completed'.
-- [ ] Given a posting error, When the system retries, Then it eventually succeeds or logs an error.
-- [ ] Trust: The system logs posting events with feedback ID and status.
+- [x] Given approved feedback, When the system posts it to Basecamp, Then the review is marked 'Completed'.
+- [x] Given a posting error, When the system retries, Then it eventually succeeds or logs an error.
+- [x] Trust: The system logs posting events with feedback ID and status.
 
 When every box above is ticked, stop and show the demo.

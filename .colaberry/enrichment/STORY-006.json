@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-006",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-30T15:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "integrations",
+      "value": "Posts the final feedback as a comment on the student's Basecamp message thread through the Basecamp REST API (POST /buckets/{project}/recordings/{message}/comments.json), using the OAuth 2.0 token of the Basecamp user who authorized the app.",
+      "evidence": "backend/app/posting/service.py"
+    },
+    {
+      "dimension": "approval_points",
+      "value": "A review becomes Completed only after a human reviewer prepared the feedback and Basecamp confirmed the posted comment; the named-human check (no AI approver) runs again just before posting.",
+      "evidence": "backend/app/posting/checks.py"
+    },
+    {
+      "dimension": "outputs",
+      "value": "The posted comment is the numbered approved findings, then 'Review ref: FB-<12 hex>' and the ##FeedbackGiven## marker that reviewers already use.",
+      "evidence": "backend/app/posting/comment.py"
+    },
+    {
+      "dimension": "systems",
+      "value": "Colaberry's Basecamp is Basecamp 5 (Launchpad app registration lists it as the product); the Tableau and Power BI programs are separate Basecamp projects, each with 6 message boards.",
+      "evidence": "directives/basecamp-connection-setup.md"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Basecamp access is tied to people: the app registration to the login that registered it, and the tokens to the login that authorized it (posts appear under that person's name). The project owner decided to move both to a shared Colaberry login.",
+      "evidence": "directives/basecamp-connection-setup.md"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Build posting now but keep real posting switched off (BASECAMP_POSTING_ENABLED=no) until STORY-014 ties posts to a verified reviewer.",
+      "rationale": "user decision 2026-09-30; the reviewer id is still an unverified header and no sandbox thread exists yet",
+      "evidence": "backend/app/posting/config.py"
+    },
+    {
+      "statement": "Prevent double posts by putting a stable feedback id in the comment and reading the thread for it before every attempt, instead of retrying a POST blindly.",
+      "rationale": "user decision 2026-09-30: a POST that times out may already have created the comment, and Basecamp has no idempotency key",
+      "evidence": "backend/app/posting/comment.py"
+    },
+    {
+      "statement": "End the posted comment with ##FeedbackGiven##.",
+      "rationale": "user decision 2026-09-30: matches the current reviewer process, and intake already treats such a comment as the reviewer's",
+      "evidence": "backend/app/posting/comment.py"
+    },
+    {
+      "statement": "Only post into Basecamp projects on an allow-list (BASECAMP_POSTING_PROJECT_IDS); real ids live in the local .env only.",
+      "rationale": "a wrong or tampered project id must not post into another project; the repo is public",
+      "evidence": "backend/app/posting/checks.py"
+    },
+    {
+      "statement": "One posting request per review at a time (per-process lock); a successful post is final even if a later record says otherwise.",
+      "rationale": "review found two simultaneous requests could both post (proved by a failing test)",
+      "evidence": "backend/app/posting/service.py"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "No real post to Basecamp has been made yet; posting is verified against a simulated Basecamp. The live connection is set up and read-only checked.",
+      "evidence": "directives/feedback-posting.md"
+    },
+    {
+      "statement": "Double-post protection across several server processes is not guaranteed (the lock is per process).",
+      "evidence": "backend/app/posting/service.py"
+    },
+    {
+      "statement": "Reviews taken in from SQL Server have no Basecamp project id yet, so their feedback cannot be posted (NO_POSTING_TARGET); pd.MessageBoardURL is the candidate source.",
+      "evidence": "backend/app/posting/checks.py"
+    },
+    {
+      "statement": "Submission retrieval reads only the first of a project's message boards, while the Tableau and Power BI projects have 6 each.",
+      "evidence": "backend/app/basecamp/submission_retrieval.py"
+    },
+    {
+      "statement": "The Basecamp access token lasts about two weeks and is not refreshed automatically; the OAuth setup script must be re-run.",
+      "evidence": "directives/basecamp-connection-setup.md"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "backend/app/posting/test_service.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/posting/test_routes.py"
+    },
+    {
+      "kind": "demo",
+      "ref": "backend/scripts/posting_demo.py"
+    },
+    {
+      "kind": "script",
+      "ref": "backend/scripts/check_basecamp_connection.py"
+    }
+  ],
+  "measurementEvents": []
+}

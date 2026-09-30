@@ -35,6 +35,16 @@ class ReviewQueueStore(ABC):
     def list_items(self) -> List[ReviewItem]:
         ...
 
+    @abstractmethod
+    def get_by_review_id(self, review_id: str) -> Optional[ReviewItem]:
+        ...
+
+    @abstractmethod
+    def mark_completed(self, review_id: str) -> Optional[ReviewItem]:
+        """Sets status Completed (REQ-007). Only the STORY-006 posting service
+        calls it, after Basecamp confirmed the feedback comment. Idempotent:
+        an already Completed item is returned unchanged. None if no such review."""
+
 
 class InMemoryReviewQueueStore(ReviewQueueStore):
     def __init__(
@@ -65,6 +75,7 @@ class InMemoryReviewQueueStore(ReviewQueueStore):
                 marker_note=marker_note,
                 author_name=comment.author_name,
                 app_url=comment.app_url,
+                project_id=comment.project_id,
             )
             self._items[comment.comment_id] = item
             return item, True
@@ -76,3 +87,19 @@ class InMemoryReviewQueueStore(ReviewQueueStore):
     def list_items(self) -> List[ReviewItem]:
         with self._lock:
             return sorted(self._items.values(), key=lambda item: item.comment_id)
+
+    def get_by_review_id(self, review_id: str) -> Optional[ReviewItem]:
+        with self._lock:
+            return self._find(review_id)
+
+    def mark_completed(self, review_id: str) -> Optional[ReviewItem]:
+        with self._lock:
+            item = self._find(review_id)
+            if item is None or item.status == "Completed":
+                return item
+            completed = item.model_copy(update={"status": "Completed"})
+            self._items[item.comment_id] = completed
+            return completed
+
+    def _find(self, review_id: str) -> Optional[ReviewItem]:
+        return next((i for i in self._items.values() if i.review_id == review_id), None)

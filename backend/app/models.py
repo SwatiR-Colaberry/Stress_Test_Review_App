@@ -86,6 +86,9 @@ class BasecampComment(BaseModel):
     # Optional (STORY-005): not every source has them. Shown to the reviewer.
     author_name: Optional[PersonName] = None
     app_url: Optional[BasecampUrl] = None
+    # Optional (STORY-006): the Basecamp project (bucket) the thread lives in.
+    # Posting feedback needs it; only sources that know it set it.
+    project_id: Optional[BasecampId] = None
 
 
 # Master Spec §22. "Completed" means a human finalized the review, never "AI finished".
@@ -105,6 +108,8 @@ class ReviewItem(BaseModel):
     # Who wrote the comment and where it is in Basecamp (STORY-005), when known.
     author_name: Optional[PersonName] = None
     app_url: Optional[BasecampUrl] = None
+    # Where to post the final feedback (STORY-006), when known.
+    project_id: Optional[BasecampId] = None
 
 
 IntakeOutcome = Literal["review_created", "already_queued", "no_marker", "malformed"]
@@ -201,6 +206,13 @@ AuditAction = Literal[
     "reviewer_finding_added",
     "reviewer_feedback_prepared",
     "reviewer_action_blocked",
+    # Posting final feedback to Basecamp (STORY-006). feedback_id is set on all
+    # four; the action is the posting status. reason_code says why a post was
+    # refused (e.g. PROJECT_NOT_ALLOWED) or failed (the error class).
+    "feedback_post_refused",
+    "feedback_post_attempted",
+    "feedback_posted",
+    "feedback_post_failed",
 ]
 
 
@@ -225,6 +237,7 @@ class AuditEvent(BaseModel):
     rule_id: Optional[str] = Field(default=None, max_length=16)  # evaluation_finding events
     review_id: Optional[str] = Field(default=None, max_length=MAX_ID_LENGTH)
     reason_code: Optional[str] = Field(default=None, max_length=64)
+    feedback_id: Optional[str] = Field(default=None, max_length=16)  # posting events (STORY-006)
 
 
 # --- Historical retrieval (REQ-019, STORY-013) --------------------------------

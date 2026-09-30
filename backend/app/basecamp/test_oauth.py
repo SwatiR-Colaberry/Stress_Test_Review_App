@@ -126,6 +126,14 @@ def test_fetch_accounts_keeps_only_basecamp_accounts():
     assert [(a.id, a.name) for a in accounts] == [(111, "Colaberry")]
 
 
+@pytest.mark.parametrize("product", ["bc3", "bc4", "bc5"])
+def test_current_basecamp_accounts_are_found_whatever_version_launchpad_reports(product):
+    body = {"accounts": [{"product": product, "id": 111, "name": "Colaberry"}]}
+    transport = httpx.MockTransport(lambda r: httpx.Response(200, json=body))
+    accounts = oauth.fetch_basecamp_accounts(SecretStr("t"), "UA", transport=transport)
+    assert [a.id for a in accounts] == [111]
+
+
 def test_fetch_accounts_gives_up_after_three_5xx():
     calls = []
 

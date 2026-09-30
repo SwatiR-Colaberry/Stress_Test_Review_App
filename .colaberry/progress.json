@@ -397,21 +397,63 @@
       "criteria": [
         {
           "text": "Given approved feedback, When the system posts it to Basecamp, Then the review is marked 'Completed'.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a posting error, When the system retries, Then it eventually succeeds or logs an error.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs posting events with feedback ID and status.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "backend/app/posting/__init__.py",
+        "backend/app/posting/models.py",
+        "backend/app/posting/comment.py",
+        "backend/app/posting/config.py",
+        "backend/app/posting/checks.py",
+        "backend/app/posting/store.py",
+        "backend/app/posting/service.py",
+        "backend/app/posting/dependencies.py",
+        "backend/app/posting/fake.py",
+        "backend/app/routers/posting.py",
+        "backend/app/main.py",
+        "backend/app/models.py",
+        "backend/app/basecamp/api_client.py",
+        "backend/app/basecamp/submission_comment_source.py",
+        "backend/app/basecamp/oauth.py",
+        "backend/app/review_queue/store.py",
+        "backend/scripts/posting_demo.py",
+        "backend/scripts/check_basecamp_connection.py",
+        "directives/feedback-posting.md",
+        "directives/basecamp-connection-setup.md",
+        "docs/stories/STORY-006.md",
+        "docs/ACCEPTANCE_CHECKLIST.md",
+        "docs/enterprise-portal-build-prompt.txt",
+        "command-center/tabs/data-model.js",
+        ".env.example",
+        "README.md",
+        ".colaberry/enrichment/STORY-006.json",
+        "PROGRESS.md"
+      ],
+      "tests_added": [
+        "backend/app/posting/test_service.py",
+        "backend/app/posting/test_routes.py",
+        "backend/app/posting/test_checks.py",
+        "backend/app/posting/test_comment.py",
+        "backend/app/posting/test_config.py",
+        "backend/app/posting/test_store.py",
+        "backend/app/basecamp/test_api_client.py (POST tests)",
+        "backend/app/basecamp/test_submission_comment_source.py (project id reaches the review item)",
+        "backend/app/basecamp/test_oauth.py (bc3/bc4/bc5 accounts)",
+        "backend/app/review_queue/test_store.py (mark_completed)",
+        "backend/scripts/test_posting_demo.py",
+        "backend/scripts/test_check_basecamp_connection.py"
+      ],
+      "notes": "AC1: test_approved_feedback_is_posted_and_the_review_is_marked_completed + test_the_review_is_not_completed_when_posting_fails. AC2: test_a_posting_error_is_retried_and_then_succeeds (connection error, 503, 429) + test_basecamp_unreachable_every_time_gives_up_after_three_attempts_and_logs_an_error. AC3: test_every_posting_event_is_audited_with_feedback_id_and_status (audit events and log lines carry feedback_id and status). Failure paths: unreachable (above), malformed feedback (refusal tests, no Basecamp call), time limit (test_posting_that_exceeds_the_time_limit_stops_and_is_recorded). User decisions 2026-09-30: build now with real posting off (BASECAMP_POSTING_ENABLED=no) until STORY-014; the comment ends with 'Review ref: FB-...' (checked before every attempt, so no double post) and ##FeedbackGiven##; queue store gains mark_completed (STORY-001 file, approved); posting only into listed projects (BASECAMP_POSTING_PROJECT_IDS); oauth accepts bc5 accounts (STORY-002 file, approved); move the Basecamp app to a shared login. VERIFIED AGAINST A SIMULATED BASECAMP ONLY: the real connection is set up and read-only checked (both projects readable), but no real post has been made. Found live: each project has 6 message boards and STORY-002 retrieval reads only the first.",
+      "updated_at": "2026-09-30T00:00:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

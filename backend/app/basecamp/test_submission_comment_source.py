@@ -32,3 +32,10 @@ def test_critique_comment_from_the_api_creates_one_pending_review_and_rerun_does
 
 def test_empty_project_gives_intake_nothing_to_do():
     assert run_intake(SubmissionCommentSource(retrieve(DEMO_EMPTY_PROJECT)), InMemoryReviewQueueStore(), InMemoryAuditTrail()) == []
+
+
+def test_the_project_id_reaches_the_review_item_so_feedback_can_be_posted_back():
+    store = InMemoryReviewQueueStore()
+    run_intake(SubmissionCommentSource(retrieve(DEMO_PROJECT_WITH_SUBMISSIONS)), store, InMemoryAuditTrail())
+    [item] = store.list_items()
+    assert item.project_id == DEMO_PROJECT_WITH_SUBMISSIONS
