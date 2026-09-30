@@ -113,8 +113,12 @@ be cleaned up because no secret was ever stored there.
 - `pytest backend` passes (`backend/app/basecamp/test_oauth.py`, `test_config.py`,
   `backend/scripts/test_check_basecamp_connection.py` — none of them touch the real Basecamp).
 
-## Known limits (found 2026-09-30)
+## Message boards (found and fixed 2026-09-30)
 
-- The Tableau and Power BI projects each have **6 message boards**, but submission retrieval
-  (STORY-002, `submission_retrieval.py`) reads only the **first** one. Retrieval misses the others
-  until that is fixed. Posting (STORY-006) is not affected: it posts to the message's own thread.
+- Each Stress Test has its own message board: the Tableau and Power BI projects each have 6
+  ("Stress Test 0 - DS Problem" … "Stress Test 5 - Deployment"; the first in the dock is ST1).
+  Submission retrieval (STORY-002, `submission_retrieval.py`) used to read only the first board,
+  so it saw ST1 only. It now reads every enabled board: 378 Tableau and 5,532 Power BI messages
+  (read-only count, 2026-09-30). A failing board fails the whole retrieval; nothing partial is returned.
+- A whole-project retrieval is now large (Power BI: 5,532 messages plus one comments call per
+  message that has comments). The client's timeout and capped retries (including 429) still apply.

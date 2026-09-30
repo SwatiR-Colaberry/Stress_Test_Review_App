@@ -320,3 +320,49 @@ def test_a_missing_or_odd_name_or_link_is_dropped_not_fatal(creator, app_url):
     comment = _retrieved_comment({**COMMENT, "creator": creator, "app_url": app_url})
     assert (comment.author_name, comment.app_url) == (None, None)
     assert comment.comment_id == 401  # the submission itself is still retrieved
+
+
+# --- Several message boards: each Stress Test has its own board (found live 2026-09-30) ---
+
+BOARD_2, BOARD_3 = 201, 202
+MESSAGE_2 = {**MESSAGE, "id": 302, "subject": "Stress Test 1 - Data Cleaning", "comments_count": 0}
+
+
+def project_with_boards(*boards):
+    return {"id": PROJECT, "dock": [{"name": "message_board", "id": b, "enabled": e} for b, e in boards]}
+
+
+def test_messages_on_every_message_board_are_retrieved():
+    routes = {**full_project_routes(),
+              f"{P}/projects/{PROJECT}.json": httpx.Response(200, json=project_with_boards((BOARD, True), (BOARD_2, True))),
+              f"{P}/buckets/{PROJECT}/message_boards/{BOARD_2}/messages.json": httpx.Response(200, json=[MESSAGE_2])}
+    dataset = retrieve_project_submissions(client_for(fake_basecamp(routes)), PROJECT, REVIEWER, audit=InMemoryAuditTrail())
+    assert [s.message_id for s in dataset.submissions] == [301, 302]
+    assert [len(s.comments) for s in dataset.submissions] == [1, 0]
+
+
+def test_disabled_boards_are_skipped_and_a_board_listed_twice_is_read_once():
+    handler = fake_basecamp({**full_project_routes(),
+                             f"{P}/projects/{PROJECT}.json": httpx.Response(200, json=project_with_boards(
+                                 (BOARD_3, False), (BOARD, True), (BOARD, True)))})
+    dataset = retrieve_project_submissions(client_for(handler), PROJECT, REVIEWER, audit=InMemoryAuditTrail())
+    assert [s.message_id for s in dataset.submissions] == [301]
+    assert not any(str(BOARD_3) in call for call in handler.calls)
+    assert handler.calls.count(f"{P}/buckets/{PROJECT}/message_boards/{BOARD}/messages.json") == 1
+
+
+def test_a_failing_second_board_fails_the_whole_retrieval_rather_than_returning_part():
+    audit = InMemoryAuditTrail()
+    routes = {**full_project_routes(),
+              f"{P}/projects/{PROJECT}.json": httpx.Response(200, json=project_with_boards((BOARD, True), (BOARD_2, True))),
+              f"{P}/buckets/{PROJECT}/message_boards/{BOARD_2}/messages.json": httpx.Response(503)}
+    with pytest.raises(BasecampUnavailable):
+        retrieve_project_submissions(client_for(fake_basecamp(routes)), PROJECT, REVIEWER, audit=audit)
+    assert [e.action for e in audit.read_all()][-1] == "retrieval_failed"
+
+
+def test_an_enabled_board_with_a_bad_id_is_a_contract_error_even_after_a_good_one():
+    routes = {**full_project_routes(),
+              f"{P}/projects/{PROJECT}.json": httpx.Response(200, json=project_with_boards((BOARD, True), ("x", True)))}
+    with pytest.raises(BasecampResponseError):
+        retrieve_project_submissions(client_for(fake_basecamp(routes)), PROJECT, REVIEWER, audit=InMemoryAuditTrail())

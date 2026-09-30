@@ -1,16 +1,18 @@
 """Retrieves everything a reviewer needs from one Basecamp project (REQ-004).
 
-A submission is one message on the project's message board. For each one we
+A submission is one message on one of the project's message boards (a project
+can have several: each Stress Test has its own board). For each one we
 return its body, its comments, and the attachments and links found in both
 (content_extractor.py).
 
 API calls (Basecamp 3/4, via BasecampClient, OAuth 2.0 per REQ-012):
-  GET /projects/{project}.json                                  -> find the message board in the dock
-  GET /buckets/{project}/message_boards/{board}/messages.json   -> all messages (paginated)
+  GET /projects/{project}.json                                  -> find every enabled message board in the dock
+  GET /buckets/{project}/message_boards/{board}/messages.json   -> all messages, per board (paginated)
   GET /buckets/{project}/recordings/{message}/comments.json     -> all comments per message (paginated;
                                                                    skipped when comments_count is 0)
 
-A project whose message board is disabled or empty returns an empty dataset.
+A project with no enabled message board, or only empty ones, returns an empty
+dataset. If any board fails, the whole retrieval fails (no partial dataset).
 
 Audit (trust criterion): every retrieval logs submission_retrieval_started and
 then _completed or _failed (including on unexpected errors), each with a timestamp, the requesting user id, the
@@ -91,10 +93,9 @@ def retrieve_project_submissions(
 
 def _fetch_submissions(client: BasecampClient, project_id: int) -> List[Submission]:
     project = client.get_json(f"/projects/{project_id}.json")
-    board_id = _message_board_id(project)
-    if board_id is None:
-        return []
-    messages = client.get_all(f"/buckets/{project_id}/message_boards/{board_id}/messages.json")
+    messages = []
+    for board_id in _message_board_ids(project):
+        messages.extend(client.get_all(f"/buckets/{project_id}/message_boards/{board_id}/messages.json"))
     submissions = []
     for raw_message in messages:
         message = _parse(_RawRecording, raw_message, "message")
@@ -110,17 +111,19 @@ def _fetch_submissions(client: BasecampClient, project_id: int) -> List[Submissi
     return submissions
 
 
-def _message_board_id(project: Any) -> Optional[int]:
-    """The enabled message board in the project's dock, or None if there is none."""
+def _message_board_ids(project: Any) -> List[int]:
+    """Every enabled message board in the project's dock, in dock order, each once."""
     if not isinstance(project, dict) or not isinstance(project.get("dock"), list):
         raise BasecampResponseError("Project response has no dock list")
+    board_ids: List[int] = []
     for tool in project["dock"]:
         if isinstance(tool, dict) and tool.get("name") == "message_board" and tool.get("enabled", True):
             board_id = tool.get("id")
             if not isinstance(board_id, int) or isinstance(board_id, bool) or board_id <= 0:
                 raise BasecampResponseError("Message board in dock has no valid id")
-            return board_id
-    return None
+            if board_id not in board_ids:
+                board_ids.append(board_id)
+    return board_ids
 
 
 class _RawRecording(BaseModel):
