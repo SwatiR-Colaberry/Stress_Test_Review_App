@@ -69,7 +69,7 @@
       "evidence": "backend/app/posting/service.py"
     },
     {
-      "statement": "Reviews taken in from SQL Server have no Basecamp project id yet, so their feedback cannot be posted (NO_POSTING_TARGET); pd.MessageBoardURL is the candidate source.",
+      "statement": "Review intake has no SQL Server reader yet; a future one must set project_id from ADF_CCS_BasecampProjects_Details.ProjectID (checked read-only: it matches the project in MessageBoardURL for all 7,695 Stress Test steps), or its reviews are refused with NO_POSTING_TARGET.",
       "evidence": "backend/app/posting/checks.py"
     },
     {

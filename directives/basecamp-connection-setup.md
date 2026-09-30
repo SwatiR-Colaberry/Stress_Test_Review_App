@@ -20,9 +20,9 @@ So if either person loses their Basecamp login (they leave, their email changes,
 from the Colaberry account), part of the setup stops working. Follow **Handover** below *before*
 that happens.
 
-**Recommendation:** do both parts with a **shared Colaberry login** (for example a role mailbox
-such as a reviews@ address, owned by the team rather than one person) and keep the Client Secret in
-the company password manager. Then nobody's departure breaks the app.
+**Decision (project owner, 2026-09-30): no shared login.** The app keeps running under a named
+person's Basecamp login, and posted feedback shows that person's name. Keep the Client Secret in the
+company password manager, and follow **Handover** below before that person's login changes.
 
 ## Current state (2026-09-30)
 
@@ -32,12 +32,8 @@ the company password manager. Then nobody's departure breaks the app.
 - Authorized once on the project owner's laptop (session CC-20260930-umhk). The Tableau and Power BI
   projects are both readable; each has 6 message boards.
 - Real posting is **off** (`BASECAMP_POSTING_ENABLED=no`) until STORY-014 (reviewer sign-in).
-- **Decision (project owner, 2026-09-30): move to a shared Colaberry login.** To do (people, not
-  code): (1) create or choose a shared Basecamp login on a team mailbox, with access to the Tableau
-  and Power BI projects (and the DRI's agreement); (2) register the app under it (or transfer this
-  one) — "Registering the app from scratch"; (3) re-authorize as that login — "Setup", step 3;
-  (4) set `BASECAMP_USER_AGENT` to the team mailbox; (5) delete the personal registration after the
-  check passes; (6) update this section.
+- **Decision (project owner, 2026-09-30): no shared login**, so posts show the authorizing
+  person's name. An earlier plan to move to a shared team login was dropped the same day.
 
 ## The settings (`.env`, never committed)
 
@@ -73,7 +69,7 @@ the company password manager. Then nobody's departure breaks the app.
 ## Registering the app from scratch (only when there is no usable registration)
 
 1. Sign in at https://launchpad.37signals.com/integrations with the login that should **own** the
-   app (preferably the shared login) → **Register another application**.
+   app → **Register another application**.
 2. Fill in: Name `Stress Test Review App` · Company `Colaberry` · Website `https://colaberry.com`
    · Icon: skip · Products: tick **Basecamp 5** only · Redirect URI
    `http://localhost:8765/basecamp/oauth/callback` (exactly: `http`, port 8765, no trailing slash).
@@ -85,7 +81,7 @@ the company password manager. Then nobody's departure breaks the app.
 Do this while the old login still works.
 
 1. **Who authorized (posts appear under their name)?** Re-run step 3 of the setup signed in as the
-   new (preferably shared) login. The new tokens replace the old ones in `.env`. Verify with step 4.
+   new person's login. The new tokens replace the old ones in `.env`. Verify with step 4.
 2. **Who owns the registration?** Either the owner hands it over — check on Launchpad whether the
    app can be transferred; if it cannot — **register a new app** under the new owner (section
    above), put its Client ID/Secret in `.env`, and re-authorize. No code changes: everything is

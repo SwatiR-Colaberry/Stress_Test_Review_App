@@ -64,8 +64,13 @@ only by the scripts. To post through a local server, start it with the settings 
   already read the thread could post twice. Needs Basecamp to hang over 60 s and a person to retry
   within that window.
 - Access-token refresh (tokens last ~2 weeks): re-run the OAuth setup script (see the connection runbook).
-- Comments taken in from SQL Server have no project id yet → `NO_POSTING_TARGET`. Candidate source:
-  `pd.MessageBoardURL` in SQL Server (to be checked read-only).
+- Review intake has no SQL Server reader yet (REQ-013 has no story); comments come from the Basecamp
+  API, which carries the project id. If a SQL Server intake is built, it must set the review's
+  `project_id` from `ADF_CCS_BasecampProjects_Details.ProjectID`. Checked read-only 2026-09-30: for
+  all 7,695 Stress Test steps with a readable `MessageBoardURL`, the URL's project number equals
+  `pd.ProjectID` and its message number equals `pd.MessageBoardID`; every step with comments has one.
+  (`ADF_CCS_BasecampProjects.ProjectID` is a different number: do not use it.) Without it such
+  reviews are refused with `NO_POSTING_TARGET`.
 
 ## Records (git-ignored: they concern student reviews)
 
