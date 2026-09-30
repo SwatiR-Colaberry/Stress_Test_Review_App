@@ -3,13 +3,13 @@
   "project": "Stress Test Review Application",
   "totals": {
     "stories_total": 17,
-    "stories_verified": 7,
+    "stories_verified": 8,
     "stories_submitted": 0,
-    "stories_in_progress": 7,
-    "stories_not_started": 3,
-    "criteria_total": 51,
-    "criteria_passed": 25,
-    "points_awarded": 1214
+    "stories_in_progress": 9,
+    "stories_not_started": 0,
+    "criteria_total": 63,
+    "criteria_passed": 28,
+    "points_awarded": 1261
   },
   "stories": [
     {
@@ -379,19 +379,15 @@
       "notes": "User decisions 2026-09-29: reviewer limits 2,000 chars per finding and 10,000 per feedback (ST2 replies run to 4,513); an edit accepts the finding in the reviewer's words; empty feedback is refused (reviewer adds a note instead); student name + Basecamp link captured from the Basecamp API (STORY-001/002 files changed additively, user-approved). Reviewer identity is a TEMPORARY unverified X-Reviewer-Id header, replaced by STORY-014 before STORY-006 posts. Prepared feedback is saved as ready_to_post; posting is STORY-006. Page checked via its API calls on a live demo server and node --check; no automated visual browser check (headless Firefox would not start). Images = STORY-015, AI polish = STORY-016. Close-out review (2026-09-29): fixed a retried 'Add finding' duplicating the finding when its text had surrounding whitespace (test_web_logic.py), and a 404 for an unknown review being written to no log (test_an_unknown_review_is_logged_not_silent). Acceptance demo re-run on a scratch audit path: approve, edit, reject, prepare; 4 timestamped audit events. pytest 734/734.",
       "updated_at": "2026-09-29T15:00:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 50,
-        "outstanding": [
-          "Given AI findings, When a reviewer approves them, Then feedback is prepared for Basecamp posting.",
-          "Given AI findings, When a reviewer edits them, Then the edits are saved and prepared for posting.",
-          "Trust: The system logs all reviewer actions with timestamps."
-        ]
+        "verified_at": "2026-09-29T12:56:33.115Z",
+        "commit_sha": "0cb58b9cc014ffce8ba90cbecdaa828b980c0c53",
+        "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/0cb58b9cc014ffce8ba90cbecdaa828b980c0c53",
+        "commit_at": "2026-09-29T12:54:54Z",
+        "points_awarded": 97,
+        "outstanding": []
       }
     },
     {
@@ -801,15 +797,23 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 7,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "b50243cca57bc7f2b6e54dafd427d9c5858e1657",
+        "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/b50243cca57bc7f2b6e54dafd427d9c5858e1657",
+        "commit_at": "2026-09-29T12:54:54Z",
         "points_awarded": 50,
-        "outstanding": []
+        "outstanding": [
+          "Given a Basecamp user on the reviewer list, when they sign in with Basecamp, then they reach the Review Queue as a Reviewer",
+          "Given a Basecamp user on the admin list, when they sign in, then they can also add, remove and change the role of reviewers and admins",
+          "Given a Basecamp user on neither list, when they sign in, then access is refused with a clear message",
+          "Given no signed-in session, when any review page or API is opened, then the user is sent to sign in and nothing is shown or changed",
+          "Given a Reviewer, when they try an admin-only action, then it is refused",
+          "Given a signed-in user, when they sign out or 8 hours pass, then they must sign in again",
+          "Trust: every sign-in, refusal, sign-out and role change is logged with who and when, and no password or token appears in logs or the repo"
+        ]
       }
     },
     {
@@ -843,15 +847,21 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 5,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 50,
-        "outstanding": []
+        "outstanding": [
+          "Given a finding under review, when I attach a PNG, JPG or GIF under 10 MB, then it is saved with that finding and shown in my preview",
+          "Given a file that is not an image or is over 10 MB, when I attach it, then it is refused with a message and nothing is saved",
+          "Given prepared feedback with images, when it is posted to Basecamp, then each image appears in the posted comment next to its point",
+          "Given a posting retry, when the same feedback is posted again, then each image appears in Basecamp only once",
+          "Trust: every image attached, removed or uploaded is logged with reviewer and time, and images are never committed to the repo"
+        ]
       }
     },
     {
@@ -884,7 +894,23 @@
       "tests_added": [],
       "notes": null,
       "updated_at": null,
-      "verification": null
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 5,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given my feedback, when I click Polish, then a rewritten suggestion is shown next to my text and my text is unchanged",
+          "Given a suggestion, when I accept it, then it is saved as my edit, and when I discard it, nothing changes",
+          "Given text that was already polished, when I click Polish again, then the saved suggestion is shown and Claude is not called again",
+          "Given Claude is unavailable or the daily token limit is reached, when I click Polish, then I see a clear message and can keep working with my own text",
+          "Trust: the AI suggestion and my accept or discard are both kept in the review history with who and when, and a suggestion never reaches the student unless I accepted it"
+        ]
+      }
     }
   ]
 }
