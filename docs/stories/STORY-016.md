@@ -8,7 +8,7 @@ As a reviewer, I want Claude to suggest cleaner wording for my feedback, so that
 
 ## The requirement this satisfies
 
-- **REQ-022** (Functional, should) — AI Polish of Reviewer Feedback
+- **REQ-022** (Functional, should) — The system must offer an AI polish of reviewer-written feedback without changing its substance.
 
 ## How to build it
 

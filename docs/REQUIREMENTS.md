@@ -42,6 +42,12 @@ The system must preserve the history of each review, including AI drafts and hum
 
 Fulfilled by: STORY-007
 
+### REQ-019 — Functional · should
+
+The system must draw on similar past reviews from the same Stress Test when drafting feedback, using a vector store outside SQL Server.
+
+Fulfilled by: STORY-013
+
 ## Data Retrieval
 
 ### REQ-004 — Functional · must
@@ -49,6 +55,12 @@ Fulfilled by: STORY-007
 The system must retrieve all necessary submission data from Basecamp, including comments, attachments, and links.
 
 Fulfilled by: STORY-002
+
+### REQ-027 — Functional · must
+
+The system must include images and screenshots from Basecamp as visual evidence in the review, and preserve the queue item with a visible integration error when that material cannot be retrieved.
+
+Fulfilled by: STORY-021
 
 ## Data Storage
 
@@ -80,14 +92,6 @@ The system must support adding new Stress Test modules (ST1–ST5) as configurat
 
 Fulfilled by: STORY-010
 
-## Historical Retrieval
-
-### REQ-019 — Functional · must
-
-The system must retrieve the top 10 (configurable, 1–15) most relevant historical reviews for a submission, filtered to the same Stress Test and ranked by semantic similarity using a vector database stored outside SQL Server, without changing existing SQL Server tables or procedures.
-
-Fulfilled by: STORY-013
-
 ## Human Review
 
 ### REQ-006 — Functional · must
@@ -101,6 +105,18 @@ Fulfilled by: STORY-005
 The system must not auto-approve any submission; human review is mandatory.
 
 Fulfilled by: STORY-011
+
+### REQ-021 — Functional · should
+
+The system must let a reviewer attach images to a finding and post them to Basecamp alongside the written feedback.
+
+Fulfilled by: STORY-015
+
+### REQ-022 — Functional · should
+
+The system must offer an AI polish of reviewer-written feedback without changing its substance.
+
+Fulfilled by: STORY-016
 
 ## Integration
 
@@ -118,23 +134,11 @@ The system must detect a '##Critique##' marker in Basecamp comments, normalizing
 
 Fulfilled by: STORY-001
 
-### REQ-020 — Functional · should
+### REQ-023 — Functional · must
 
-Sign in with Basecamp as Reviewer or Admin
+The system must recognise reasonable ##Critique## marker variations, ignore near-misses, identify the thread by MessageId and the version by CommentId, and create a new review for a later version while preserving the previous one.
 
-Fulfilled by: STORY-014
-
-### REQ-021 — Functional · should
-
-Images in Reviewer Feedback
-
-Fulfilled by: STORY-015
-
-### REQ-022 — Functional · should
-
-AI Polish of Reviewer Feedback
-
-Fulfilled by: STORY-016
+Fulfilled by: STORY-017
 
 ## Review Completion
 
@@ -152,6 +156,12 @@ The system must create a Review Queue item with status 'Pending' for each detect
 
 Fulfilled by: STORY-001
 
+### REQ-028 — Functional · must
+
+The system must track a review through Pending, In Review, Feedback Generated and Completed, where Completed means a human finished the review, never that the AI finished.
+
+Fulfilled by: STORY-022
+
 ## Rule Application
 
 ### REQ-003 — Functional · must
@@ -160,6 +170,24 @@ The system must load only the rule module for the identified Stress Test (ST0) a
 
 Fulfilled by: STORY-003
 
+### REQ-024 — Functional · must
+
+The system must run the ST0 review in three stages, report every Stage 1 structural issue together and stop, and never let the dataset advisory create a structural failure.
+
+Fulfilled by: STORY-018
+
+### REQ-025 — Functional · must
+
+The system must evaluate rules ST0-001 to ST0-008 and report each outcome as PASS, Required Fix or Needs Attention, never as PASS when a rule could not be evaluated.
+
+Fulfilled by: STORY-019
+
+### REQ-026 — Functional · must
+
+The system must require 8 to 10 structured data science problems, each carrying all eight required fields, with exactly one clearly identified selected problem, detected by meaning rather than exact heading wording.
+
+Fulfilled by: STORY-020
+
 ## Security
 
 ### REQ-016 — Safety · must
@@ -167,6 +195,12 @@ Fulfilled by: STORY-003
 The system must ensure that no credentials are stored in source code or shared documents.
 
 Fulfilled by: STORY-011
+
+### REQ-020 — Functional · should
+
+The system must authenticate reviewers and admins through Basecamp sign-in and enforce their role on every review action.
+
+Fulfilled by: STORY-014
 
 ## User Interface
 

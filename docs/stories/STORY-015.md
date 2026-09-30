@@ -8,7 +8,7 @@ As a reviewer, I want to attach images such as annotated screenshots to my feedb
 
 ## The requirement this satisfies
 
-- **REQ-021** (Functional, should) — Images in Reviewer Feedback
+- **REQ-021** (Functional, should) — The system must let a reviewer attach images to a finding and post them to Basecamp alongside the written feedback.
 
 ## How to build it
 

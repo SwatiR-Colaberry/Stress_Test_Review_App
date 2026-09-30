@@ -2,14 +2,14 @@
   "schema_version": 2,
   "project": "Stress Test Review Application",
   "totals": {
-    "stories_total": 17,
-    "stories_verified": 8,
+    "stories_total": 23,
+    "stories_verified": 10,
     "stories_submitted": 0,
-    "stories_in_progress": 9,
-    "stories_not_started": 0,
-    "criteria_total": 63,
-    "criteria_passed": 28,
-    "points_awarded": 1261
+    "stories_in_progress": 7,
+    "stories_not_started": 6,
+    "criteria_total": 91,
+    "criteria_passed": 34,
+    "points_awarded": 1355
   },
   "stories": [
     {
@@ -456,19 +456,15 @@
       "notes": "AC1: test_approved_feedback_is_posted_and_the_review_is_marked_completed + test_the_review_is_not_completed_when_posting_fails. AC2: test_a_posting_error_is_retried_and_then_succeeds (connection error, 503, 429) + test_basecamp_unreachable_every_time_gives_up_after_three_attempts_and_logs_an_error. AC3: test_every_posting_event_is_audited_with_feedback_id_and_status (audit events and log lines carry feedback_id and status). Failure paths: unreachable (above), malformed feedback (refusal tests, no Basecamp call), time limit (test_posting_that_exceeds_the_time_limit_stops_and_is_recorded). User decisions 2026-09-30: build now with real posting off (BASECAMP_POSTING_ENABLED=no) until STORY-014; the comment ends with 'Review ref: FB-...' (checked before every attempt, so no double post) and ##FeedbackGiven##; queue store gains mark_completed (STORY-001 file, approved); posting only into listed projects (BASECAMP_POSTING_PROJECT_IDS); oauth accepts bc5 accounts (STORY-002 file, approved); move the Basecamp app to a shared login. VERIFIED AGAINST A SIMULATED BASECAMP ONLY: the real connection is set up and read-only checked (both projects readable), but no real post has been made. Found live: each project has 6 message boards and STORY-002 retrieval reads only the first.",
       "updated_at": "2026-09-30T00:00:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 50,
-        "outstanding": [
-          "Given approved feedback, When the system posts it to Basecamp, Then the review is marked 'Completed'.",
-          "Given a posting error, When the system retries, Then it eventually succeeds or logs an error.",
-          "Trust: The system logs posting events with feedback ID and status."
-        ]
+        "verified_at": "2026-09-30T15:28:27.831Z",
+        "commit_sha": "5cd56e310f3baa5b1eb891a39fa09b2c74957c5b",
+        "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/5cd56e310f3baa5b1eb891a39fa09b2c74957c5b",
+        "commit_at": "2026-09-30T15:28:10Z",
+        "points_awarded": 97,
+        "outstanding": []
       }
     },
     {
@@ -753,19 +749,15 @@
       "notes": "AC1 test_a_pending_review_in_the_queue_shows_all_details_needed_for_review; AC2 test_a_completed_review_shows_status_and_history; AC3 test_every_ui_view_is_audited_with_timestamp_and_user_id (+ reviewer page and Rules page loads). Pages /queue/, /rules/, updated /reviewer/. Status worked out from records (user decision A). No Post button until STORY-014. pytest 896/896; demo backend/scripts/queue_ui_demo.py. User-approved changes to STORY-005 files (audited page load, back link, id handling, shared styles) and STORY-003 rule files (optional fictional example). Not automated: browser layout (checked by eye).",
       "updated_at": "2026-09-30T18:00:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 50,
-        "outstanding": [
-          "Given a pending review in the queue, when accessed via the UI, then it displays all necessary details for review.",
-          "Given a completed review, when accessed via the UI, then it shows the review status and history.",
-          "Trust: The system logs all UI interactions with timestamps and user IDs."
-        ]
+        "verified_at": "2026-09-30T18:00:32.324Z",
+        "commit_sha": "8b318e2db18c5f050ad218060d9a54bc95cbb842",
+        "commit_url": "https://github.com/SwatiR-Colaberry/Stress_Test_Review_App/commit/8b318e2db18c5f050ad218060d9a54bc95cbb842",
+        "commit_at": "2026-09-30T18:00:10Z",
+        "points_awarded": 97,
+        "outstanding": []
       }
     },
     {
@@ -999,6 +991,190 @@
           "Trust: the AI suggestion and my accept or discard are both kept in the review history with who and when, and a suggestion never reaches the student unless I accepted it"
         ]
       }
+    },
+    {
+      "id": "STORY-017",
+      "release": "r0",
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given a comment containing ##Critique##, ## Critique##, ##Critique ## or ## Critique ##, when it is processed, then the marker is normalised and a review is created.",
+          "passed": false
+        },
+        {
+          "text": "Given a comment containing plain Critique, #Critique, ##Review##, or prose that merely uses the word critique, when it is processed, then no review is created.",
+          "passed": false
+        },
+        {
+          "text": "Given a detected marker, when the review is created, then MessageId identifies the Basecamp thread and CommentId identifies the exact submission version, and IsSubmitted is never used as the version identifier.",
+          "passed": false
+        },
+        {
+          "text": "Given a later version of the same submission carrying a new critique marker, when it is processed, then a new review is created and the previous review is preserved for history.",
+          "passed": false
+        },
+        {
+          "text": "Trust: every detection logs the normalised marker, the MessageId and the CommentId it was taken from.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
+    },
+    {
+      "id": "STORY-018",
+      "release": "r1",
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given a submission for ST0, when the review runs, then Stage 1 Structural Check runs first and Stage 2 Artifact Check runs only after Stage 1 passes.",
+          "passed": false
+        },
+        {
+          "text": "Given Stage 1 finds structural issues, when the result is produced, then all Stage 1 issues are listed together, no Stage 2 issue is included, and the review stops there.",
+          "passed": false
+        },
+        {
+          "text": "Given the Stage 3 dataset advisory raises concerns, when the result is produced, then they are reported as advisory only and never turn the submission into a structural failure.",
+          "passed": false
+        },
+        {
+          "text": "Given any completed evaluation, when the result is stored, then it is never marked approved by the system itself and always awaits a human reviewer.",
+          "passed": false
+        },
+        {
+          "text": "Trust: each stage run is logged with the stage, the rules evaluated, the outcome and the rule module version.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
+    },
+    {
+      "id": "STORY-019",
+      "release": "r1",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given a submission, when Stage 1 runs, then each rule from ST0-001 to ST0-008 is evaluated and reported with its own result of PASS, Required Fix or Needs Attention.",
+          "passed": false
+        },
+        {
+          "text": "Given the data collection explanation is missing or not separate from the dataset description, when ST0-003 is reported, then it is Needs Attention rather than Required Fix.",
+          "passed": false
+        },
+        {
+          "text": "Given a rule whose input is missing so it cannot be judged, when results are produced, then it is reported as unevaluated with the reason and never as PASS.",
+          "passed": false
+        },
+        {
+          "text": "Trust: every rule result is logged with its rule id, the evidence it was judged from, and the rule module version.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
+    },
+    {
+      "id": "STORY-020",
+      "release": "r1",
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given a submission, when the problems are counted, then between 8 and 10 structured problems are required and the actual count is reported.",
+          "passed": false
+        },
+        {
+          "text": "Given each problem, when it is checked, then Problem, Solution, Model Type/s, Algorithm, Independent Variable/s, Dependent Variable, Target Audience and Future Capability/ies are all required, and any missing field is named against that problem.",
+          "passed": false
+        },
+        {
+          "text": "Given headings that differ in capitalisation, punctuation, singular or plural, numbering or wording, when fields are detected, then detection is by meaning and those variations do not cause a failure.",
+          "passed": false
+        },
+        {
+          "text": "Given the submission, when the selected problem is checked, then exactly one clearly identified selected problem is required, and none or more than one is reported as a Required Fix.",
+          "passed": false
+        },
+        {
+          "text": "Trust: for each problem the fields found and the text they were read from are logged, so a reviewer can see why a field was judged missing.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
+    },
+    {
+      "id": "STORY-021",
+      "release": "r1",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given a submission whose material includes images or screenshots, when the review runs, then those images are retrieved from Basecamp and included in the evaluation as visual evidence.",
+          "passed": false
+        },
+        {
+          "text": "Given a rule that depends on visual evidence such as ST0-004, when the image is missing or unreadable, then the rule is reported as Required Fix with the reason and is never silently passed.",
+          "passed": false
+        },
+        {
+          "text": "Given Basecamp material cannot be retrieved, when retrieval fails, then the queue item is preserved and the integration error is shown, rather than the review continuing without the evidence.",
+          "passed": false
+        },
+        {
+          "text": "Trust: every image used in an evaluation is logged with its Basecamp source id, and no submitted image is written into the repository.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
+    },
+    {
+      "id": "STORY-022",
+      "release": "r2",
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given a detected critique marker, when the review is created, then its status is Pending.",
+          "passed": false
+        },
+        {
+          "text": "Given a reviewer opens a case, when they start work on it, then the status becomes In Review.",
+          "passed": false
+        },
+        {
+          "text": "Given the AI draft has been produced and stored, when that completes, then the status becomes Feedback Generated.",
+          "passed": false
+        },
+        {
+          "text": "Given a human reviewer finalises the review and the final feedback is posted or stored, when that completes, then the status becomes Completed, and the system never sets Completed because the AI finished.",
+          "passed": false
+        },
+        {
+          "text": "Trust: every status change is logged with the previous status, the new status, who changed it and when.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": null
     }
   ]
 }

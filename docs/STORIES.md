@@ -1,6 +1,6 @@
 # Stress Test Review Application — Stories
 
-16 stories across 5 releases, walking-skeleton first:
+22 stories across 5 releases, walking-skeleton first:
 the earliest release proves the thinnest end-to-end path including the trust
 spine, and later releases stack features on top of something already working.
 
@@ -21,6 +21,7 @@ system rather than a part of it.
 - **[STORY-001](stories/STORY-001.md)** — Detect Critique Marker in Basecamp
 - **[STORY-002](stories/STORY-002.md)** — Retrieve Submission Data from Basecamp
 - **[STORY-011](stories/STORY-011.md)** — Implement Trust Spine for Submission Processing
+- **[STORY-017](stories/STORY-017.md)** — Recognise Marker Variants and Handle Submission Versions
 
 ## r1 · Rule Application and AI Evaluation — weeks 3–4
 
@@ -30,6 +31,10 @@ system rather than a part of it.
 - **[STORY-003](stories/STORY-003.md)** — Load ST0 Rule Module _(waits on STORY-001)_
 - **[STORY-004](stories/STORY-004.md)** — Evaluate Submission with Claude _(waits on STORY-003)_
 - **[STORY-013](stories/STORY-013.md)** — Historical Retrieval with a Vector Database
+- **[STORY-018](stories/STORY-018.md)** — Run the ST0 Review in Three Stages
+- **[STORY-019](stories/STORY-019.md)** — Evaluate ST0 Rules ST0-001 to ST0-008
+- **[STORY-020](stories/STORY-020.md)** — Check Problem Completeness and the Selected Problem
+- **[STORY-021](stories/STORY-021.md)** — Review Images and Screenshots as Evidence
 
 ## r2 · Human Review Workflow — weeks 5–6
 
@@ -41,6 +46,7 @@ system rather than a part of it.
 - **[STORY-012](stories/STORY-012.md)** — Web UI for Review Queue Management _(waits on STORY-005)_
 - **[STORY-014](stories/STORY-014.md)** — Sign in with Basecamp as Reviewer or Admin
 - **[STORY-015](stories/STORY-015.md)** — Images in Reviewer Feedback
+- **[STORY-022](stories/STORY-022.md)** — Track Review Status Through the Full Model
 
 ## r3 · Audit and History — weeks 7–8
 

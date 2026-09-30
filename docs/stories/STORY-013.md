@@ -4,45 +4,30 @@ As a reviewer, I want the AI draft to draw on similar past reviews from the same
 
 **Release:** r1 · Rule Application and AI Evaluation (weeks 3–4)
 **Owner:** System
-**Blocked by:** STORY-003 (Load ST0 Rule Module) — retrieval filters by Stress Test, which the rule module identifies, so it must exist first. *(Added in the repo 2026-09-25; in `plan.json` since 2026-09-29.)*
+**Blocked by:** nothing — you can start this now
 
 ## The requirement this satisfies
 
-- **REQ-019** (Functional, should) — Historical Retrieval with a Vector Database
-
-> **REQ-019 updated in `.colaberry/plan.json` (2026-09-29, user decision):** statement *"The system must retrieve the top 10 (configurable, 1–15) most relevant historical reviews for a submission, filtered to the same Stress Test and ranked by semantic similarity using a vector database stored outside SQL Server, without changing existing SQL Server tables or procedures."*, cluster Historical Retrieval, priority must. It was auto-created from the story title (cluster "Marker Detection", priority "should"). The plan also gained STORY-013's blocked-by, failure paths and build decisions. `plan.json` is now edited by hand, so the platform no longer overwrites it: later plan changes made in the portal must be copied into it by hand.
+- **REQ-019** (Functional, should) — The system must draw on similar past reviews from the same Stress Test when drafting feedback, using a vector store outside SQL Server.
 
 ## How to build it
 
 Implement exactly what the acceptance lines describe for this story, and nothing that belongs to another one.
 
-Guidance (Master Spec §14–15, Figure 4, and user decisions of 2026-09-25):
-
-- **First data to index:** the per-Stress-Test history extract, `data/extracts/<date>-per-stress-test/` (15 most recent approved projects for each of ST0–ST5; see `directives/ST-historical-comment-extraction.md`). Later, completed reviews from this app are added to the same index (STORY-007).
-- **Retrieval order:** filter by Stress Test, then rank by vector similarity, then return the top `HISTORY_TOP_K`, **default 10** (user decision 2026-09-28; replaces the 2026-09-25 "top 15"). *As built:* no rule-id filter, because historical reviewer feedback is not tagged with rule ids; a case is a whole submission and its whole answer. See `directives/historical-retrieval.md`.
-- **Storage:** the vector database lives outside SQL Server; existing SQL Server tables and procedures must not change. The index holds student text and personal data, so it stays out of git like `data/extracts/`.
-- **Choose the vector database and embedding service at the start of the story.** Both are new dependencies (and the embedding service may be a paid external service), so they need approval before they are added.
-- Every external call (embedding service, vector database) gets an explicit timeout and capped retries; indexing the same case twice must not create a duplicate entry.
-
 ## Failure paths you must handle
 
-- Vector database unreachable
-- Embedding generation fails
-- No similar historical cases found
 
 ## Acceptance — your stop condition
-
-> **Acceptance line 1 (2026-09-29):** it says "top 5–10". As built, the default is 10 (configurable 1–15), so it passes as written. It is deliberately left unchanged in `plan.json`, because rewording it would reset its ticked state in `progress.json`.
 
 Tick each box as it genuinely passes. This file is yours — the platform reads
 the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [x] Given historical critique and feedback comments for a Stress Test are indexed in a vector database stored outside SQL Server, when a new submission for that Stress Test is reviewed, then the system returns the top 5–10 most similar cases from that same Stress Test only.
-- [x] Given a submission for one Stress Test, when historical cases are retrieved, then no case from a different Stress Test is returned.
-- [x] Given the vector database or the embedding service is unavailable, when retrieval runs, then the review continues without historical examples and the error is shown to the reviewer.
-- [x] Given no similar historical cases exist, when retrieval runs, then the system returns an empty list and says so, rather than failing.
-- [x] Trust: Historical examples never override the current Stress Test rules, and existing SQL Server tables and procedures are never changed.
+- [ ] Given historical critique and feedback comments for a Stress Test are indexed in a vector database stored outside SQL Server, when a new submission for that Stress Test is reviewed, then the system returns the top 5–10 most similar cases from that same Stress Test only.
+- [ ] Given a submission for one Stress Test, when historical cases are retrieved, then no case from a different Stress Test is returned.
+- [ ] Given the vector database or the embedding service is unavailable, when retrieval runs, then the review continues without historical examples and the error is shown to the reviewer.
+- [ ] Given no similar historical cases exist, when retrieval runs, then the system returns an empty list and says so, rather than failing.
+- [ ] Trust: Historical examples never override the current Stress Test rules, and existing SQL Server tables and procedures are never changed.
 
 When every box above is ticked, stop and show the demo.

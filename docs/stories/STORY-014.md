@@ -8,7 +8,7 @@ As a reviewer or admin, I want to sign in with my Basecamp account, so that ever
 
 ## The requirement this satisfies
 
-- **REQ-020** (Functional, should) — Sign in with Basecamp as Reviewer or Admin
+- **REQ-020** (Functional, should) — The system must authenticate reviewers and admins through Basecamp sign-in and enforce their role on every review action.
 
 ## How to build it
 
