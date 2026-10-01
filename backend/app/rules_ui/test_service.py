@@ -7,12 +7,13 @@ from fastapi.testclient import TestClient
 
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import InMemoryAuditTrail
+from app.auth.fake import signed_in_client
 from app.main import app
 from app.routers.rules_ui import get_modules_dir
 from app.rules.loader import MODULES_DIR
 from app.rules_ui.service import RulesReadError, rules_page, stress_test_name
 
-REVIEWER = {"X-Reviewer-Id": "reviewer-7"}
+REVIEWER = "reviewer-7@example.com"  # signed in with Basecamp (STORY-014)
 
 
 @pytest.fixture
@@ -86,31 +87,30 @@ def client(modules):
     audit = InMemoryAuditTrail()
     app.dependency_overrides[get_modules_dir] = lambda: modules
     app.dependency_overrides[get_audit_trail] = lambda: audit
-    yield TestClient(app), audit
+    yield signed_in_client(app, REVIEWER), audit
     app.dependency_overrides.clear()
 
 
 def test_opening_the_rules_page_is_audited_with_user_and_time(client):
     http, audit = client
-    assert http.get("/rules-ui/modules", headers=REVIEWER).json()["modules"][0]["name"] == "Stress Test 0"
-    assert http.get("/rules-ui/modules").status_code == 401
+    assert http.get("/rules-ui/modules").json()["modules"][0]["name"] == "Stress Test 0"
+    assert TestClient(app).get("/rules-ui/modules").status_code == 401  # not signed in: not a view
     events = audit.read_all()
-    assert [(e.action, e.actor_id, e.outcome) for e in events] == [
-        ("rules_viewed", "reviewer-7", "success"), ("rules_viewed", "unidentified", "blocked")]
+    assert [(e.action, e.actor_id, e.outcome) for e in events] == [("rules_viewed", REVIEWER, "success")]
     assert all(e.recorded_at.tzinfo is not None for e in events)
 
 
 def test_an_unreadable_registry_answers_503_and_is_audited(client, modules):
     http, audit = client
     (modules / "registry.json").write_text("{broken")
-    response = http.get("/rules-ui/modules", headers=REVIEWER)
+    response = http.get("/rules-ui/modules")
     assert response.status_code == 503
     assert response.json()["detail"]["reason_code"] == "RULE_REGISTRY_UNREADABLE"
     assert audit.read_all()[0].reason_code == "RULE_REGISTRY_UNREADABLE"
 
 
 def test_the_rules_page_is_served():
-    http = TestClient(app)
+    http = signed_in_client(app)
     assert "Stress Test rules" in http.get("/rules/").text
     for asset in ("/rules/rules.js", "/rules/rules_logic.js", "/rules/rules.css"):
         assert http.get(asset).status_code == 200, asset

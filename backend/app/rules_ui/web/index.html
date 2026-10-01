@@ -19,11 +19,8 @@
         <a href="/queue/">Review Queue</a>
         <a href="/rules/" aria-current="page">Rules</a>
       </nav>
-      <label class="who">
-        Reviewer id
-        <input id="reviewer-id" autocomplete="off" maxlength="128" placeholder="e.g. swati">
-        <small>Temporary: replaced by Basecamp sign-in.</small>
-      </label>
+      <!-- STORY-014: who is signed in, their role, Sign out (filled by session.js) -->
+      <div id="who" class="who" aria-live="polite"></div>
     </div>
   </header>
 
@@ -46,6 +43,8 @@
     <div id="module"></div>
   </main>
 
+  <script src="/reviewer/session_logic.js"></script>
+  <script src="/reviewer/session.js"></script>
   <script src="/reviewer/review_logic.js"></script>
   <script src="rules_logic.js"></script>
   <script src="rules.js"></script>

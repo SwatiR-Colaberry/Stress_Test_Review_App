@@ -1,8 +1,18 @@
+import pytest
 from fastapi.testclient import TestClient
 
+from app.auth.fake import TestSignIn
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _signed_in():
+    """STORY-014: every API except /health needs a Basecamp sign-in."""
+    TestSignIn(app).sign_in(client, "jane.reviewer@example.com")
+    yield
+    client.cookies.clear()
 
 
 def test_health():
@@ -90,6 +100,7 @@ def test_reviewer_pages_and_their_shared_files_are_always_revalidated():
     from app.main import app
 
     client = TestClient(app)
+    TestSignIn(app).sign_in(client)  # STORY-014: pages need a sign-in
     for path in ("/queue/", "/queue/queue.js", "/reviewer/reviewer.css", "/reviewer/review_logic.js",
                  "/rules/", "/rules/rules.js"):
         response = client.get(path)

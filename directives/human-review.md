@@ -34,12 +34,13 @@ Code: `backend/app/human_review/`, routes in `backend/app/routers/human_review.p
 
 `REVIEWS_DIR`, `EVALUATIONS_DIR` and `AUDIT_TRAIL_PATH` override the folders.
 
-## Reviewer identity — TEMPORARY
+## Reviewer identity
 
-The reviewer id comes from the `X-Reviewer-Id` header (typed at the top of the page). It is
-**not verified**: anyone who can reach the API can type any id. AI/system ids (`claude`,
-`system`, `bot`, …) and blank ids are refused. **STORY-014 (sign in with Basecamp)** replaces
-this and must land before STORY-006 posts anything real.
+The reviewer is the person **signed in with Basecamp** (STORY-014, `directives/basecamp-sign-in.md`):
+their Basecamp email is recorded on every action. Without a session the page goes to sign-in and
+the API answers 401 before anything is read or saved. The temporary `X-Reviewer-Id` header was
+removed on 2026-10-01. The service still refuses AI/system ids (`claude`, `system`, `bot`, …) and
+blank ids as a second line of defence.
 
 ## Failures
 
@@ -48,7 +49,7 @@ this and must land before STORY-006 posts anything real.
 | Page cannot load the review (network, 10 s timeout, 404, 503) | Red banner with the reason; Retry when retrying can help |
 | An edit or decision is not saved (network, timeout, 503) | The text stays in the box marked "Not saved"; Retry resends the same request (same `action_id`), which the server applies once. An added finding is retried with the same `action_id` while its text is unchanged (`web/review_logic.js`). |
 | Audit trail fails after the action was saved | 503 "not saved, retry"; the retry writes the missing audit event without saving the action twice |
-| Refused action | 401 no reviewer id · 403 AI/system id · 409 `UNKNOWN_FINDING`, `UNDECIDED_FINDINGS`, `REVIEW_LOCKED`, `ACTION_ID_REUSED`, `EMPTY_FEEDBACK`, `FEEDBACK_TOO_LONG` · 404 `REVIEW_NOT_FOUND`, `NO_AI_DRAFT`. Every 401/403/409 refusal is audited; a 404 has no review to attach an event to, so it is logged as a warning instead. |
+| Refused action | 401 not signed in (session ended: the page goes to sign-in) · 409 `UNKNOWN_FINDING`, `UNDECIDED_FINDINGS`, `REVIEW_LOCKED`, `ACTION_ID_REUSED`, `EMPTY_FEEDBACK`, `FEEDBACK_TOO_LONG` · 404 `REVIEW_NOT_FOUND`, `NO_AI_DRAFT`. Every 409 refusal is audited (a 401 is logged: nobody is signed in); a 404 has no review to attach an event to, so it is logged as a warning instead. |
 | Rule module unreadable | Cards show rule codes instead of names; a warning is logged |
 | Corrupt line in a review file | Error naming the file and line; never skipped |
 

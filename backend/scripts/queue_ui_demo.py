@@ -4,7 +4,7 @@ Offline and free: no Basecamp, no Claude, no SQL Server. Everything
 new temporary folder, never data/.
 
   r Pending          evaluated, nobody has opened it yet
-  r In Review        one finding approved by demo-reviewer
+  r In Review        one finding approved by the demo reviewer
   r Completed        all findings decided, feedback prepared, posted
                      (the posting is simulated: a "posted" record is written
                      and the queue item marked Completed, as STORY-006 does
@@ -27,7 +27,7 @@ from typing import Dict
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "backend"))
 
-DEMO_REVIEWER = {"X-Reviewer-Id": "demo-reviewer"}
+DEMO_REVIEWER = "demo-reviewer@example.com"  # fictional; signed in for seeding only (STORY-014)
 _BASE_COMMENT = 912000  # fictional ids
 _STUDENTS = ["Demo Student A (fictional)", "Demo Student B (fictional)", "Demo Student C (fictional)"]
 
@@ -55,7 +55,8 @@ def _evaluation(comment_id: int, when: datetime):
 
 def seed(client, queue, results, postings, now: datetime) -> Dict[str, str]:
     """Create the three reviews; returns {stage: review_id}. `client` is a
-    TestClient on the app whose dependencies point at these same stores."""
+    TestClient on the app whose dependencies point at these same stores,
+    signed in as DEMO_REVIEWER (app.auth.fake.TestSignIn)."""
     from app.models import BasecampComment
     from app.posting.comment import feedback_id_for
     from app.posting.models import PostingRecord
@@ -73,7 +74,7 @@ def seed(client, queue, results, postings, now: datetime) -> Dict[str, str]:
         ids[stage] = item.review_id
 
     def act(review_id, action_id, kind, **fields):
-        response = client.post(f"/reviews/{review_id}/actions", headers=DEMO_REVIEWER,
+        response = client.post(f"/reviews/{review_id}/actions",
                                json={"action_id": action_id, "kind": kind, **fields})
         response.raise_for_status()
 
@@ -82,7 +83,7 @@ def seed(client, queue, results, postings, now: datetime) -> Dict[str, str]:
     act(done, "demo-2", "edit_finding", finding_id="ST0-002",
         text="Please add the public link to where the dataset comes from (e.g. the Kaggle page).")
     act(done, "demo-3", "approve_finding", finding_id="ST0-006")
-    client.post(f"/reviews/{done}/prepare", headers=DEMO_REVIEWER).raise_for_status()
+    client.post(f"/reviews/{done}/prepare").raise_for_status()
     postings.append(PostingRecord(feedback_id=feedback_id_for(done), review_id=done, status="posted",
                                   recorded_at=datetime.now(timezone.utc), attempt=1,
                                   basecamp_comment_id=_BASE_COMMENT + 99))
@@ -104,13 +105,18 @@ def main() -> None:
     import uvicorn
     from fastapi.testclient import TestClient
 
+    from app.auth.dependencies import get_session_store
+    from app.auth.fake import TestSignIn
     from app.evaluation.store import ResultStore
     from app.main import app
     from app.posting.dependencies import get_posting_store
     from app.review_queue.dependencies import get_review_queue_store
 
-    ids = seed(TestClient(app), get_review_queue_store(), ResultStore(tmp / "evaluations"), get_posting_store(),
+    client = TestClient(app)
+    TestSignIn(app).sign_in(client, DEMO_REVIEWER)
+    ids = seed(client, get_review_queue_store(), ResultStore(tmp / "evaluations"), get_posting_store(),
                datetime.now(timezone.utc))
+    app.dependency_overrides.pop(get_session_store)  # the browser signs in for real (STORY-014)
     print(f"Demo data folder: {tmp}")
     print(f"Reviews: {ids}")
     print(f"Open: http://127.0.0.1:{args.port}/queue/")

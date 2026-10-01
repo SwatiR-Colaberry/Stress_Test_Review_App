@@ -29,31 +29,33 @@ status out from the records the app already keeps (user decision 2026-09-30):
 | Feedback Generated | The reviewer prepared the final feedback (locked) |
 | Completed | Basecamp confirmed the post, or the queue item is marked Completed |
 
-After Feedback Generated, the review waits: real posting stays off until Basecamp sign-in
-(STORY-014), so there is no "Post" button yet (user decision 2026-09-30).
+After Feedback Generated, the review waits: real posting is still off
+(`BASECAMP_POSTING_ENABLED=no`) and there is no "Post" button yet (user decision 2026-09-30;
+Basecamp sign-in, the precondition, landed with STORY-014 on 2026-10-01).
 
 ## Trust: every page load is audited
 
 Each request the pages make writes one audit event with `recorded_at` and `actor_id`
-(the reviewer id), whatever the outcome — `queue_viewed`, `review_detail_viewed` (also the
-reviewer page's load) and `rules_viewed`. Outcome `success`, `blocked`
-(`MISSING_REVIEWER_IDENTITY` with actor `unidentified`, or `AI_CANNOT_REVIEW`) or `failure`
-(the reason code, or the error class of an unexpected error). A successful view is recorded
+(the signed-in reviewer's Basecamp email), whatever the outcome — `queue_viewed`,
+`review_detail_viewed` (also the reviewer page's load) and `rules_viewed`. Outcome `success`,
+`blocked` or `failure` (the reason code, or the error class of an unexpected error). A request
+with no session is refused before it is a view (401, logged, not audited; STORY-014). A successful view is recorded
 **before** its data is returned: if the audit trail cannot be written the page gets 503 and
 shows nothing. Reviewer actions, prepare and post are audited by STORY-005/006 as before.
 Filtering and searching in the browser never reach the server and are not audited.
 
-## Reviewer identity — TEMPORARY
+## Reviewer identity
 
-The reviewer id box (top right) sends an `X-Reviewer-Id` header. It is not verified; STORY-014
-replaces it with Basecamp sign-in. The id is kept in the browser's local storage (not the page
-cache), so it survives closing the browser, except in a private window.
+The app bar shows who is signed in with Basecamp, their role and **Sign out** (STORY-014,
+`directives/basecamp-sign-in.md`); admins also see **Admins**. The pages send no identity of
+their own: the session cookie does. The reviewer-id box and its `X-Reviewer-Id` header were
+removed on 2026-10-01.
 
 ## Failures
 
 | What happens | What the reviewer sees | Code |
 |---|---|---|
-| No reviewer id / AI id | "Enter your reviewer id" (401) / refused (403) | audited as blocked |
+| Not signed in, or the 8-hour session ended | the page goes to sign-in and comes back (401) | `NOT_SIGNED_IN`, logged |
 | Unknown review (e.g. server restarted: the queue is in memory) | "not in the Review Queue" (404) | `REVIEW_NOT_FOUND` |
 | A store cannot be read or has a corrupt line | "Could not load … Retry" (503) | `REVIEWER_ACTIONS_UNREADABLE`, `POSTING_RECORDS_UNREADABLE`, `EVALUATION_RESULTS_UNREADABLE` |
 | Saved decisions no longer fit the newest AI draft (re-evaluated under newer rules) | detail refused (409); the list still loads | `REVIEW_STATE_MISMATCH` |
@@ -76,16 +78,17 @@ repo is public. The ST0 examples were drafted 2026-09-30 and approved by the pro
 ## Running it
 
 ```
-.venv/bin/python backend/scripts/queue_ui_demo.py        # port 8012
-# open http://127.0.0.1:8012/queue/, enter any reviewer id, click a review; Rules in the app bar
+.venv/bin/python backend/scripts/signin_demo.py          # port 8014, same three reviews
+# open http://127.0.0.1:8014/queue/, choose "Demo Reviewer" on the demo sign-in page, click a review
 ```
-The demo seeds three fictional reviews (Pending, In Review, Completed) into a new temporary
+(`queue_ui_demo.py` seeds the same data but serves the real Basecamp sign-in, so it needs the
+settings in `directives/basecamp-sign-in.md`.) The demo seeds three fictional reviews (Pending, In Review, Completed) into a new temporary
 folder — evaluations, reviewer actions, posting records and the audit trail — never `data/`.
 The Completed review's post is simulated; nothing is sent to Basecamp.
 
 ## Not yet
 
-- Posting button (after STORY-014), real sign-in (STORY-014).
+- Posting button (needs a decision now that sign-in exists).
 - Images in feedback (STORY-015). Highlighting the evidence in the student's submission and
   showing the attached image a finding is about: follow-up story approved 2026-09-30, to be
   added in the portal first (see PROGRESS.md). Marking a spot inside an image is not needed (user decision 2026-09-30).
@@ -101,4 +104,4 @@ The Completed review's post is simulated; nothing is sent to Basecamp.
    `test_opening_the_reviewer_page_is_audited_with_user_and_time` and
    `test_opening_the_rules_page_is_audited_with_user_and_time`.
 2. Run the demo and open the three pages; the printed audit file lists every page load with
-   the reviewer id and time.
+   the signed-in reviewer's email and time.

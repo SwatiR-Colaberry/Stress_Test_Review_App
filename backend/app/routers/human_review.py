@@ -2,16 +2,14 @@
 edit / reject / add, and prepare the final feedback for Basecamp posting.
 Posting itself is STORY-006.
 
-Reviewer identity: TEMPORARY STUB. The X-Reviewer-Id header names the
-reviewer; it is not verified, so anyone who can reach the API can claim any
-reviewer id. AI/system and blank ids are refused. Replaced by Basecamp
-sign-in (REQ-012; login story agreed 2026-09-29) before anything is posted.
+Reviewer identity: the signed-in Basecamp user's email (STORY-014,
+app/auth/guards.py). The X-Reviewer-Id header it replaced is gone.
 
-Every page load is audited (review_detail_viewed, STORY-012) and needs the
-reviewer id like the actions do.
+Every page load is audited (review_detail_viewed, STORY-012) with the
+reviewer's email, like the actions are.
 
-Status codes: 404 unknown review or no AI draft yet; 401 no reviewer id;
-403 AI/system id; 409 refused action (reason_code: UNKNOWN_FINDING,
+Status codes: 404 unknown review or no AI draft yet; 401 not signed in;
+409 refused action (reason_code: UNKNOWN_FINDING,
 UNDECIDED_FINDINGS, REVIEW_LOCKED, ACTION_ID_REUSED, EMPTY_FEEDBACK,
 FEEDBACK_TOO_LONG); 503 storage or audit trail unavailable: "not saved,
 retry" (a retry with the same action_id is safe).
@@ -23,6 +21,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import AuditReadError, AuditTrail, AuditWriteError
+from app.auth.guards import require_signed_in
+from app.auth.sessions import Principal
 from app.evaluation.store import EvaluationStoreError
 from app.human_review import service
 from app.human_review.dependencies import get_draft_source, get_review_action_store
@@ -38,7 +38,7 @@ router = APIRouter(prefix="/reviews", tags=["human review"])
 _STATUS = {"MISSING_REVIEWER_IDENTITY": 401, "AI_CANNOT_REVIEW": 403}
 _UNAVAILABLE = (ReviewStoreError, EvaluationStoreError, AuditWriteError, AuditReadError)
 
-ReviewerHeader = Header(default=None, max_length=MAX_ID_LENGTH)
+Reviewer = Depends(require_signed_in)
 CorrelationHeader = Header(default=None, max_length=64)
 
 
@@ -46,10 +46,10 @@ CorrelationHeader = Header(default=None, max_length=64)
 def get_findings(review_id: str, drafts: DraftSource = Depends(get_draft_source),
                  store: ReviewActionStore = Depends(get_review_action_store),
                  audit: AuditTrail = Depends(get_audit_trail),
-                 x_reviewer_id: Optional[str] = ReviewerHeader,
+                 reviewer: Principal = Reviewer,
                  x_correlation_id: Optional[str] = CorrelationHeader) -> ReviewView:
     # STORY-012: opening the page is a UI interaction, audited as review_detail_viewed.
-    return _run(lambda: viewing.view_review(review_id[:MAX_ID_LENGTH], x_reviewer_id,
+    return _run(lambda: viewing.view_review(review_id[:MAX_ID_LENGTH], reviewer.email,
                                             x_correlation_id or str(uuid.uuid4()), audit,
                                             lambda: service.view_review(review_id, drafts, store)))
 
@@ -58,9 +58,9 @@ def get_findings(review_id: str, drafts: DraftSource = Depends(get_draft_source)
 def post_action(review_id: str, action: ReviewerAction, drafts: DraftSource = Depends(get_draft_source),
                 store: ReviewActionStore = Depends(get_review_action_store),
                 audit: AuditTrail = Depends(get_audit_trail),
-                x_reviewer_id: Optional[str] = ReviewerHeader,
+                reviewer: Principal = Reviewer,
                 x_correlation_id: Optional[str] = CorrelationHeader) -> ReviewView:
-    return _run(lambda: service.apply_action(review_id, x_reviewer_id, action, drafts, store, audit,
+    return _run(lambda: service.apply_action(review_id, reviewer.email, action, drafts, store, audit,
                                              x_correlation_id or str(uuid.uuid4())))
 
 
@@ -68,9 +68,9 @@ def post_action(review_id: str, action: ReviewerAction, drafts: DraftSource = De
 def post_prepare(review_id: str, drafts: DraftSource = Depends(get_draft_source),
                  store: ReviewActionStore = Depends(get_review_action_store),
                  audit: AuditTrail = Depends(get_audit_trail),
-                 x_reviewer_id: Optional[str] = ReviewerHeader,
+                 reviewer: Principal = Reviewer,
                  x_correlation_id: Optional[str] = CorrelationHeader) -> PreparedFeedback:
-    return _run(lambda: service.prepare_feedback(review_id, x_reviewer_id, drafts, store, audit,
+    return _run(lambda: service.prepare_feedback(review_id, reviewer.email, drafts, store, audit,
                                                  x_correlation_id or str(uuid.uuid4())))
 
 

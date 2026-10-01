@@ -14,8 +14,6 @@ let modules = [];
 let current = null; // stress_test_id of the open tab
 
 const REASONS = {
-  MISSING_REVIEWER_IDENTITY: "Enter your reviewer id above to see the rules.",
-  AI_CANNOT_REVIEW: "That id is an AI/system identity; enter your own reviewer id.",
   RULE_REGISTRY_UNREADABLE: "The list of Stress Test rules could not be read. Retry; if it keeps failing, tell the developer.",
 };
 const MODULE_REASONS = {
@@ -36,16 +34,6 @@ function el(tag, props = {}, ...children) {
   return node;
 }
 
-function storage(action, value) {
-  try {
-    if (action === "get") return localStorage.getItem("reviewer-id") || "";
-    localStorage.setItem("reviewer-id", value);
-  } catch (err) {
-    console.warn("reviewer id not remembered:", err.name);
-  }
-  return "";
-}
-
 function showBanner(message, onRetry) {
   $("banner").hidden = false;
   $("banner-text").textContent = message;
@@ -59,9 +47,10 @@ async function load() {
   let status = 0;
   let data = null;
   try {
-    const response = await fetch("/rules-ui/modules", {
-      signal: controller.signal, headers: { "X-Reviewer-Id": $("reviewer-id").value.trim() } });
+    // The session cookie goes with it (STORY-014).
+    const response = await fetch("/rules-ui/modules", { signal: controller.signal });
     status = response.status;
+    if (status === 401) Session.signInAgain();
     data = await response.json().catch(() => null);
   } catch (err) {
     showBanner(err.name === "AbortError" ? "The server did not answer in time. Retry." :
@@ -74,7 +63,7 @@ async function load() {
     const reason = data && data.detail && data.detail.reason_code;
     modules = [];
     render();
-    showBanner(REASONS[reason] || `Unexpected answer from the server (${status}).`,
+    showBanner(explainAuthFailure(status, data) || REASONS[reason] || `Unexpected answer from the server (${status}).`,
                status === 503 ? load : null);
     return;
   }
@@ -172,13 +161,10 @@ function notesSection(m) {
 
 // ---- wiring ----------------------------------------------------------------
 
-$("reviewer-id").value = storage("get");
-$("reviewer-id").addEventListener("input", () => storage("set", $("reviewer-id").value.trim()));
-$("reviewer-id").addEventListener("change", load);
 $("search").addEventListener("input", render);
 window.addEventListener("hashchange", () => {
   const wanted = stressTestOfRule(location.hash.slice(1));
   if (wanted && wanted !== current) { current = wanted; render(); document.getElementById(location.hash.slice(1))?.scrollIntoView(); }
 });
-window.addEventListener("pageshow", (e) => { if (e.persisted) { $("reviewer-id").value = storage("get"); load(); } });
+window.addEventListener("pageshow", (e) => { if (e.persisted) load(); });
 load();

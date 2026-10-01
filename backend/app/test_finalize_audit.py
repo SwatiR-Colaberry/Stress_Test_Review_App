@@ -6,9 +6,18 @@ from fastapi.testclient import TestClient
 
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import AuditWriteError, InMemoryAuditTrail
+from app.auth.fake import TestSignIn
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _signed_in():
+    """STORY-014: every API needs a Basecamp sign-in."""
+    TestSignIn(app).sign_in(client, "jane.reviewer@example.com")
+    yield
+    client.cookies.clear()
 
 _HUMAN_APPROVED = {
     "review_id": "rev-1",

@@ -1,9 +1,9 @@
 """Rules page route (STORY-012): every active Stress Test rule module, for
 reviewers. Read-only; every call is audited as rules_viewed (see
-app/queue_ui/viewing.py). Reviewer identity: the temporary X-Reviewer-Id
-header, as on the other reviewer pages (Basecamp sign-in in STORY-014).
+app/queue_ui/viewing.py). Reviewer identity: the signed-in Basecamp
+user's email (STORY-014, app/auth/guards.py).
 
-Status codes: 401 no reviewer id; 403 AI/system id; 503 the rule registry or
+Status codes: 401 not signed in; 503 the rule registry or
 the audit trail is unavailable (retrying is safe). A single unreadable module
 is not an error: it is listed as unavailable with its reason code.
 """
@@ -15,7 +15,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import AuditTrail, AuditWriteError
-from app.models import MAX_ID_LENGTH
+from app.auth.guards import require_signed_in
+from app.auth.sessions import Principal
 from app.queue_ui import viewing
 from app.rules.loader import MODULES_DIR
 from app.rules_ui.models import RulesPage
@@ -30,10 +31,10 @@ def get_modules_dir() -> Path:
 
 @router.get("/modules", response_model=RulesPage)
 def get_rules(modules_dir: Path = Depends(get_modules_dir), audit: AuditTrail = Depends(get_audit_trail),
-              x_reviewer_id: Optional[str] = Header(default=None, max_length=MAX_ID_LENGTH),
+              reviewer: Principal = Depends(require_signed_in),
               x_correlation_id: Optional[str] = Header(default=None, max_length=64)) -> RulesPage:
     try:
-        return viewing.view_rules(x_reviewer_id, x_correlation_id or str(uuid.uuid4()), audit,
+        return viewing.view_rules(reviewer.email, x_correlation_id or str(uuid.uuid4()), audit,
                                   lambda: rules_page(modules_dir))
     except viewing.ViewerRefused as exc:
         status = 401 if exc.reason_code == "MISSING_REVIEWER_IDENTITY" else 403

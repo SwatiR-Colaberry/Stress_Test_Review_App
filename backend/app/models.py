@@ -218,6 +218,23 @@ AuditAction = Literal[
     "queue_viewed",
     "review_detail_viewed",
     "rules_viewed",
+    # Reviewer and admin roles (STORY-014). actor_id is the admin making the
+    # change; subject_id is the person whose role it is; role is the new role
+    # (the removed role on role_removed). A refused change is outcome "blocked"
+    # with reason_code (e.g. LAST_ADMIN, BOOTSTRAP_ADMIN).
+    "role_added",
+    "role_changed",
+    "role_removed",
+    # Sign in with Basecamp (STORY-014). actor_id is the person's Basecamp
+    # email, or "unidentified" when Basecamp never said who it was; role is set
+    # on signed_in; reason_code says why a sign-in was refused (NOT_ON_LIST,
+    # NOT_IN_ACCOUNT, STATE_MISMATCH, BASECAMP_ERROR, ...).
+    "signed_in",
+    "sign_in_refused",
+    "signed_out",
+    # A Reviewer tried an admin-only action (STORY-014): outcome "blocked",
+    # reason_code ADMIN_ONLY, role = the person's role.
+    "admin_action_refused",
 ]
 
 
@@ -243,6 +260,8 @@ class AuditEvent(BaseModel):
     review_id: Optional[str] = Field(default=None, max_length=MAX_ID_LENGTH)
     reason_code: Optional[str] = Field(default=None, max_length=64)
     feedback_id: Optional[str] = Field(default=None, max_length=16)  # posting events (STORY-006)
+    subject_id: Optional[str] = Field(default=None, max_length=MAX_ID_LENGTH)  # role events (STORY-014)
+    role: Optional[Literal["reviewer", "admin"]] = None  # role events (STORY-014)
 
 
 # --- Historical retrieval (REQ-019, STORY-013) --------------------------------

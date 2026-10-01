@@ -7,7 +7,7 @@ Code: `backend/app/posting/`, route in `backend/app/routers/posting.py`, POST su
 ## What it does
 
 1. A reviewer has prepared the feedback (STORY-005: `data/reviews/prepared.jsonl`, `ready_to_post`).
-2. `POST /reviews/{review_id}/post` (header `X-Reviewer-Id`) calls `post_review_feedback()`:
+2. `POST /reviews/{review_id}/post` (signed in with Basecamp, STORY-014) calls `post_review_feedback()`:
    - already posted? return that result and send nothing;
    - posting switched off, or the feedback fails the checks? refuse with a reason code, nothing sent;
    - otherwise up to **3 attempts**, each: read the thread's comments, and only if this feedback's
@@ -34,7 +34,7 @@ Review ref: FB-1a2b3c4d5e6f
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `BASECAMP_POSTING_ENABLED` | `no` | `yes` posts to the real Basecamp. **Off until STORY-014** (Basecamp sign-in) ties posts to a verified reviewer (user decision 2026-09-30). |
+| `BASECAMP_POSTING_ENABLED` | `no` | `yes` posts to the real Basecamp. Was off until STORY-014 (Basecamp sign-in) tied posts to a verified reviewer (user decision 2026-09-30); sign-in landed 2026-10-01. Turning it on is still a separate, deliberate step (a sandbox test first). |
 | `BASECAMP_POSTING_PROJECT_IDS` | empty = none | Projects feedback may be posted into. A review pointing anywhere else is refused. |
 | `BASECAMP_POSTING_TIME_LIMIT_S` | 60 (5–300) | Upper bound for one posting request, all attempts included. |
 
@@ -53,7 +53,7 @@ only by the scripts. To post through a local server, start it with the settings 
 | A post whose answer was lost (read timeout, dropped connection) | The client does **not** re-post blindly; the next attempt reads the thread, finds the ref, records it as posted | 200 |
 | Token rejected (`AuthError`), unexpected Basecamp answer (`ContractViolation`), Basecamp settings missing (`ConfigError`) | Fails at once (a retry cannot help) | 502 |
 | Two requests for one review at once | Per-review lock: the second waits, then returns the first one's post; if it waits past the time limit, `POSTING_IN_PROGRESS` | 200 / 409 |
-| No `X-Reviewer-Id` | Refused and logged | 401 |
+| Not signed in | Refused before the route runs and logged (STORY-014) | 401 |
 | Posting records or audit trail cannot be written; bad posting settings | "Retry; it is safe" (the thread is checked before any new post) | 503 |
 | A request dies after Basecamp confirmed | The next request finds the `posted` record, writes any missing audit event once, marks the review Completed, sends nothing | 200 |
 

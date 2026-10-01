@@ -7,12 +7,16 @@ inspect it override it themselves.
 
 STORY-004: no test may call the real, billed Claude API. ANTHROPIC_API_KEY
 (and the other ways the SDK finds credentials) are removed for every test,
-so an accidentally real client fails at once instead of spending money."""
+so an accidentally real client fails at once instead of spending money.
+
+STORY-014: a test's sign-in (app.auth.fake.TestSignIn overrides the session
+store) never carries over into the next test."""
 import pytest
 
 from app.audit import dependencies
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import InMemoryAuditTrail
+from app.auth.dependencies import get_session_store
 from app.main import app
 
 
@@ -22,6 +26,7 @@ def _in_memory_audit_trail(monkeypatch):
     app.dependency_overrides[get_audit_trail] = lambda: InMemoryAuditTrail()
     yield
     app.dependency_overrides.pop(get_audit_trail, None)
+    app.dependency_overrides.pop(get_session_store, None)
 
 
 _ANTHROPIC_CREDENTIAL_VARS = (

@@ -24,12 +24,12 @@ the same criteria out of `.colaberry/progress.json`, which Claude Code keeps in
 step (see the managed block in CLAUDE.md). Ticking something you have not
 actually met only misleads you.
 
-- [ ] Given a Basecamp user on the reviewer list, when they sign in with Basecamp, then they reach the Review Queue as a Reviewer
-- [ ] Given a Basecamp user on the admin list, when they sign in, then they can also add, remove and change the role of reviewers and admins
-- [ ] Given a Basecamp user on neither list, when they sign in, then access is refused with a clear message
-- [ ] Given no signed-in session, when any review page or API is opened, then the user is sent to sign in and nothing is shown or changed
-- [ ] Given a Reviewer, when they try an admin-only action, then it is refused
-- [ ] Given a signed-in user, when they sign out or 8 hours pass, then they must sign in again
-- [ ] Trust: every sign-in, refusal, sign-out and role change is logged with who and when, and no password or token appears in logs or the repo
+- [x] Given a Basecamp user on the reviewer list, when they sign in with Basecamp, then they reach the Review Queue as a Reviewer
+- [x] Given a Basecamp user on the admin list, when they sign in, then they can also add, remove and change the role of reviewers and admins
+- [x] Given a Basecamp user on neither list, when they sign in, then access is refused with a clear message
+- [x] Given no signed-in session, when any review page or API is opened, then the user is sent to sign in and nothing is shown or changed
+- [x] Given a Reviewer, when they try an admin-only action, then it is refused
+- [x] Given a signed-in user, when they sign out or 8 hours pass, then they must sign in again
+- [x] Trust: every sign-in, refusal, sign-out and role change is logged with who and when, and no password or token appears in logs or the repo
 
 When every box above is ticked, stop and show the demo.

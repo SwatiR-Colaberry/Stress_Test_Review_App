@@ -34,14 +34,13 @@ function canReview(status) {
 }
 
 // What the page says when a request fails. status 0 = no answer at all.
+// Sign-in refusals (401, ADMIN_ONLY) are worded by session_logic.js first.
 function explainFailure(status, data, timedOut) {
   const detail = (data && data.detail) || {};
   if (status === 0) {
     return timedOut ? "The server did not answer in time. Retry."
                     : "Could not reach the server (network problem). Retry.";
   }
-  if (detail.reason_code === "MISSING_REVIEWER_IDENTITY") return "Enter your reviewer id above to open the queue.";
-  if (detail.reason_code === "AI_CANNOT_REVIEW") return "That id is an AI/system identity; enter your own reviewer id.";
   if (detail.reason_code === "REVIEW_NOT_FOUND") {
     return "This review is not in the Review Queue (the server may have restarted). Choose one from the list.";
   }

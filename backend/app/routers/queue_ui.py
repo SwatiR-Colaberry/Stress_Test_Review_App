@@ -2,10 +2,10 @@
 review's detail with its status and history. Read-only; every call is
 audited (see app/queue_ui/viewing.py).
 
-Reviewer identity: the same TEMPORARY X-Reviewer-Id header as STORY-005,
-replaced by Basecamp sign-in in STORY-014.
+Reviewer identity: the signed-in Basecamp user's email (STORY-014,
+app/auth/guards.py).
 
-Status codes: 401 no reviewer id; 403 AI/system id; 404 unknown review;
+Status codes: 401 not signed in; 404 unknown review;
 409 the saved reviewer actions no longer fit the newest AI draft;
 503 a store or the audit trail cannot be read/written ("could not load,
 retry"; retrying is safe, nothing is written except the audit event).
@@ -17,6 +17,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import AuditTrail, AuditWriteError
+from app.auth.guards import require_signed_in
+from app.auth.sessions import Principal
 from app.human_review.dependencies import get_draft_source, get_review_action_store
 from app.human_review.drafts import DraftSource
 from app.human_review.store import ReviewActionStore
@@ -30,7 +32,7 @@ from app.review_queue.store import ReviewQueueStore
 
 router = APIRouter(prefix="/queue-ui", tags=["review queue ui"])
 
-ReviewerHeader = Header(default=None, max_length=MAX_ID_LENGTH)
+Reviewer = Depends(require_signed_in)
 CorrelationHeader = Header(default=None, max_length=64)
 
 
@@ -40,10 +42,10 @@ def get_queue(queue: ReviewQueueStore = Depends(get_review_queue_store),
               actions: ReviewActionStore = Depends(get_review_action_store),
               postings: PostingStore = Depends(get_posting_store),
               audit: AuditTrail = Depends(get_audit_trail),
-              x_reviewer_id: Optional[str] = ReviewerHeader,
+              reviewer: Principal = Reviewer,
               x_correlation_id: Optional[str] = CorrelationHeader) -> List[QueueRow]:
     return _run(lambda: viewing.view_queue(
-        x_reviewer_id, x_correlation_id or str(uuid.uuid4()), audit,
+        reviewer.email, x_correlation_id or str(uuid.uuid4()), audit,
         lambda: service.list_rows(queue, drafts, actions, postings)))
 
 
@@ -52,10 +54,10 @@ def get_review(review_id: str, drafts: DraftSource = Depends(get_draft_source),
                actions: ReviewActionStore = Depends(get_review_action_store),
                postings: PostingStore = Depends(get_posting_store),
                audit: AuditTrail = Depends(get_audit_trail),
-               x_reviewer_id: Optional[str] = ReviewerHeader,
+               reviewer: Principal = Reviewer,
                x_correlation_id: Optional[str] = CorrelationHeader) -> ReviewDetail:
     return _run(lambda: viewing.view_review(
-        review_id[:MAX_ID_LENGTH], x_reviewer_id, x_correlation_id or str(uuid.uuid4()), audit,
+        review_id[:MAX_ID_LENGTH], reviewer.email, x_correlation_id or str(uuid.uuid4()), audit,
         lambda: service.review_detail(review_id, drafts, actions, postings)))
 
 

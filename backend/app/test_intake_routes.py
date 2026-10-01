@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import AuditWriteError, InMemoryAuditTrail
+from app.auth.fake import signed_in_client
 from app.main import app
 from app.review_queue.dependencies import get_review_queue_store
 from app.review_queue.store import InMemoryReviewQueueStore
@@ -20,7 +21,8 @@ def client(audit):
     store = InMemoryReviewQueueStore()
     app.dependency_overrides[get_review_queue_store] = lambda: store
     app.dependency_overrides[get_audit_trail] = lambda: audit
-    yield TestClient(app)
+    # STORY-014: intake changes the Review Queue, so it is admin-only.
+    yield signed_in_client(app, "admin@example.com", "admin")
     app.dependency_overrides.clear()
 
 

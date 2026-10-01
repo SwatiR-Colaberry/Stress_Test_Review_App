@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1",
+  "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
+  "storyId": "STORY-014",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-10-01T13:40:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "actors",
+      "value": "Two human roles use the app: Reviewer (works the Review Queue, reviewer page and Rules page) and Admin (everything a reviewer can, plus adding, removing and changing the role of reviewers and admins). Anyone else is refused at sign-in.",
+      "evidence": "backend/app/auth/roles.py"
+    },
+    {
+      "dimension": "integrations",
+      "value": "Reviewers and admins sign in through Basecamp Launchpad OAuth (authorization code, then authorization.json for the person's identity and accounts), using a second Basecamp integration separate from the one that posts feedback.",
+      "evidence": "backend/app/auth/launchpad.py"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Every page and API except /health and /auth/* requires a signed-in session; without one, pages redirect to sign-in and APIs answer 401 before anything is read or changed. Admin-only actions answer 403 to a Reviewer.",
+      "evidence": "backend/app/main.py"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Sessions last a fixed 8 hours from sign-in and end at once on sign-out; the browser holds a random token in an HttpOnly, SameSite=Lax cookie and the server keeps only its SHA-256 hash. The person's Basecamp token is used once and never stored.",
+      "evidence": "backend/app/auth/sessions.py"
+    },
+    {
+      "dimension": "data",
+      "value": "The reviewer/admin list (Basecamp email, role, who changed it, when) is kept in the app's own git-ignored storage, not SQL Server; fixed admins come from server configuration.",
+      "evidence": "backend/app/auth/roles.py"
+    },
+    {
+      "dimension": "approval_points",
+      "value": "Only an admin can grant or remove access; every role change, sign-in, refusal and sign-out is written to the audit trail with who and when.",
+      "evidence": "backend/app/routers/admin.py"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "People are matched on their Basecamp email, not their Basecamp person id.",
+      "rationale": "user decision 2026-10-01: admins add people by an address they know",
+      "evidence": "backend/app/auth/config.py"
+    },
+    {
+      "statement": "The first admins come from AUTH_BOOTSTRAP_ADMIN_EMAILS and cannot be removed or demoted in the app; the last admin can never be removed.",
+      "rationale": "user decision 2026-10-01: the role list must never lock every admin out",
+      "evidence": "backend/app/auth/roles.py"
+    },
+    {
+      "statement": "Sign-in uses a second Basecamp integration with its own client id and redirect URI, separate from the posting app.",
+      "rationale": "user decision 2026-10-01: the posting app's registration and token stay untouched",
+      "evidence": "directives/basecamp-sign-in.md"
+    },
+    {
+      "statement": "Every API except /health and /auth/* requires sign-in, including the older intake and check endpoints; intake (it changes the Review Queue) is admin-only.",
+      "rationale": "user decision 2026-10-01: the simplest rule to reason about; a test sweeps every route in the OpenAPI schema",
+      "evidence": "backend/app/auth/test_guards.py"
+    },
+    {
+      "statement": "The temporary X-Reviewer-Id header was removed from the review, queue, rules and posting routes and pages; the reviewer is the signed-in email.",
+      "rationale": "user approved changing the STORY-005/006/012 files, 2026-10-01",
+      "evidence": "backend/app/routers/human_review.py"
+    },
+    {
+      "statement": "A request with no session is logged, not written to the audit trail.",
+      "rationale": "otherwise anyone could fill the audit file without signing in; sign-ins, refusals, sign-outs, role changes and admin refusals are audited",
+      "evidence": "backend/app/auth/guards.py"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The live Basecamp sign-in has not been tried: it needs the second Basecamp integration registered and its settings in .env. Everything is verified against a fake Launchpad.",
+      "evidence": "directives/basecamp-sign-in.md"
+    },
+    {
+      "statement": "Sessions are held in server memory: a restart signs everyone out, and several server processes would not share sessions.",
+      "evidence": "backend/app/auth/sessions.py"
+    },
+    {
+      "statement": "Signing out of Basecamp does not end this app's session; it ends at sign-out here or after 8 hours.",
+      "evidence": "directives/basecamp-sign-in.md"
+    },
+    {
+      "statement": "Real posting to Basecamp is still switched off (BASECAMP_POSTING_ENABLED=no) and there is no Post button, although sign-in, its precondition, now exists.",
+      "evidence": "directives/feedback-posting.md"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "backend/app/auth/test_auth_routes.py::test_a_reviewer_signs_in_and_reaches_the_review_queue_as_a_reviewer"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/auth/test_guards.py::test_an_admin_adds_changes_and_removes_reviewers_and_admins"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/auth/test_auth_routes.py::test_someone_on_neither_list_is_refused_with_a_clear_message"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/auth/test_guards.py::test_without_a_session_every_api_is_401_and_changes_nothing"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/auth/test_guards.py::test_a_reviewer_is_refused_admin_only_actions_and_it_is_audited"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/auth/test_guards.py::test_after_eight_hours_pages_and_apis_need_a_new_sign_in"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/auth/test_auth_routes.py::test_no_token_code_or_secret_appears_in_logs_audit_or_pages"
+    },
+    {
+      "kind": "demo",
+      "ref": "backend/scripts/signin_demo.py"
+    }
+  ],
+  "measurementEvents": []
+}

@@ -23,3 +23,6 @@ data/vector_index/
 
 # Reviewer action log (STORY-005): edits and added findings quote student work. Never commit.
 data/reviews/
+
+# Reviewer/admin role list (STORY-014): staff emails. Never commit.
+data/auth/

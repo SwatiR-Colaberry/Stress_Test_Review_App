@@ -10,7 +10,7 @@
 <body>
   <!-- STORY-012: the Review Queue for reviewers. Lists every review with its
        student and status; opening one shows its details and full history.
-       Every load is audited on the server with the reviewer id and time. -->
+       Every load is audited on the server with the signed-in reviewer and time. -->
   <header class="appbar">
     <div class="appbar-inner">
       <a class="brand" href="/queue/"><span class="brand-mark">ST</span>Stress Test Review</a>
@@ -18,11 +18,8 @@
         <a href="/queue/" aria-current="page">Review Queue</a>
         <a href="/rules/">Rules</a>
       </nav>
-      <label class="who">
-        Reviewer id
-        <input id="reviewer-id" autocomplete="off" maxlength="128" placeholder="e.g. swati">
-        <small>Temporary: replaced by Basecamp sign-in.</small>
-      </label>
+      <!-- STORY-014: who is signed in, their role, Sign out (filled by session.js) -->
+      <div id="who" class="who" aria-live="polite"></div>
     </div>
   </header>
 
@@ -63,6 +60,8 @@
     </section>
   </main>
 
+  <script src="/reviewer/session_logic.js"></script>
+  <script src="/reviewer/session.js"></script>
   <script src="/reviewer/review_logic.js"></script>
   <script src="queue_logic.js"></script>
   <script src="queue.js"></script>

@@ -845,37 +845,107 @@
       "criteria": [
         {
           "text": "Given a Basecamp user on the reviewer list, when they sign in with Basecamp, then they reach the Review Queue as a Reviewer",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a Basecamp user on the admin list, when they sign in, then they can also add, remove and change the role of reviewers and admins",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a Basecamp user on neither list, when they sign in, then access is refused with a clear message",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given no signed-in session, when any review page or API is opened, then the user is sent to sign in and nothing is shown or changed",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a Reviewer, when they try an admin-only action, then it is refused",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a signed-in user, when they sign out or 8 hours pass, then they must sign in again",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: every sign-in, refusal, sign-out and role change is logged with who and when, and no password or token appears in logs or the repo",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        ".colaberry/enrichment/STORY-014.json",
+        ".colaberry/progress.json",
+        ".env.example",
+        ".gitignore",
+        "PROGRESS.md",
+        "README.md",
+        "backend/app/auth/__init__.py",
+        "backend/app/auth/basecamp_identity.py",
+        "backend/app/auth/config.py",
+        "backend/app/auth/dependencies.py",
+        "backend/app/auth/fake.py",
+        "backend/app/auth/guards.py",
+        "backend/app/auth/launchpad.py",
+        "backend/app/auth/logs.py",
+        "backend/app/auth/page_guard.py",
+        "backend/app/auth/pages.py",
+        "backend/app/auth/roles.py",
+        "backend/app/auth/sessions.py",
+        "backend/app/auth/signin.py",
+        "backend/app/auth/web/admin.css",
+        "backend/app/auth/web/admin.js",
+        "backend/app/auth/web/admin_logic.js",
+        "backend/app/auth/web/index.html",
+        "backend/app/human_review/web/index.html",
+        "backend/app/human_review/web/reviewer.css",
+        "backend/app/human_review/web/reviewer.js",
+        "backend/app/human_review/web/session.js",
+        "backend/app/human_review/web/session_logic.js",
+        "backend/app/main.py",
+        "backend/app/models.py",
+        "backend/app/queue_ui/web/index.html",
+        "backend/app/queue_ui/web/queue.js",
+        "backend/app/queue_ui/web/queue_logic.js",
+        "backend/app/routers/admin.py",
+        "backend/app/routers/auth.py",
+        "backend/app/routers/basecamp.py",
+        "backend/app/routers/human_review.py",
+        "backend/app/routers/posting.py",
+        "backend/app/routers/queue_ui.py",
+        "backend/app/routers/rules_ui.py",
+        "backend/app/rules_ui/web/index.html",
+        "backend/app/rules_ui/web/rules.js",
+        "backend/scripts/queue_ui_demo.py",
+        "backend/scripts/signin_demo.py",
+        "command-center/tabs/data-model.js",
+        "directives/basecamp-sign-in.md",
+        "directives/feedback-posting.md",
+        "directives/human-review.md",
+        "directives/review-queue-ui.md",
+        "docs/ACCEPTANCE_CHECKLIST.md",
+        "docs/stories/STORY-014.md"
+      ],
+      "tests_added": [
+        "backend/app/auth/test_auth_routes.py",
+        "backend/app/auth/test_config.py",
+        "backend/app/auth/test_guards.py",
+        "backend/app/auth/test_roles.py",
+        "backend/app/auth/test_sessions.py",
+        "backend/app/auth/test_web_logic.py",
+        "backend/app/human_review/test_routes.py",
+        "backend/app/posting/test_routes.py",
+        "backend/app/queue_ui/test_routes.py",
+        "backend/app/queue_ui/test_web_logic.py",
+        "backend/app/rules_ui/test_service.py",
+        "backend/app/test_finalize_audit.py",
+        "backend/app/test_intake_routes.py",
+        "backend/app/test_main.py",
+        "backend/conftest.py",
+        "backend/scripts/test_queue_ui_demo.py",
+        "backend/scripts/test_signin_demo.py"
+      ],
+      "notes": "Built 2026-10-01, session CC-20261001-tr7q. Sign in with Basecamp (OAuth via Launchpad) into an 8-hour server session; people matched on Basecamp email against the app's own role list (data/auth/roles.json, git-ignored; fixed admins from AUTH_BOOTSTRAP_ADMIN_EMAILS); every API except /health and /auth/* needs a session (401), pages redirect to sign-in, admin-only actions 403 ADMIN_ONLY; Admins page /admin/. The temporary X-Reviewer-Id header (STORY-005/006/012) is removed; their routes and tests now use the signed-in email (user-approved). Evidence: pytest 1065/1065 incl. backend/app/auth/test_auth_routes.py, test_guards.py (sweeps every OpenAPI route), test_roles.py, test_sessions.py, test_web_logic.py, backend/scripts/test_signin_demo.py; offline demo backend/scripts/signin_demo.py walked every criterion with curl, audit events with who/when, no token in audit or log. Pages checked by eye by the user. Not verified live: the real Basecamp sign-in needs the second Basecamp app registered (directives/basecamp-sign-in.md).",
+      "updated_at": "2026-10-01T13:35:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

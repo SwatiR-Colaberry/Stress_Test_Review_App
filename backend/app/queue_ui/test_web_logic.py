@@ -72,7 +72,6 @@ def test_completed_reviews_are_read_only():
 @needs_node
 def test_failures_are_explained_and_only_passing_ones_offer_retry():
     assert "did not answer in time" in _js("L.explainFailure(0, null, true)")
-    assert "reviewer id" in _js("L.explainFailure(401, {detail: {reason_code: 'MISSING_REVIEWER_IDENTITY'}})")
     assert "not in the Review Queue" in _js("L.explainFailure(404, {detail: {reason_code: 'REVIEW_NOT_FOUND'}})")
     assert "Retry" in _js("L.explainFailure(503, null)")
     assert "newest AI draft" in _js("L.explainFailure(409, {detail: {reason_code: 'REVIEW_STATE_MISMATCH'}})")
@@ -80,7 +79,8 @@ def test_failures_are_explained_and_only_passing_ones_offer_retry():
 
 
 def test_the_queue_page_and_its_scripts_are_served():
-    client = TestClient(app)
+    from app.auth.fake import signed_in_client
+    client = signed_in_client(app)
     page = client.get("/queue/")
     assert page.status_code == 200 and "Review Queue" in page.text
     for asset in ("/queue/queue.js", "/queue/queue_logic.js", "/queue/queue.css", "/reviewer/reviewer.css"):

@@ -29,27 +29,17 @@ function el(tag, props = {}, ...children) {
   return node;
 }
 
-function storage(action, value) {
-  try {
-    if (action === "get") return localStorage.getItem("reviewer-id") || "";
-    localStorage.setItem("reviewer-id", value);
-  } catch (err) {
-    console.warn("reviewer id not remembered:", err.name); // private window: just not remembered
-  }
-  return "";
-}
-
 // One GET with a timeout. Resolves {ok, status, body, message}; never throws.
 async function get(path) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const response = await fetch(path, {
-      signal: controller.signal,
-      headers: { "X-Reviewer-Id": $("reviewer-id").value.trim() },
-    });
+    // The session cookie goes with it; who is asking is the signed-in user (STORY-014).
+    const response = await fetch(path, { signal: controller.signal });
+    if (response.status === 401) Session.signInAgain();
     const data = await response.json().catch(() => null);
-    return { ok: response.ok, status: response.status, body: data, message: explainFailure(response.status, data) };
+    const message = explainAuthFailure(response.status, data) || explainFailure(response.status, data);
+    return { ok: response.ok, status: response.status, body: data, message };
   } catch (err) {
     return { ok: false, status: 0, body: null, message: explainFailure(0, null, err.name === "AbortError") };
   } finally {
@@ -229,17 +219,8 @@ async function refresh() {
   if (await loadQueue()) await loadDetail();
 }
 
-$("reviewer-id").value = storage("get");
-// Saved on every keystroke (kept even if the reviewer never leaves the box); reload on change.
-$("reviewer-id").addEventListener("input", () => storage("set", $("reviewer-id").value.trim()));
-$("reviewer-id").addEventListener("change", refresh);
 // Coming back (tab switch, or Back from the reviewer page, which may show a stored copy of this
-// page without rerunning it): take the id saved meanwhile and reload, so status and history are current.
-function comeBack() {
-  const stored = storage("get");
-  if (stored) $("reviewer-id").value = stored;
-  refresh();
-}
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") comeBack(); });
-window.addEventListener("pageshow", (e) => { if (e.persisted) comeBack(); });
+// page without rerunning it): reload, so status and history are current.
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
+window.addEventListener("pageshow", (e) => { if (e.persisted) refresh(); });
 refresh();

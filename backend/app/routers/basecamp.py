@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import AuditTrail, AuditWriteError
+from app.auth.guards import require_admin
+from app.auth.sessions import Principal
 from app.basecamp.critique_marker_detector import normalize_critique_marker
 from app.models import BasecampComment, IntakeResult, MarkerDetectRequest, MarkerDetectResponse
 from app.review_queue.dependencies import get_review_queue_store
@@ -27,6 +29,7 @@ def process_basecamp_comment(
     store: ReviewQueueStore = Depends(get_review_queue_store),
     audit: AuditTrail = Depends(get_audit_trail),
     x_correlation_id: Optional[str] = Header(default=None, max_length=64),
+    admin: Principal = Depends(require_admin),  # changes the Review Queue: admins only (STORY-014)
 ) -> IntakeResult:
     """STORY-001: detect the critique marker and, if present, create a Pending
     Review Queue item for this exact comment version. Idempotent per

@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import AuditWriteError, InMemoryAuditTrail
+from app.auth.fake import signed_in_client
 from app.basecamp.config import BasecampConfigError
 from app.human_review.dependencies import get_review_action_store
 from app.main import app
@@ -19,7 +20,7 @@ from app.models import BasecampComment
 from app.review_queue.dependencies import get_review_queue_store
 from app.review_queue.store import InMemoryReviewQueueStore
 
-REQUESTER = {"X-Reviewer-Id": "swati"}
+REQUESTER = "swati@example.com"  # signed in with Basecamp (STORY-014)
 
 
 class Env:
@@ -40,10 +41,10 @@ class Env:
             get_posting_config: lambda: self.config,
         }
         app.dependency_overrides.update(overrides)
-        self.http = TestClient(app)
+        self.http = signed_in_client(app, REQUESTER)
 
-    def post(self, headers=REQUESTER, review=REVIEW):
-        return self.http.post(f"/reviews/{review}/post", headers=headers)
+    def post(self, review=REVIEW):
+        return self.http.post(f"/reviews/{review}/post")
 
 
 @pytest.fixture
@@ -63,11 +64,12 @@ def test_post_route_posts_and_the_queue_shows_completed(env):
     assert len(env.thread.comments) == 1
 
 
-def test_no_requester_is_401_logged_and_nothing_is_sent(env, caplog):
-    caplog.set_level(logging.WARNING, logger="stress_test_review.posting")
-    assert env.post(headers={}).status_code == 401
-    assert env.thread.requests == []
-    assert "MISSING_REVIEWER_IDENTITY" in caplog.text
+def test_without_signing_in_it_is_401_logged_and_nothing_is_sent(env, caplog):
+    caplog.set_level(logging.WARNING)
+    response = TestClient(app).post(f"/reviews/{REVIEW}/post")
+    assert response.status_code == 401 and response.json()["detail"]["reason_code"] == "NOT_SIGNED_IN"
+    assert env.thread.requests == [] and env.audit.read_all() == []
+    assert "NOT_SIGNED_IN" in caplog.text
 
 
 def test_unknown_review_is_404(env):
@@ -109,6 +111,6 @@ def test_audit_trail_down_is_503_retry(env):
 def test_bad_posting_settings_are_503_naming_the_variable(monkeypatch):
     monkeypatch.setenv("BASECAMP_POSTING_ENABLED", "maybe")
     app.dependency_overrides.clear()
-    response = TestClient(app).post(f"/reviews/{REVIEW}/post", headers=REQUESTER)
+    response = signed_in_client(app, REQUESTER).post(f"/reviews/{REVIEW}/post")
     assert response.status_code == 503
     assert "BASECAMP_POSTING_ENABLED" in response.json()["detail"]["message"]

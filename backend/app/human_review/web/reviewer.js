@@ -6,16 +6,15 @@
 // - an edit/decision is not saved (network, timeout, 503) -> the reviewer's
 //   text stays in the box, the finding is marked "Not saved", and Retry
 //   resends the SAME request (same action_id), which the server applies once.
-// - a refused action (401/403/409) -> the reason in plain words.
+// - a refused action (403/409) -> the reason in plain words.
+// - the session ended (401) -> sign in again (STORY-014), then back here.
 // All student and reviewer text is inserted with textContent, never as HTML.
 "use strict";
 
 const TIMEOUT_MS = 10000;
-const NEXT_STEP = "Feedback is ready to post. Posting to Basecamp is switched on after Basecamp sign-in (STORY-014); until then it waits here, shown as Feedback Generated in the queue.";
+const NEXT_STEP = "Feedback is ready to post. Posting to Basecamp is not switched on yet; until then it waits here, shown as Feedback Generated in the queue.";
 const MAX_FINDING_CHARS = 2000;
 const REASONS = {
-  MISSING_REVIEWER_IDENTITY: "Enter your reviewer id at the top first.",
-  AI_CANNOT_REVIEW: "That id belongs to an AI or system account. Only a human reviewer can review.",
   UNKNOWN_FINDING: "This finding no longer exists. Reload the page.",
   UNDECIDED_FINDINGS: "Every finding needs a decision (approve, edit or reject) first.",
   REVIEW_LOCKED: "Feedback for this review is already prepared, so it can no longer change.",
@@ -48,17 +47,6 @@ function el(tag, props = {}, ...children) {
   return node;
 }
 
-function storage(action, value) {
-  try {
-    if (action === "get") return localStorage.getItem("reviewer-id") || "";
-    localStorage.setItem("reviewer-id", value);
-  } catch (err) {
-    // Storage blocked (private window): the id just is not remembered.
-    console.warn("reviewer id not remembered:", err.name);
-  }
-  return "";
-}
-
 function newActionId() {
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
   return `a-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -72,9 +60,13 @@ async function call(method, path, body) {
     const response = await fetch(path, {
       method,
       signal: controller.signal,
-      headers: { "Content-Type": "application/json", "X-Reviewer-Id": $("reviewer-id").value.trim() },
+      // The session cookie goes with it; the reviewer is the signed-in user (STORY-014).
+      headers: { "Content-Type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
     });
+    // Session ended (8 hours, or signed out elsewhere): sign in again. A typed edit
+    // was not saved; the page says so before the browser leaves.
+    if (response.status === 401) Session.signInAgain();
     const data = await response.json().catch(() => null);
     return { ok: response.ok, status: response.status, body: data, message: explain(response.status, data) };
   } catch (err) {
@@ -88,6 +80,8 @@ async function call(method, path, body) {
 }
 
 function explain(status, data) {
+  const auth = explainAuthFailure(status, data);
+  if (auth) return auth;
   const detail = data && data.detail;
   if (detail && detail.reason_code && REASONS[detail.reason_code]) return REASONS[detail.reason_code];
   if (status === 503) return "Not saved: storage or the audit trail is unavailable. Retry; it is safe.";
@@ -270,16 +264,8 @@ async function prepare() {
 
 // ---- start -----------------------------------------------------------------
 
-$("reviewer-id").value = storage("get");
-// Saved on every keystroke, so it is kept even if the reviewer never leaves the box.
-// Loading the review needs the id (it is audited, STORY-012), so reload on change.
-$("reviewer-id").addEventListener("input", (e) => storage("set", e.target.value.trim()));
-$("reviewer-id").addEventListener("change", load);
-// Back/Forward can show a stored copy of this page without rerunning it: pick up an id set meanwhile.
-window.addEventListener("pageshow", (e) => {
-  const stored = storage("get");
-  if (e.persisted && stored && stored !== $("reviewer-id").value.trim()) { $("reviewer-id").value = stored; load(); }
-});
+// Back/Forward can show a stored copy of this page without rerunning it: reload so it is current.
+window.addEventListener("pageshow", (e) => { if (e.persisted) load(); });
 $("add-text").addEventListener("input", (e) => {
   $("add-count").textContent = `${e.target.value.length} / ${MAX_FINDING_CHARS}`;
   $("add-button").textContent = "Add finding";

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reviewers and Admins</title>
+  <link rel="stylesheet" href="/reviewer/reviewer.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="narrow">
+  <!-- STORY-014: admins add, remove and change the role of reviewers and
+       admins. People sign in with Basecamp and are matched on their Basecamp
+       email. Every change is audited on the server with who and when. -->
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="/queue/"><span class="brand-mark">ST</span>Stress Test Review</a>
+      <nav class="nav" aria-label="Pages">
+        <a href="/queue/">Review Queue</a>
+        <a href="/rules/">Rules</a>
+      </nav>
+      <div id="who" class="who" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <main>
+    <h1>Reviewers and admins</h1>
+    <p class="sub">Only people on this list can sign in. Reviewers work the Review Queue; admins can also manage this list.</p>
+
+    <div id="banner" class="banner" role="alert" hidden>
+      <span id="banner-text"></span>
+      <button id="banner-retry" type="button" hidden>Retry</button>
+    </div>
+
+    <section class="card">
+      <h2>Add someone</h2>
+      <form id="add-form" class="add-row">
+        <label>Basecamp email
+          <input id="add-email" type="email" maxlength="128" autocomplete="off" required placeholder="name@example.com">
+        </label>
+        <label>Role
+          <select id="add-role">
+            <option value="reviewer">Reviewer</option>
+            <option value="admin">Admin</option>
+          </select>
+        </label>
+        <button id="add-button" class="primary" type="submit">Add</button>
+      </form>
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>Everyone who can sign in</h2>
+      <table class="people">
+        <thead><tr><th scope="col">Email</th><th scope="col">Role</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <tbody id="people"></tbody>
+      </table>
+      <p class="sub">Fixed admins are set in the server configuration so the list can never lock everyone out.</p>
+    </section>
+  </main>
+
+  <script src="/reviewer/session_logic.js"></script>
+  <script src="/reviewer/session.js"></script>
+  <script src="admin_logic.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

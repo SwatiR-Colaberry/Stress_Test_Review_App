@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.audit.dependencies import get_audit_trail
 from app.audit.trail import InMemoryAuditTrail
+from app.auth.fake import TestSignIn
 from app.evaluation.store import ResultStore
 from app.human_review.dependencies import get_draft_source, get_review_action_store
 from app.human_review.drafts import DraftSource
@@ -34,12 +35,13 @@ def test_the_demo_seeds_one_review_per_stage(tmp_path):
     })
     try:
         client = TestClient(app)
+        TestSignIn(app).sign_in(client, queue_ui_demo.DEMO_REVIEWER)
         ids = queue_ui_demo.seed(client, queue, ResultStore(tmp_path / "evaluations"), postings,
                                  datetime.now(timezone.utc))
-        rows = client.get("/queue-ui/reviews", headers=queue_ui_demo.DEMO_REVIEWER).json()
+        rows = client.get("/queue-ui/reviews").json()
     finally:
         app.dependency_overrides.clear()
     assert {r["review_id"]: r["status"] for r in rows} == {
         ids["Pending"]: "Pending", ids["In Review"]: "In Review", ids["Completed"]: "Completed"}
     assert [r["status"] for r in rows] == ["Completed", "In Review", "Pending"]  # newest request first
-    assert {e.actor_id for e in audit.read_all()} == {"demo-reviewer"}
+    assert {e.actor_id for e in audit.read_all()} == {queue_ui_demo.DEMO_REVIEWER}
