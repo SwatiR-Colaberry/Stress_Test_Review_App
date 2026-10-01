@@ -3,7 +3,8 @@
 STORY-014 · REQ-020 ("Sign in with Basecamp as Reviewer or Admin").
 Code: `backend/app/auth/` (settings, roles, sessions, sign-in, guards, page guard, Admins page in `web/`),
 routes in `backend/app/routers/auth.py` and `backend/app/routers/admin.py`, wiring in `backend/app/main.py`.
-The posting app's Basecamp connection is separate: `directives/basecamp-connection-setup.md`.
+Sign-in shares the posting app's Basecamp registration ("Stress Test Review App"), see
+`directives/basecamp-connection-setup.md`; only its redirect URI changed.
 
 ## What it does
 
@@ -35,7 +36,7 @@ The posting app's Basecamp connection is separate: `directives/basecamp-connecti
 | Variable | What |
 |---|---|
 | `AUTH_BOOTSTRAP_ADMIN_EMAILS` | Comma-separated emails that are **always admins** ("fixed admins"); they cannot be removed or demoted in the app, so the list can never lock everyone out. |
-| `AUTH_BASECAMP_CLIENT_ID` / `AUTH_BASECAMP_CLIENT_SECRET` | The **sign-in** Basecamp integration — a second one, not the posting app's (decision 2026-10-01). |
+| `AUTH_BASECAMP_CLIENT_ID` / `AUTH_BASECAMP_CLIENT_SECRET` | The Basecamp integration used for sign-in: the **same** client id and secret as `BASECAMP_CLIENT_ID` / `BASECAMP_CLIENT_SECRET` (decision 2026-10-01, revised the same day: one registration, not two). A separate registration also works. |
 | `AUTH_BASECAMP_REDIRECT_URI` | Must equal the registration exactly and end in `/auth/callback`. https, or `http://localhost:<port>/auth/callback` locally. |
 | `AUTH_COOKIE_SECURE` | `yes` (default). `no` **only** for plain-http localhost. |
 | `BASECAMP_ACCOUNT_ID`, `BASECAMP_USER_AGENT` | Shared with the posting app: only members of this account may sign in. |
@@ -47,13 +48,12 @@ malformed value (e.g. an http redirect on a real host) shows "not configured cor
 
 ## Setting it up (one time, by a person)
 
-1. Sign in at <https://launchpad.37signals.com/integrations> with a Colaberry Basecamp login and
-   **register a new application** (e.g. "Stress Test Review – sign-in").
-   Redirect URI: `http://localhost:8000/auth/callback` for local use (add the real https one when the app
-   is hosted).
-2. Put its client id and secret, the redirect URI and your own email as the first admin in `.env`:
-   `AUTH_BASECAMP_CLIENT_ID`, `AUTH_BASECAMP_CLIENT_SECRET`, `AUTH_BASECAMP_REDIRECT_URI`,
-   `AUTH_BOOTSTRAP_ADMIN_EMAILS`, and `AUTH_COOKIE_SECURE=no` for localhost.
+1. At <https://launchpad.37signals.com/integrations>, signed in as the Basecamp login that registered
+   "Stress Test Review App", edit it and set its **Redirect URI** to `http://localhost:8000/auth/callback`
+   for local use (the real https one when the app is hosted). No second registration is needed.
+2. In `.env`: copy `BASECAMP_CLIENT_ID` / `BASECAMP_CLIENT_SECRET` into `AUTH_BASECAMP_CLIENT_ID` /
+   `AUTH_BASECAMP_CLIENT_SECRET`, set `AUTH_BASECAMP_REDIRECT_URI` to the same redirect URI, your own
+   Basecamp login email in `AUTH_BOOTSTRAP_ADMIN_EMAILS`, and `AUTH_COOKIE_SECURE=no` for localhost.
 3. Start the app (`uvicorn app.main:app --app-dir backend --env-file .env --port 8000`), open
    `http://localhost:8000/queue/`, sign in, open **Admins** and add the reviewers by their Basecamp email.
 
@@ -67,6 +67,15 @@ malformed value (e.g. an http redirect on a real host) shows "not configured cor
   someone on no list, someone from another Basecamp account, cancel). The printed audit file shows each
   sign-in, refusal, sign-out and role change.
 - Live: after the setup above, sign in as yourself (admin), as a reviewer, and as someone not on the list.
+  Done for the admin path on 2026-10-01 by the project owner (reached the Admins page as a fixed admin;
+  `signed_in` in the audit trail).
+
+## The shared registration and the posting connection
+
+A Launchpad app has one redirect URI, and it now points at `/auth/callback`. The posting tokens already in
+`.env` are unaffected. To reconnect the posting app later (`backend/scripts/basecamp_oauth_setup.py`),
+stop the app first (both use port 8000) and set `BASECAMP_REDIRECT_URI=http://localhost:8000/auth/callback`
+in `.env` for that run.
 
 ## Audit and logs
 
@@ -80,7 +89,9 @@ malformed value (e.g. an http redirect on a real host) shows "not configured cor
 
 A request with no session is **logged** (`request_refused` / `page_refused`, JSON to stdout), not audited:
 otherwise anyone could fill the audit file without signing in. Logs carry reason codes and error classes
-only — never an email, token, OAuth code or secret. Emails live only in the git-ignored audit trail and role list.
+only — never an email, token, OAuth code or secret. Uvicorn's access log, which prints every request URL,
+has `code`, `state` and `*token*` query values replaced with `<redacted>` (`backend/app/logging_config.py`;
+found in the first live sign-in, 2026-10-01). Emails live only in the git-ignored audit trail and role list.
 
 ## Failure modes
 

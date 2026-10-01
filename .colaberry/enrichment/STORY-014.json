@@ -3,7 +3,7 @@
   "projectId": "45d4dc7e-929b-4d8f-b6f8-962a5926e561",
   "storyId": "STORY-014",
   "projectTruthBaseRevision": 1,
-  "observedAt": "2026-10-01T13:40:00Z",
+  "observedAt": "2026-10-01T16:00:00Z",
   "sourceCommitSha": null,
   "factProposals": [
     {
@@ -13,7 +13,7 @@
     },
     {
       "dimension": "integrations",
-      "value": "Reviewers and admins sign in through Basecamp Launchpad OAuth (authorization code, then authorization.json for the person's identity and accounts), using a second Basecamp integration separate from the one that posts feedback.",
+      "value": "Reviewers and admins sign in through Basecamp Launchpad OAuth (authorization code, then authorization.json for the person's identity and accounts), using the same Basecamp registration as the posting app, with its redirect URI set to /auth/callback.",
       "evidence": "backend/app/auth/launchpad.py"
     },
     {
@@ -49,8 +49,8 @@
       "evidence": "backend/app/auth/roles.py"
     },
     {
-      "statement": "Sign-in uses a second Basecamp integration with its own client id and redirect URI, separate from the posting app.",
-      "rationale": "user decision 2026-10-01: the posting app's registration and token stay untouched",
+      "statement": "Sign-in uses the posting app's Basecamp registration (same client id and secret), not a second one; its redirect URI now points at /auth/callback.",
+      "rationale": "user decision 2026-10-01, revising the earlier choice of a second registration the same day: one registration to manage. The posting tokens are unaffected; reconnecting the posting app uses the same redirect URI.",
       "evidence": "directives/basecamp-sign-in.md"
     },
     {
@@ -67,11 +67,16 @@
       "statement": "A request with no session is logged, not written to the audit trail.",
       "rationale": "otherwise anyone could fill the audit file without signing in; sign-ins, refusals, sign-outs, role changes and admin refusals are audited",
       "evidence": "backend/app/auth/guards.py"
+    },
+    {
+      "statement": "Uvicorn's access log redacts code, state and *token* query values.",
+      "rationale": "the first live sign-in showed the one-time OAuth code in the request log; the story promises no token in logs",
+      "evidence": "backend/app/logging_config.py"
     }
   ],
   "limitations": [
     {
-      "statement": "The live Basecamp sign-in has not been tried: it needs the second Basecamp integration registered and its settings in .env. Everything is verified against a fake Launchpad.",
+      "statement": "Live Basecamp sign-in has been confirmed for the admin path only (project owner, 2026-10-01); a live reviewer sign-in and a live refusal are verified against the fake Launchpad.",
       "evidence": "directives/basecamp-sign-in.md"
     },
     {
@@ -119,6 +124,10 @@
     {
       "kind": "demo",
       "ref": "backend/scripts/signin_demo.py"
+    },
+    {
+      "kind": "test",
+      "ref": "backend/app/test_logging_config.py::test_the_access_log_never_shows_the_basecamp_sign_in_code_or_state"
     }
   ],
   "measurementEvents": []

@@ -4,11 +4,13 @@ AUTH_BOOTSTRAP_ADMIN_EMAILS  Comma-separated Basecamp emails that are always
                              admins. They cannot be removed or demoted from the
                              app, so the role list can never lock every admin
                              out (user decision 2026-10-01). Empty = none.
-AUTH_BASECAMP_CLIENT_ID      The sign-in Basecamp integration (a second one,
-AUTH_BASECAMP_CLIENT_SECRET  separate from the posting app's: user decision
-AUTH_BASECAMP_REDIRECT_URI   2026-10-01). The redirect URI must match the
-                             registration exactly and end in /auth/callback;
-                             https, or http only on localhost.
+AUTH_BASECAMP_CLIENT_ID      The Basecamp integration used for sign-in:
+AUTH_BASECAMP_CLIENT_SECRET  normally the posting app's own (same id and
+AUTH_BASECAMP_REDIRECT_URI   secret; user decision 2026-10-01, revised the same
+                             day), though a separate one also works. The
+                             redirect URI must match the registration exactly
+                             and end in /auth/callback; https, or http only on
+                             localhost.
 AUTH_COOKIE_SECURE           "no" only for http://localhost. Default yes.
 BASECAMP_ACCOUNT_ID          Shared with the posting app: only members of this
 BASECAMP_USER_AGENT          Basecamp account may sign in.
