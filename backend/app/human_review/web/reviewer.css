@@ -6,9 +6,11 @@
   --accent: #2f5f8a; --accent-ink: #ffffff; --accent-soft: #e5eef7;
   --ok: #2e7d4f; --ok-soft: #e4f3ea; --warn: #9a6400; --warn-soft: #fbf1dc;
   --bad: #b3261e; --bad-soft: #fbe7e5; --info: #5b4db3; --info-soft: #ecebfa;
-  --shadow: 0 1px 2px rgba(20, 30, 50, .06), 0 2px 8px rgba(20, 30, 50, .05);
+  --shadow: 0 1px 2px rgba(20, 30, 50, .06), 0 6px 18px rgba(20, 30, 50, .07);
+  --shadow-lift: 0 2px 4px rgba(20, 30, 50, .08), 0 12px 28px rgba(20, 30, 50, .12);
   --radius: 12px;
-  --wash: #e6edf5;
+  --band: linear-gradient(120deg, #22425f 0%, #2f5f8a 48%, #4a3f9a 100%);
+  --on-band: #ffffff; --on-band-muted: rgba(255, 255, 255, .78);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -16,14 +18,14 @@
     --accent: #7fb0dc; --accent-ink: #10202e; --accent-soft: #1f2e3c;
     --ok: #6cc38f; --ok-soft: #1c3027; --warn: #e2b155; --warn-soft: #3a2f1a;
     --bad: #f08a80; --bad-soft: #3b2220; --info: #aea3f0; --info-soft: #2a2740;
-    --shadow: none;
-    --wash: #19212b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3); --shadow-lift: 0 8px 24px rgba(0, 0, 0, .4);
+    --band: linear-gradient(120deg, #142233 0%, #1c3550 50%, #2a2452 100%);
+    --on-band-muted: rgba(255, 255, 255, .7);
   }
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; } /* else a display rule (e.g. .banner's flex) shows it empty */
-/* A faint wash under the app bar fading into the page colour (CSS only, no image). */
-body { margin: 0; background: linear-gradient(180deg, var(--wash) 0, var(--bg) 360px) no-repeat, var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+body { margin: 0; background: var(--bg); position: relative; isolation: isolate; color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
 a { color: var(--accent); }
 h1 { margin: 0; font-size: 22px; line-height: 1.25; }
 h2 { margin: 0 0 8px; font-size: 16px; }
@@ -48,8 +50,25 @@ h3 { margin: 16px 0 6px; font-size: 13px; text-transform: uppercase; letter-spac
 .who form { margin: 0; }
 .who button { padding: 5px 10px; font-size: 13px; }
 
+/* ---- hero band ------------------------------------------------------------ */
+/* A coloured band behind each page's title; the first cards float over its lower
+   edge. CSS only: a gradient, two soft light glows and a faint dot grid. */
+body::before { content: ""; position: absolute; z-index: -1; inset: 0 0 auto 0; height: 250px;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 255, 255, .14), transparent 32%),
+    radial-gradient(circle at 8% 100%, rgba(255, 255, 255, .08), transparent 40%),
+    radial-gradient(rgba(255, 255, 255, .09) 1px, transparent 1.5px) 0 0 / 22px 22px,
+    var(--band); }
+.top h1 { color: var(--on-band); }
+.top .sub { color: var(--on-band-muted); }
+.top a.back { color: var(--on-band-muted); }
+.top a.back:hover { color: var(--on-band); }
+.top input { background: var(--card); border-color: transparent; }
+.top button { border-color: transparent; }
+@media (max-width: 600px) { body::before { height: 300px; } }
+
 /* ---- page frame ----------------------------------------------------------- */
-.top { max-width: 1200px; margin: 0 auto; padding: 22px 16px 8px; display: flex; flex-wrap: wrap; gap: 12px;
+.top { max-width: 1200px; margin: 0 auto; padding: 28px 16px 18px; display: flex; flex-wrap: wrap; gap: 12px;
        justify-content: space-between; align-items: flex-end; }
 main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 48px; display: grid; gap: 14px; }
 .sub { margin: 2px 0 0; color: var(--muted); }

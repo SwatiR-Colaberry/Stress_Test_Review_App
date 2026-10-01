@@ -1,5 +1,6 @@
 /* Admins page (STORY-014). Shares reviewer.css tokens; light and dark. */
-main > h1 { margin-top: 16px; } /* breathing room under the app bar */
+main, .top { max-width: 1100px; }
+.top .sub { margin: 4px 0 0; }
 .add-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .add-row label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
 /* Same height for the box, the menu and the button, so both labels sit on one line. */
