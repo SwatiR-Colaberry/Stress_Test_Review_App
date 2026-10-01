@@ -9,19 +9,38 @@ DEFAULT_NEXT = "/queue/"
 MAX_NEXT_LENGTH = 512
 
 _STYLE = """
-:root { --bg: #f6f7f9; --card: #fff; --ink: #1d2433; --muted: #5b6475; --accent: #1f6feb; --line: #dfe3ea; }
+:root { --bg: #f4f5f7; --card: #fff; --ink: #1c2230; --muted: #5f6878; --accent: #2f5f8a; --accent-ink: #fff;
+        --line: #e2e5ea; --glow-a: rgba(47, 95, 138, .16); --glow-b: rgba(91, 77, 179, .10);
+        --dots: rgba(28, 34, 48, .07); --shadow: 0 1px 2px rgba(20, 30, 50, .06), 0 12px 32px rgba(20, 30, 50, .08); }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #14171c; --card: #1d2128; --ink: #e8ebf0; --muted: #a3abb9; --accent: #5b9dff; --line: #313744; }
+  :root { --bg: #14161a; --card: #1c1f24; --ink: #e6e8eb; --muted: #a2a9b3; --accent: #7fb0dc; --accent-ink: #10202e;
+          --line: #2f343b; --glow-a: rgba(127, 176, 220, .12); --glow-b: rgba(174, 163, 240, .08);
+          --dots: rgba(230, 232, 235, .05); --shadow: 0 12px 32px rgba(0, 0, 0, .35); }
 }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
-main { max-width: 440px; margin: 12vh auto 0; padding: 32px; background: var(--card);
-       border: 1px solid var(--line); border-radius: 12px; }
-h1 { font-size: 1.3rem; margin: 0 0 12px; }
+* { box-sizing: border-box; }
+html { min-height: 100%; }
+/* Background is CSS only (no image files): two soft colour glows and a faint dot grid. */
+body { margin: 0; min-height: 100vh; color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+       background:
+         radial-gradient(circle at 15% 10%, var(--glow-a), transparent 45%),
+         radial-gradient(circle at 88% 85%, var(--glow-b), transparent 40%),
+         radial-gradient(var(--dots) 1px, transparent 1.5px) 0 0 / 22px 22px,
+         var(--bg); }
+main { position: relative; max-width: 440px; margin: 14vh auto 0; padding: 32px; background: var(--card);
+       border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+main::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px;
+               background: linear-gradient(90deg, var(--accent), #5b4db3); }
+.brand { display: flex; gap: 10px; align-items: center; margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+.brand-mark { width: 32px; height: 32px; border-radius: 8px; background: var(--accent); color: var(--accent-ink);
+              display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+h1 { font-size: 1.35rem; margin: 0 0 12px; }
 p { color: var(--muted); margin: 0 0 20px; }
 a.button { display: inline-block; padding: 10px 18px; border-radius: 8px; background: var(--accent);
-           color: #fff; text-decoration: none; font-weight: 600; }
+           color: var(--accent-ink); text-decoration: none; font-weight: 600; }
+a.button:hover { filter: brightness(1.08); }
+a.button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .note { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); color: var(--ink); }
-@media (max-width: 480px) { main { margin: 16px; padding: 20px; } }
+@media (max-width: 480px) { main { margin: 16px; padding: 24px 20px; } }
 """
 
 
@@ -56,5 +75,5 @@ def _page(title: str, body: str) -> str:
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)} · Stress Test Review</title><style>{_STYLE}</style></head>
-<body><main>{body}
+<body><main><div class="brand" aria-hidden="true"><span class="brand-mark">ST</span>Stress Test Review</div>{body}
 </main></body></html>"""

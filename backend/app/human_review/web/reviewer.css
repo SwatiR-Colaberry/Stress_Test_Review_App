@@ -8,6 +8,7 @@
   --bad: #b3261e; --bad-soft: #fbe7e5; --info: #5b4db3; --info-soft: #ecebfa;
   --shadow: 0 1px 2px rgba(20, 30, 50, .06), 0 2px 8px rgba(20, 30, 50, .05);
   --radius: 12px;
+  --wash: #e6edf5;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -16,11 +17,13 @@
     --ok: #6cc38f; --ok-soft: #1c3027; --warn: #e2b155; --warn-soft: #3a2f1a;
     --bad: #f08a80; --bad-soft: #3b2220; --info: #aea3f0; --info-soft: #2a2740;
     --shadow: none;
+    --wash: #19212b;
   }
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; } /* else a display rule (e.g. .banner's flex) shows it empty */
-body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+/* A faint wash under the app bar fading into the page colour (CSS only, no image). */
+body { margin: 0; background: linear-gradient(180deg, var(--wash) 0, var(--bg) 360px) no-repeat, var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
 a { color: var(--accent); }
 h1 { margin: 0; font-size: 22px; line-height: 1.25; }
 h2 { margin: 0 0 8px; font-size: 16px; }
