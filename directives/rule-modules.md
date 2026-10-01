@@ -10,9 +10,13 @@ A rule module is **versioned configuration, not code**: one JSON file per Stress
 |---|---|
 | `docs/stress-test-rules/ST0-rules-v1.md` | The official ST0 spec, transcribed. The source of truth for the module. |
 | `backend/app/rules/modules/ST0/v1.json` | The ST0 rule module: rules, stages, required problem fields, tolerance, advisory guidance, guardrails, reviewer notes. |
-| `backend/app/rules/modules/registry.json` | Which version of each Stress Test is active: `{"ST0": "v1"}`. |
+| `backend/app/rules/modules/ST0/v2.json` | ST0 v2 (active since 2026-10-02): v1 plus `part_keywords` on each rule and `needs_image` on ST0-004, so Claude sees the screenshot part's image (see `directives/ai-evaluation.md`, Images). |
+| `backend/app/rules/modules/registry.json` | Which version of each Stress Test is active: `{"ST0": "v2"}`. |
 | `backend/app/rules/module.py` | `RuleModule`: the typed contract every module file must pass. |
 | `backend/app/rules/loader.py` | `load_rules(label, audit, …)`: identify, load, record. |
+
+A rule may also name its part of a submission (`part_keywords`, lowercase words matched in labels such as
+"Dataset Screenshot:") and say it `needs_image`; a rule that needs an image must have part keywords.
 
 `RuleModule` rejects a file whose rule ids belong to another Stress Test, repeat, or are missing from the stages; stages must be numbered in order and an advisory stage can never block; unknown fields are rejected.
 
@@ -74,4 +78,4 @@ No application code changes.
 ## How success is verified
 
 - `pytest backend/app/rules` passes (module contract, ST0 v1 matches the spec, every loader path, audit recording, hung-read regression).
-- Live check: `AUDIT_TRAIL_PATH=/tmp/rules.jsonl .venv/bin/python -c "import sys; sys.path.insert(0,'backend'); from app.audit.dependencies import get_audit_trail; from app.rules.loader import load_rules; print(load_rules('Stress Test 0 - Dataset', get_audit_trail()).rule_version)"` prints `v1`, and the audit file gains one `rules_loaded` line with `"rule_version":"v1"`.
+- Live check: `AUDIT_TRAIL_PATH=/tmp/rules.jsonl .venv/bin/python -c "import sys; sys.path.insert(0,'backend'); from app.audit.dependencies import get_audit_trail; from app.rules.loader import load_rules; print(load_rules('Stress Test 0 - Dataset', get_audit_trail()).rule_version)"` prints `v2`, and the audit file gains one `rules_loaded` line with `"rule_version":"v2"`. The loader tests read the active version from `registry.json`, so a version bump does not need test edits.

@@ -13,6 +13,8 @@ import pytest
 from app.audit.trail import AuditWriteError, InMemoryAuditTrail
 from app.rules.loader import MAX_ATTEMPTS, MODULES_DIR, identify_stress_test, load_rules
 
+CURRENT = json.loads((MODULES_DIR / "registry.json").read_text())["ST0"]  # the version in force
+
 
 @pytest.fixture
 def modules(tmp_path):
@@ -22,7 +24,7 @@ def modules(tmp_path):
 
 
 def _edit_st0(modules, **changes):
-    path = modules / "ST0" / "v1.json"
+    path = modules / "ST0" / f"{CURRENT}.json"
     raw = json.loads(path.read_text())
     raw.update(changes)
     path.write_text(json.dumps(raw))
@@ -31,7 +33,7 @@ def _edit_st0(modules, **changes):
 # Acceptance 1: a submission for ST0 loads only the ST0 rules.
 def test_an_st0_submission_loads_only_st0_rules():
     result = load_rules("Stress Test 0 - Dataset & DS Problem - Retail Forecast", InMemoryAuditTrail())
-    assert (result.outcome, result.stress_test_id, result.rule_version) == ("loaded", "ST0", "v1")
+    assert (result.outcome, result.stress_test_id, result.rule_version) == ("loaded", "ST0", CURRENT)
     assert {rule.id.split("-")[0] for rule in result.module.rules} == {"ST0"}
     assert result.reason_code is None
 
@@ -63,9 +65,9 @@ def test_an_unknown_or_unclear_stress_test_routes_to_manual_resolution(label, re
 
 # Failure path: rule module not found.
 def test_a_missing_module_file_routes_to_manual_resolution(modules):
-    (modules / "ST0" / "v1.json").unlink()
+    (modules / "ST0" / f"{CURRENT}.json").unlink()
     result = load_rules("Stress Test 0", InMemoryAuditTrail(), modules_dir=modules)
-    assert (result.outcome, result.reason_code, result.rule_version) == ("manual_resolution", "RULE_MODULE_NOT_FOUND", "v1")
+    assert (result.outcome, result.reason_code, result.rule_version) == ("manual_resolution", "RULE_MODULE_NOT_FOUND", CURRENT)
 
 
 def test_a_missing_file_is_not_retried(modules):
@@ -81,20 +83,20 @@ def test_a_missing_file_is_not_retried(modules):
 
 # Failure path: incorrect rule version loaded.
 def test_a_file_with_another_version_is_refused(modules):
-    _edit_st0(modules, version="v2")  # registry asks for v1, file says v2
+    _edit_st0(modules, version="v99")  # registry asks for the current version, file says v99
     result = load_rules("Stress Test 0", InMemoryAuditTrail(), modules_dir=modules)
     assert (result.outcome, result.reason_code) == ("manual_resolution", "RULE_VERSION_MISMATCH")
 
 
 def test_a_file_for_another_stress_test_is_refused(modules):
-    # A valid ST1 module sitting where the ST0 v1 file should be.
-    raw = json.loads((MODULES_DIR / "ST0" / "v1.json").read_text())
+    # A valid ST1 module sitting where the current ST0 file should be.
+    raw = json.loads((MODULES_DIR / "ST0" / f"{CURRENT}.json").read_text())
     raw["stress_test_id"] = "ST1"
     for rule in raw["rules"]:
         rule["id"] = rule["id"].replace("ST0", "ST1")
     for stage in raw["stages"]:
         stage["rule_ids"] = [rule_id.replace("ST0", "ST1") for rule_id in stage["rule_ids"]]
-    (modules / "ST0" / "v1.json").write_text(json.dumps(raw))
+    (modules / "ST0" / f"{CURRENT}.json").write_text(json.dumps(raw))
     result = load_rules("Stress Test 0", InMemoryAuditTrail(), modules_dir=modules)
     assert (result.outcome, result.reason_code) == ("manual_resolution", "RULE_VERSION_MISMATCH")
 
@@ -102,7 +104,7 @@ def test_a_file_for_another_stress_test_is_refused(modules):
 def test_an_invalid_module_file_routes_to_manual_resolution(modules):
     _edit_st0(modules, rules=[])
     assert load_rules("Stress Test 0", InMemoryAuditTrail(), modules_dir=modules).reason_code == "RULE_MODULE_INVALID"
-    (modules / "ST0" / "v1.json").write_text("{not json")
+    (modules / "ST0" / f"{CURRENT}.json").write_text("{not json")
     assert load_rules("Stress Test 0", InMemoryAuditTrail(), modules_dir=modules).reason_code == "RULE_MODULE_INVALID"
 
 
@@ -178,10 +180,10 @@ def test_a_successful_load_is_recorded_with_the_rule_version(caplog):
     audit = InMemoryAuditTrail()
     load_rules("Stress Test 0 - A", audit, correlation_id="c-1", review_id="rev-9", comment_id=1001)
     [event] = audit.read_all()
-    assert (event.action, event.outcome, event.stress_test_id, event.rule_version) == ("rules_loaded", "success", "ST0", "v1")
+    assert (event.action, event.outcome, event.stress_test_id, event.rule_version) == ("rules_loaded", "success", "ST0", CURRENT)
     assert (event.actor_id, event.correlation_id, event.review_id, event.comment_id) == ("system", "c-1", "rev-9", 1001)
     [line] = _rule_log_lines(caplog)
-    assert (line["event"], line["rule_version"], line["correlation_id"]) == ("rules_loaded", "v1", "c-1")
+    assert (line["event"], line["rule_version"], line["correlation_id"]) == ("rules_loaded", CURRENT, "c-1")
 
 
 @pytest.mark.parametrize("label, reason, version", [
@@ -199,11 +201,11 @@ def test_a_manual_resolution_is_recorded_with_its_reason(caplog, label, reason, 
 
 
 def test_a_version_mismatch_is_recorded_with_the_version_that_was_asked_for(modules):
-    _edit_st0(modules, version="v2")
+    _edit_st0(modules, version="v99")
     audit = InMemoryAuditTrail()
     load_rules("Stress Test 0", audit, modules_dir=modules)
     [event] = audit.read_all()
-    assert (event.reason_code, event.stress_test_id, event.rule_version) == ("RULE_VERSION_MISMATCH", "ST0", "v1")
+    assert (event.reason_code, event.stress_test_id, event.rule_version) == ("RULE_VERSION_MISMATCH", "ST0", CURRENT)
 
 
 def test_if_the_load_cannot_be_recorded_no_rules_are_returned(caplog):
@@ -211,7 +213,7 @@ def test_if_the_load_cannot_be_recorded_no_rules_are_returned(caplog):
     with pytest.raises(AuditWriteError):
         load_rules("Stress Test 0 - A", _BrokenAuditTrail())
     [line] = _rule_log_lines(caplog)
-    assert (line["event"], line["error_class"], line["rule_version"]) == ("audit_write_failed", "AuditWriteError", "v1")
+    assert (line["event"], line["error_class"], line["rule_version"]) == ("audit_write_failed", "AuditWriteError", CURRENT)
 
 
 def test_loading_twice_records_two_events_and_the_same_rules():

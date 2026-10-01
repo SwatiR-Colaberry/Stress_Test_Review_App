@@ -26,7 +26,7 @@ It has no approval or status field: an AI evaluation can never approve a submiss
 ## The token-saving rules (user decisions, 2026-09-28)
 
 1. A stable system prompt (the rule module) goes first with a cache marker; later calls read it from the cache.
-2. Plain text, not HTML; the highlight survives as `[SELECTED]`.
+2. Plain text, not HTML; the highlight survives as `[SELECTED]`. Images only as set out in **Images** below (2026-10-02).
 3. Deterministic pre-checks first, passed to Claude.
 4. Structured output via `output_config.format` (`ClaudeStageAnswer`).
 5. Passes come back as a list of ids; only FAIL/ADVISORY get full findings; tight field limits (300/300/400 characters) and a `max_tokens` cap.
@@ -37,6 +37,43 @@ It has no approval or status field: an AI evaluation can never approve a submiss
 10. Usage (input, cache write, cache read, output) logged per call; `EVALUATION_DAILY_TOKEN_LIMIT` refuses a call whose worst case would pass it.
 11. Explicit timeout and at most 2 retries.
 12. Audit events: `evaluation_started`, one `evaluation_finding` per evaluated rule (comment id + rule id + PASS/FAIL/ADVISORY), `evaluation_completed`; `evaluation_failed` / `evaluation_manual_resolution` with a reason code; `evaluation_already_done` on a replay.
+
+## Images (user decision 2026-10-02)
+
+Claude sees an image only for a rule that needs one (`"needs_image": true` in the rule module; in ST0 v2 only
+**ST0-004**, the dataset screenshot), and only when that rule's stage runs (ST0: Stage 2, after Stage 1 has no FAIL).
+
+1. **Which images** (`backend/app/evaluation/image_selection.py`, pure): the request comment is read as parts, each
+   starting at a label line ("Dataset Screenshot:", "Problem 3:"). An image belongs to the part it sits under, and a
+   part to the rule whose `part_keywords` its label names (a label that also names an image rule counts as that
+   rule's part). Only parts of image rules are read; **the last image in each part**; **at most 5**, the first image
+   rule's parts first. Images under other parts, or before the first label, are never read.
+2. **Download** (`backend/app/basecamp/image_source.py`, `image_download.py`): the HTML in SQL Server only has browser
+   links (`preview.app.basecamp.com`, which need a browser login), so the API copy of the comment is read once
+   (`GET /buckets/{bucket}/comments/{id}.json`) and the image is matched by `sgid` to its `download_url`. That link is
+   on the API host and redirects to pre-signed storage (`storage.basecamp.com`): the token goes to the API host only,
+   never with the redirect. PNG / JPEG / GIF / WebP (told by the file's first bytes), at most 5 MB, 15 s timeout,
+   at most 3 attempts. Kept in memory only, never written to disk.
+3. **To Claude**: each image after a caption naming its rule and part, then the usual text, with one line per image
+   rule saying what is attached or why nothing could be. An image that cannot be read never stops the review:
+   Claude is told to answer ADVISORY, so the reviewer checks it.
+4. **Recorded**: `EvaluationResult.images` (rule, part label, file name, `READ` or the reason) and one
+   `evaluation_image` audit event per picked image.
+
+Past ST0 requests (2026-09-25 extract): 33 had images; under this rule 12 have one image read, the rest stay with
+the reviewer (ADVISORY), as before. Cost: about 1,500–3,000 more input tokens per image (the live request on
+2026-10-02: 12,163 → 15,077 tokens, about half a cent more).
+
+| Image failure | reason code | What happens |
+|---|---|---|
+| Token refused (expired after 2 weeks) | `TOKEN_REJECTED` | not read; ADVISORY. Renew the posting app's token (`directives/basecamp-connection-setup.md`). |
+| Basecamp down / 429 / 5xx | `UNAVAILABLE` | 3 attempts (1 s, 2 s), then not read; ADVISORY |
+| Image no longer on Basecamp, or not in the API's list | `NOT_FOUND` | not read; ADVISORY |
+| Over 5 MB, not an image, odd response | `TOO_LARGE` / `UNSUPPORTED_TYPE` / `BAD_RESPONSE` / `BAD_URL` | not read; ADVISORY |
+| No image source (e.g. the historical comparison) | `NOT_FETCHED` | not read; ADVISORY |
+
+Not handled: renewing the Basecamp token automatically; images in earlier comments of the thread; telling a
+screenshot placed under another label (e.g. next to the data source) — those stay with the reviewer by design.
 
 ## Configuration (`.env`, git-ignored; names in `.env.example`)
 
@@ -75,7 +112,15 @@ The scripts read `.env` **over** the shell environment, so a different `ANTHROPI
 .venv/bin/python backend/scripts/evaluate_demo.py                    # fake Claude: the acceptance demo, free
 .venv/bin/python backend/scripts/compare_st0_history.py              # historical comparison, DRY RUN: count_tokens + cost estimate, free
 .venv/bin/python backend/scripts/compare_st0_history.py --run --yes  # PAID: evaluates the cases, writes data/evaluations/comparison/report.md
+.venv/bin/python backend/scripts/live_trial.py                       # newest real ST0 request from SQL Server (SELECT only): ids and dates, free
+.venv/bin/python backend/scripts/live_trial.py --yes                 # PAID (~2-3 cents): queue it, AI draft with images, serve on :8000
 ```
+
+`live_trial.py` is a one-off trial (user decision 2026-10-01): nothing watches SQL Server for new requests yet, and
+the Review Queue lives in the server's memory, so it reads the newest request, queues it (audited), evaluates it and
+serves the app in one process. Stop the normal server first (same port) and sign in again. The `.env` Claude key wins
+over a different `ANTHROPIC_API_KEY` left in the shell (found on its first run). Running it again neither duplicates
+the review nor pays again.
 
 The comparison takes, per ST0 thread in the history extract, the first reviewer `##FeedbackGiven##` comment and the last genuine student `##Critique##` before it. Markers are read from the comment text, not the extract's `MarkerType` column: SQL labels a comment by its first marker, so a reviewer's reply quoting `##Critique##` would otherwise be graded as a submission (4 of the first 15 cases on 2026-09-28). The case's thread stops at the critique, so Claude never sees the feedback that answers it.
 

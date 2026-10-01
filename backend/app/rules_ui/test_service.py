@@ -11,6 +11,8 @@ from app.auth.fake import signed_in_client
 from app.main import app
 from app.routers.rules_ui import get_modules_dir
 from app.rules.loader import MODULES_DIR
+
+CURRENT = json.loads((MODULES_DIR / "registry.json").read_text())["ST0"]  # the version in force
 from app.rules_ui.service import RulesReadError, rules_page, stress_test_name
 
 REVIEWER = "reviewer-7@example.com"  # signed in with Basecamp (STORY-014)
@@ -35,7 +37,7 @@ def _add_st1(modules, text=None, registry_version="v1"):
 
 def test_the_real_st0_rules_are_shown_by_stage_with_examples():
     [st0] = rules_page().modules
-    assert (st0.name, st0.version, st0.available) == ("Stress Test 0", "v1", True)
+    assert (st0.name, st0.version, st0.available) == ("Stress Test 0", CURRENT, True)
     assert [s.number for s in st0.stages] == [1, 2, 3]
     assert st0.stages[2].kind == "advisory" and st0.stages[2].rules == [] and st0.stages[2].instructions
     assert [r.id for s in st0.stages for r in s.rules] == [
@@ -46,7 +48,7 @@ def test_the_real_st0_rules_are_shown_by_stage_with_examples():
 
 
 def test_a_new_stress_test_appears_by_adding_its_file_and_registry_line(modules):
-    raw = json.loads((modules / "ST0" / "v1.json").read_text())
+    raw = json.loads((modules / "ST0" / "v1.json").read_text())  # a valid v1 file to copy as ST1 v1
     text = json.dumps(raw).replace("ST0-", "ST1-").replace('"stress_test_id": "ST0"', '"stress_test_id": "ST1"')
     _add_st1(modules, text)
     names = [(m.name, m.available) for m in rules_page(modules).modules]

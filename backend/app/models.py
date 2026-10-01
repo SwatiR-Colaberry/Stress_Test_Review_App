@@ -195,6 +195,9 @@ AuditAction = Literal[
     "evaluation_failed",
     "evaluation_already_done",
     "evaluation_manual_resolution",
+    # One per image picked for Claude (user decision 2026-10-02): rule_id is
+    # the image rule, reason_code READ or why it could not be read.
+    "evaluation_image",
     # Historical retrieval (STORY-013): which past reviews informed a draft.
     # reason_code = found / none_found / the error class when unavailable.
     "history_retrieved",
@@ -395,6 +398,16 @@ class TokenUsage(BaseModel):
         return TokenUsage(**{name: getattr(self, name) + getattr(other, name) for name in TokenUsage.model_fields})
 
 
+class ImageNote(BaseModel):
+    """One image picked for Claude: which rule's part it came from, and
+    whether Claude saw it (READ) or why not (e.g. TOKEN_REJECTED, TOO_LARGE).
+    The file name is the student's; the image itself is never stored."""
+    rule_id: RuleId
+    part_label: str = Field(max_length=60)
+    filename: Optional[str] = Field(default=None, max_length=255)
+    outcome: str = Field(pattern=r"^[A-Z_]{2,40}$")
+
+
 class EvaluationResult(BaseModel):
     """Claude's draft for one submission version (the critiqued comment).
     There is deliberately no status or approval field: an AI evaluation can
@@ -417,6 +430,9 @@ class EvaluationResult(BaseModel):
     # the reviewer sees about them: found / none found / unavailable + why.
     # None: no retrieval was run (results stored before STORY-013 load too).
     history: Optional[HistoryRetrieval] = None
+    # Images picked for Claude (rules that need an image only); empty for
+    # text-only rule versions and results stored before images were read.
+    images: List[ImageNote] = []
 
     @model_validator(mode="after")
     def _distinct(self) -> "EvaluationResult":

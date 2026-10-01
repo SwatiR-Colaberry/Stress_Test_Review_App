@@ -41,6 +41,21 @@ class Rule(_Strict):
     # Each note names its source (spec section or user decision).
     evaluation_notes: List[str] = []
     example: Optional[RuleExample] = None
+    # Words that name this rule's part of a submission, matched in a label
+    # such as "Dataset Screenshot:" (lowercase). They tell which rule's part
+    # an image sits under (evaluation/image_selection.py).
+    part_keywords: List[str] = []
+    # Claude is shown images only for a rule that needs them, and only images
+    # in that rule's part (user decision 2026-10-02). Needs part_keywords.
+    needs_image: bool = False
+
+    @model_validator(mode="after")
+    def _image_rule_has_a_part(self) -> "Rule":
+        if self.needs_image and not self.part_keywords:
+            raise ValueError(f"{self.id} needs_image but has no part_keywords")
+        if any(not word.strip() or word != word.strip().lower() for word in self.part_keywords):
+            raise ValueError(f"{self.id} part_keywords must be non-empty, trimmed and lowercase")
+        return self
 
 
 class Stage(_Strict):

@@ -4,6 +4,8 @@ Evaluator is the seam: the orchestrator depends on it, tests and the demo
 use a fake, and AnthropicEvaluator is the real one (official anthropic SDK).
 
 One request per stage:
+- images first, each after its caption, when the stage judges a rule that
+  needs an image (user decision 2026-10-02); otherwise plain text as before;
 - system prompt in a block marked cache_control (identical across stages and
   submissions, so later calls read it from the prompt cache);
 - structured output through output_config.format, built from
@@ -136,10 +138,24 @@ class AnthropicEvaluator(Evaluator):
         return {
             "model": self._config.model,
             "system": [{"type": "text", "text": prompt.system, "cache_control": {"type": "ephemeral"}}],
-            "messages": [{"role": "user", "content": prompt.user}],
+            "messages": [{"role": "user", "content": self._content(prompt)}],
             "thinking": {"type": "adaptive"},
             "output_config": {"effort": self._config.effort, "format": {"type": "json_schema", "schema": self._schema}},
         }
+
+    @staticmethod
+    def _content(prompt: EvaluationPrompt) -> Any:
+        """Plain text, or (images picked for an image rule) each image after its
+        caption, then the text. count_tokens sends the same, so images count."""
+        if not prompt.images:
+            return prompt.user
+        blocks: list = []
+        for image in prompt.images:
+            blocks.append({"type": "text", "text": image.caption})
+            blocks.append({"type": "image", "source": {"type": "base64", "media_type": image.media_type,
+                                                       "data": image.data_base64}})
+        blocks.append({"type": "text", "text": prompt.user})
+        return blocks
 
     def count_tokens(self, prompt: EvaluationPrompt) -> int:
         result = self._with_retries("count_tokens", lambda: self._client.messages.count_tokens(**self._request(prompt)))
